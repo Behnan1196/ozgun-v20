@@ -56,6 +56,7 @@ import {
 } from '@/components/ui/resizable'
 import StreamChat from '@/components/StreamChat'
 import StreamVideo from '@/components/StreamVideo'
+import MobileBottomNav from '@/components/MobileBottomNav'
 
 // Interfaces
 interface Student {
@@ -4356,6 +4357,9 @@ export default function CoachPage() {
            </ResizablePanel>
          </ResizablePanelGroup>
        </div>
+
+       {/* Mobile Bottom Navigation */}
+       <MobileBottomNav role="coach" />
      </div>
    )
  } 

@@ -347,3 +347,22 @@ textarea::placeholder {
 .MuiOutlinedInput-root:-webkit-autofill {
   -webkit-box-shadow: 0 0 0 100px white inset !important;
 }
+
+/* Mobile Responsive Utility Classes */
+.mobile-hide {
+  display: block;
+}
+
+.mobile-show {
+  display: none;
+}
+
+@media (max-width: 1023px) {
+  .mobile-hide {
+    display: none !important;
+  }
+  
+  .mobile-show {
+    display: block !important;
+  }
+}
