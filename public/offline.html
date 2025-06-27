@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Çevrimdışı - TYT-AYT Koçluk</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            text-align: center;
+        }
+        
+        .container {
+            max-width: 400px;
+            padding: 2rem;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+        }
+        
+        h1 {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+            font-weight: 600;
+        }
+        
+        p {
+            margin-bottom: 1.5rem;
+            opacity: 0.9;
+            line-height: 1.6;
+        }
+        
+        .retry-button {
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+        }
+        
+        .retry-button:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+        }
+        
+        .features {
+            margin-top: 2rem;
+            text-align: left;
+        }
+        
+        .features h3 {
+            margin-bottom: 1rem;
+            font-size: 1.1rem;
+        }
+        
+        .features ul {
+            list-style: none;
+            opacity: 0.8;
+        }
+        
+        .features li {
+            padding: 0.3rem 0;
+            position: relative;
+            padding-left: 1.5rem;
+        }
+        
+        .features li:before {
+            content: "✓";
+            position: absolute;
+            left: 0;
+            color: #4ade80;
+            font-weight: bold;
+        }
+        
+        @media (max-width: 480px) {
+            .container {
+                margin: 1rem;
+                padding: 1.5rem;
+            }
+            
+            .icon {
+                font-size: 3rem;
+            }
+            
+            h1 {
+                font-size: 1.3rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="icon">📱</div>
+        <h1>İnternet Bağlantısı Yok</h1>
+        <p>Şu anda çevrimdışısınız. Lütfen internet bağlantınızı kontrol edin ve tekrar deneyin.</p>
+        
+        <button class="retry-button" onclick="window.location.reload()">
+            🔄 Tekrar Dene
+        </button>
+        
+        <div class="features">
+            <h3>Çevrimdışı Özellikler:</h3>
+            <ul>
+                <li>Önbelleğe alınmış sayfalar</li>
+                <li>Kayıtlı görevler</li>
+                <li>Temel navigasyon</li>
+                <li>Çalışma planı görüntüleme</li>
+            </ul>
+        </div>
+    </div>
+    
+    <script>
+        // Check for network connection
+        function checkConnection() {
+            if (navigator.onLine) {
+                window.location.reload();
+            }
+        }
+        
+        // Listen for online event
+        window.addEventListener('online', checkConnection);
+        
+        // Auto-retry every 30 seconds
+        setInterval(checkConnection, 30000);
+        
+        // Visual feedback for connection status
+        function updateConnectionStatus() {
+            const button = document.querySelector('.retry-button');
+            if (navigator.onLine) {
+                button.textContent = '🔄 Tekrar Dene';
+                button.style.background = 'rgba(74, 222, 128, 0.3)';
+            } else {
+                button.textContent = '📡 Bağlantı Bekleniyor...';
+                button.style.background = 'rgba(239, 68, 68, 0.3)';
+            }
+        }
+        
+        window.addEventListener('online', updateConnectionStatus);
+        window.addEventListener('offline', updateConnectionStatus);
+        
+        // Initial status check
+        updateConnectionStatus();
+    </script>
+</body>
+</html> 

@@ -8,6 +8,15 @@
 /* Stream.io Video CSS */
 @import '@stream-io/video-react-sdk/dist/css/styles.css';
 
+/* PWA Mobile-First Responsive Design */
+:root {
+  --mobile-header-height: 60px;
+  --mobile-bottom-nav-height: 70px;
+  --mobile-padding: 16px;
+  --tablet-padding: 24px;
+  --desktop-padding: 32px;
+}
+
 /* Custom scrollbar */
 ::-webkit-scrollbar {
   width: 8px;
@@ -44,6 +53,104 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* PWA Mobile Layout Classes */
+.mobile-container {
+  @apply max-w-full mx-auto;
+  padding: var(--mobile-padding);
+}
+
+.mobile-header {
+  height: var(--mobile-header-height);
+  @apply sticky top-0 z-50 bg-white border-b border-gray-200 px-4 flex items-center justify-between;
+}
+
+.mobile-content {
+  min-height: calc(100vh - var(--mobile-header-height) - var(--mobile-bottom-nav-height));
+  @apply pb-4;
+}
+
+.mobile-bottom-nav {
+  height: var(--mobile-bottom-nav-height);
+  @apply fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 flex items-center justify-around z-50;
+}
+
+.mobile-tab-button {
+  @apply flex flex-col items-center justify-center py-2 px-3 text-xs font-medium text-gray-500 hover:text-blue-600 transition-colors;
+}
+
+.mobile-tab-button.active {
+  @apply text-blue-600;
+}
+
+.mobile-card {
+  @apply bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-4;
+}
+
+.mobile-button {
+  @apply w-full py-3 px-4 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors;
+}
+
+.mobile-input {
+  @apply w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent;
+}
+
+/* Responsive breakpoints */
+@media (min-width: 640px) {
+  .mobile-container {
+    padding: var(--tablet-padding);
+    @apply max-w-2xl;
+  }
+}
+
+@media (min-width: 1024px) {
+  .mobile-container {
+    padding: var(--desktop-padding);
+    @apply max-w-7xl;
+  }
+  
+  .mobile-bottom-nav {
+    @apply hidden;
+  }
+  
+  .mobile-content {
+    min-height: auto;
+  }
+}
+
+/* Touch-friendly improvements */
+@media (max-width: 1023px) {
+  /* Larger touch targets */
+  button, .clickable {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  
+  /* Better spacing for mobile */
+  .resizable-panel-group {
+    @apply flex-col;
+  }
+  
+  /* Hide desktop sidebar on mobile */
+  .desktop-sidebar {
+    @apply hidden;
+  }
+  
+  /* Stack panels vertically on mobile */
+  .desktop-panels {
+    @apply flex-col space-y-4;
+  }
+  
+  /* Mobile-friendly modals */
+  .modal-content {
+    @apply mx-4 rounded-t-2xl rounded-b-none;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    max-height: 90vh;
+  }
+}
+
 /* Admin panel specific styles */
 .admin-sidebar {
   @apply bg-white shadow-lg border-r border-gray-200;
@@ -70,96 +177,104 @@ body {
   @apply bg-blue-50;
 }
 
-/* Responsive Weekly Calendar Grid */
+/* Mobile-First Responsive Weekly Calendar Grid */
 .weekly-calendar-grid {
-  /* Default: Try to fit 7 columns if space allows, otherwise wrap */
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  /* Allow rows to size naturally based on content */
-  grid-auto-rows: auto;
+  display: grid;
+  gap: 1rem;
+  /* Mobile: 1 column */
+  grid-template-columns: 1fr;
 }
 
-/* Responsive breakpoints for different panel widths */
-@media (max-width: 2400px) {
+/* Progressive enhancement for larger screens */
+@media (min-width: 640px) {
   .weekly-calendar-grid {
-    /* Very wide screens: 7 columns */
-    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    /* Tablet: 2 columns */
+    grid-template-columns: repeat(2, 1fr);
   }
 }
 
-@media (max-width: 2000px) {
+@media (min-width: 1024px) {
   .weekly-calendar-grid {
-    /* Wide screens: 5-6 columns */
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    /* Desktop: 3-4 columns */
+    grid-template-columns: repeat(3, 1fr);
   }
 }
 
-@media (max-width: 1600px) {
+@media (min-width: 1280px) {
   .weekly-calendar-grid {
-    /* Medium screens: 4-5 columns */
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    /* Large desktop: 4-5 columns */
+    grid-template-columns: repeat(4, 1fr);
   }
 }
 
-@media (max-width: 1200px) {
+@media (min-width: 1536px) {
   .weekly-calendar-grid {
-    /* Smaller screens: 3-4 columns */
-    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    /* Extra large: 5-7 columns */
+    grid-template-columns: repeat(5, 1fr);
   }
 }
 
-@media (max-width: 900px) {
+@media (min-width: 1920px) {
   .weekly-calendar-grid {
-    /* Small screens: 2-3 columns */
-    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    /* Ultra wide: all 7 days */
+    grid-template-columns: repeat(7, 1fr);
   }
 }
 
-@media (max-width: 600px) {
-  .weekly-calendar-grid {
-    /* Mobile: 1-2 columns */
-    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  }
-}
-
-/* Additional improvements for small day cards */
-@media (max-width: 800px) {
-  .weekly-calendar-grid .day-card {
-    /* Reduce padding on smaller screens */
-    @apply p-2;
+/* Mobile-optimized day cards */
+@media (max-width: 639px) {
+  .day-card {
+    @apply p-3;
+    min-height: 200px;
   }
   
-  .weekly-calendar-grid .day-header {
-    /* Compact header on mobile */
-    @apply py-2 px-2;
+  .day-header {
+    @apply py-2 px-3 text-sm font-semibold;
   }
   
-  .weekly-calendar-grid .task-card {
-    /* Smaller task cards */
-    @apply p-1.5;
+  .task-card {
+    @apply p-2 mb-2 text-sm;
+  }
+  
+  .task-time {
+    @apply text-xs;
   }
 }
 
 /* Enhanced visual improvements */
 .day-card {
-  /* Subtle box shadow with depth */
   box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.08), 0 1px 2px 0 rgba(0, 0, 0, 0.02);
+  transition: all 0.2s ease-in-out;
 }
 
 .day-card:hover {
-  /* Enhanced hover effect */
   box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.08), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
   transform: translateY(-1px);
 }
 
+@media (hover: none) {
+  /* Disable hover effects on touch devices */
+  .day-card:hover {
+    transform: none;
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.08), 0 1px 2px 0 rgba(0, 0, 0, 0.02);
+  }
+}
+
 .task-card {
-  /* Subtle shadows for task cards */
   box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  transition: all 0.15s ease-in-out;
 }
 
 .task-card:hover {
-  /* Enhanced task card hover */
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
   transform: translateY(-0.5px);
+}
+
+@media (hover: none) {
+  .task-card:hover {
+    transform: none;
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  }
 }
 
 /* Improved completion status styling */
@@ -170,6 +285,37 @@ body {
 /* Better button styling */
 button:focus {
   @apply outline-none ring-2 ring-blue-500 ring-opacity-50;
+}
+
+/* Safe area for iOS devices */
+@supports (padding: max(0px)) {
+  .mobile-header {
+    padding-left: max(1rem, env(safe-area-inset-left));
+    padding-right: max(1rem, env(safe-area-inset-right));
+    padding-top: env(safe-area-inset-top);
+  }
+  
+  .mobile-bottom-nav {
+    padding-left: max(0px, env(safe-area-inset-left));
+    padding-right: max(0px, env(safe-area-inset-right));
+    padding-bottom: max(0px, env(safe-area-inset-bottom));
+  }
+  
+  .mobile-content {
+    padding-left: max(1rem, env(safe-area-inset-left));
+    padding-right: max(1rem, env(safe-area-inset-right));
+  }
+}
+
+/* PWA Offline indicator */
+.offline-indicator {
+  @apply fixed top-0 left-0 right-0 bg-yellow-500 text-white text-center py-2 text-sm font-medium z-50;
+  transform: translateY(-100%);
+  transition: transform 0.3s ease-in-out;
+}
+
+.offline-indicator.show {
+  transform: translateY(0);
 }
 
 /* Fix autofill and placeholder issues */
@@ -198,10 +344,6 @@ textarea::placeholder {
 }
 
 /* Fix for Material-UI autofill background */
-.MuiFilledInput-root:-webkit-autofill {
-  -webkit-box-shadow: 0 0 0 30px #f5f5f5 inset !important;
-}
-
 .MuiOutlinedInput-root:-webkit-autofill {
-  -webkit-box-shadow: 0 0 0 30px white inset !important;
+  -webkit-box-shadow: 0 0 0 100px white inset !important;
 }
