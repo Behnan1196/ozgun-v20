@@ -141,6 +141,16 @@ export default function StudentPage() {
   const [loading, setLoading] = useState(true)
   const [userMenuOpen, setUserMenuOpen] = useState(false)
   const [activeTab, setActiveTab] = useState('statistics')
+  const [mobileActiveTab, setMobileActiveTab] = useState('plan') // Default to plan on mobile
+
+  // Handle mobile tab changes
+  const handleMobileTabChange = (tabId: string) => {
+    setMobileActiveTab(tabId)
+    if (tabId !== 'plan') {
+      // For existing tabs, update the desktop activeTab state too
+      setActiveTab(tabId)
+    }
+  }
   const [currentWeek, setCurrentWeek] = useState(new Date())
   const [weekDates, setWeekDates] = useState<Date[]>([])
   const [showSettingsModal, setShowSettingsModal] = useState(false)
@@ -545,7 +555,7 @@ export default function StudentPage() {
 
       {/* Main Content with Resizable Panels - Desktop only */}
       <div className="h-[calc(100vh-7rem)] mobile-hide">
-        <ResizablePanelGroup direction="horizontal" className="h-full">
+        <ResizablePanelGroup direction="horizontal" className="h-full mobile-hide">
           {/* Left Panel - Weekly Plan */}
           <ResizablePanel defaultSize={75} minSize={50} className="bg-white">
             <div className="p-6 h-full flex flex-col">
@@ -1074,7 +1084,159 @@ export default function StudentPage() {
       {/* Mobile Content - Mobile only */}
       <div className="mobile-show pb-20">
         <div className="p-4">
-          {activeTab === 'statistics' && (
+          {/* Show Weekly Plan when Plan tab is active */}
+          {mobileActiveTab === 'plan' && (
+            <div className="space-y-6">
+              {/* Week Navigation */}
+              <div className="flex items-center justify-between bg-white rounded-lg p-4 shadow-sm border border-blue-200">
+                <div className="flex items-center space-x-4">
+                  <button
+                    onClick={() => navigateWeek('prev')}
+                    className="p-2 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                  </button>
+                  
+                  <h2 className="text-lg font-bold text-gray-800 flex items-center space-x-2">
+                    <Calendar className="h-5 w-5 text-blue-600" />
+                    <span>Haftalık Plan</span>
+                  </h2>
+                  
+                  <button
+                    onClick={() => navigateWeek('next')}
+                    className="p-2 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                  </button>
+                </div>
+                
+                <div className="text-sm text-gray-600 bg-blue-50 px-3 py-2 rounded-md border border-blue-200">
+                  <span className="font-medium">
+                    {weekDates.length > 0 ? formatDate(weekDates[0]) : 'Yükleniyor...'}
+                  </span>
+                </div>
+              </div>
+
+              {/* Mobile Weekly Calendar Grid */}
+              <div className="bg-slate-100 p-4 rounded-lg">
+                {weekDates.length === 0 ? (
+                  <div className="flex items-center justify-center h-32">
+                    <div className="text-center">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-4"></div>
+                      <p className="text-gray-600">Yükleniyor...</p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="grid gap-4 grid-cols-1">
+                    {weekDates.map((date, index) => {
+                      const dayTasks = getTasksForDay(date)
+                      const completedTasks = dayTasks.filter(t => t.status === 'completed').length
+                      const totalTasks = dayTasks.length
+                      
+                      return (
+                        <div key={index} className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+                          {/* Day Header */}
+                          <div className="bg-gradient-to-r from-slate-50 to-gray-100 border-b border-gray-200 p-3">
+                            <div className="flex items-center justify-between">
+                              <div className="text-sm font-semibold text-slate-700">
+                                {dayNames[index]}
+                              </div>
+                              <div className="text-xs text-slate-500 font-medium">
+                                {formatDate(date)}
+                              </div>
+                            </div>
+                            <div className="mt-2">
+                              {totalTasks > 0 ? (
+                                <span className="bg-blue-500 text-white px-2 py-1 rounded-full text-xs font-medium">
+                                  {completedTasks}/{totalTasks} görev
+                                </span>
+                              ) : (
+                                <span className="text-slate-400 text-xs">Görev yok</span>
+                              )}
+                            </div>
+                          </div>
+                          
+                          {/* Day Content */}
+                          <div className="p-3 space-y-3">
+                            {dayTasks.length === 0 ? (
+                              <div className="text-center py-8 text-gray-500">
+                                Bugün için görev yok
+                              </div>
+                            ) : (
+                              dayTasks.map((task) => {
+                                const subject = subjects.find(s => s.id === task.subject_id)
+                                const topic = topics.find(t => t.id === task.topic_id)
+                                
+                                return (
+                                  <div 
+                                    key={task.id} 
+                                    onClick={() => toggleTaskCompletion(task)}
+                                    className={`p-3 rounded-lg border cursor-pointer transition-all ${
+                                      task.status === 'completed'
+                                        ? 'bg-green-50 border-green-200 opacity-75'
+                                        : 'bg-white border-gray-200 hover:shadow-md'
+                                    }`}
+                                  >
+                                    <div className="flex items-start justify-between">
+                                      <div className="flex-1">
+                                        <div className="flex items-center space-x-2 mb-1">
+                                          <span className="text-xs font-semibold text-blue-600">
+                                            {task.task_type === 'study' ? 'ÇALIŞMA' :
+                                             task.task_type === 'practice' ? 'SORU ÇÖZ' :
+                                             task.task_type === 'exam' ? 'SINAV' :
+                                             task.task_type === 'resource' ? 'KAYNAK' : 'TEKRAR'}
+                                          </span>
+                                        </div>
+                                        
+                                        {subject && topic && (
+                                          <div className="text-sm font-medium text-gray-800 mb-1">
+                                            {subject.name} - {topic.name}
+                                          </div>
+                                        )}
+                                        
+                                        {task.description && (
+                                          <div className="text-sm text-gray-600 mb-2">
+                                            {task.description}
+                                          </div>
+                                        )}
+                                        
+                                        <div className="flex items-center space-x-3 text-xs text-gray-500">
+                                          {task.scheduled_start_time && (
+                                            <span>⏰ {task.scheduled_start_time}</span>
+                                          )}
+                                          {task.estimated_duration && (
+                                            <span>⏱️ {task.estimated_duration} dk</span>
+                                          )}
+                                          {task.problem_count && (
+                                            <span>📊 {task.problem_count} soru</span>
+                                          )}
+                                        </div>
+                                      </div>
+                                      
+                                      <div className="ml-3">
+                                        {task.status === 'completed' ? (
+                                          <CheckCircle className="h-5 w-5 text-green-600" />
+                                        ) : (
+                                          <div className="h-5 w-5 border-2 border-gray-400 rounded-full"></div>
+                                        )}
+                                      </div>
+                                    </div>
+                                  </div>
+                                )
+                              })
+                            )}
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Show existing tab content for other tabs */}
+          {mobileActiveTab === 'statistics' && (
             <div className="space-y-6">
               <h3 className="font-semibold text-gray-900 flex items-center">
                 📊 Gelişim İstatistikleri
@@ -1277,8 +1439,135 @@ export default function StudentPage() {
             </div>
           )}
 
+          {/* Mobile Statistics Tab */}
+          {mobileActiveTab === 'statistics' && (
+            <div className="space-y-6">
+              <h3 className="font-semibold text-gray-900 flex items-center">
+                📊 Gelişim İstatistikleri
+              </h3>
+              
+              <div className="space-y-4">
+                {/* Progress Overview Cards */}
+                <div className="grid grid-cols-1 gap-4">
+                  <div className="p-4 bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-lg">
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="text-sm font-medium text-green-800">
+                        Bu Hafta Tamamlanan
+                      </div>
+                      <div className="text-green-600">✓</div>
+                    </div>
+                    <div className="text-3xl font-bold text-green-700 mb-2">
+                      {Math.round((weeklyTasks.filter(t => t.status === 'completed').length / Math.max(weeklyTasks.length, 1)) * 100)}%
+                    </div>
+                    <div className="text-xs text-green-600 mb-3">
+                      {weeklyTasks.filter(t => t.status === 'completed').length}/{weeklyTasks.length} görev
+                    </div>
+                    {/* Progress Bar */}
+                    <div className="w-full bg-green-200 rounded-full h-2">
+                      <div 
+                        className="bg-green-500 h-2 rounded-full transition-all duration-300"
+                        style={{
+                          width: `${Math.round((weeklyTasks.filter(t => t.status === 'completed').length / Math.max(weeklyTasks.length, 1)) * 100)}%`
+                        }}
+                      ></div>
+                    </div>
+                  </div>
+                  
+                  <div className="p-4 bg-gradient-to-r from-blue-50 to-cyan-50 border border-blue-200 rounded-lg">
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="text-sm font-medium text-blue-800">
+                        Toplam Çalışma Saati
+                      </div>
+                      <div className="text-blue-600">⏰</div>
+                    </div>
+                    <div className="text-3xl font-bold text-blue-700 mb-2">
+                      {Math.round(weeklyTasks.filter(t => t.status === 'completed').reduce((acc, t) => acc + t.estimated_duration, 0) / 60 * 10) / 10}h
+                    </div>
+                    <div className="text-xs text-blue-600 mb-3">
+                      Bu hafta tahmini
+                    </div>
+                    {/* Study Hours Visualization */}
+                    <div className="flex items-end space-x-1 h-8">
+                      {[1,2,3,4,5,6,7].map((day, index) => {
+                        const dayTasks = weeklyTasks.filter(t => {
+                          const taskDate = new Date(t.scheduled_date)
+                          const weekStart = getWeekStart(currentWeek)
+                          const dayDate = new Date(weekStart)
+                          dayDate.setDate(weekStart.getDate() + index)
+                          return taskDate.toDateString() === dayDate.toDateString() && t.status === 'completed'
+                        })
+                        const dayHours = dayTasks.reduce((acc, t) => acc + t.estimated_duration, 0) / 60
+                        const maxHeight = Math.max(dayHours / 8, 0.1)
+                        return (
+                          <div 
+                            key={index}
+                            className="bg-blue-400 rounded-sm flex-1 transition-all duration-300"
+                            style={{ height: `${Math.min(maxHeight * 100, 100)}%` }}
+                            title={`${dayHours.toFixed(1)} saat`}
+                          ></div>
+                        )
+                      })}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Task Type Distribution */}
+                <div className="p-4 bg-gradient-to-r from-purple-50 to-indigo-50 border border-purple-200 rounded-lg">
+                  <div className="text-sm font-medium text-purple-800 mb-4 flex items-center">
+                    📈 Görev Türü Dağılımı
+                  </div>
+                  <div className="space-y-3">
+                    {(() => {
+                      const taskTypes = ['study', 'practice', 'exam', 'review', 'resource']
+                      const taskTypeNames: Record<string, string> = {
+                        'study': 'Çalışma',
+                        'practice': 'Soru Çöz',
+                        'exam': 'Sınav',
+                        'review': 'Tekrar',
+                        'resource': 'Kaynak'
+                      }
+                      const taskTypeColors: Record<string, string> = {
+                        'study': 'bg-blue-500',
+                        'practice': 'bg-green-500',
+                        'exam': 'bg-red-500',
+                        'review': 'bg-yellow-500',
+                        'resource': 'bg-indigo-500'
+                      }
+                      
+                      return taskTypes.map(type => {
+                        const count = weeklyTasks.filter(t => t.task_type === type).length
+                        const percentage = weeklyTasks.length > 0 ? (count / weeklyTasks.length) * 100 : 0
+                        
+                        if (count === 0) return null
+                        
+                        return (
+                          <div key={type} className="flex items-center">
+                            <div className="w-16 text-xs text-purple-700 font-medium">
+                              {taskTypeNames[type]}
+                            </div>
+                            <div className="flex-1 mx-3">
+                              <div className="w-full bg-purple-200 rounded-full h-2">
+                                <div 
+                                  className={`${taskTypeColors[type]} h-2 rounded-full transition-all duration-500`}
+                                  style={{ width: `${percentage}%` }}
+                                ></div>
+                              </div>
+                            </div>
+                            <div className="text-xs text-purple-600 w-12 text-right">
+                              {count} ({Math.round(percentage)}%)
+                            </div>
+                          </div>
+                        )
+                      }).filter(Boolean)
+                    })()}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Mobile Profile Tab */}
-          {activeTab === 'profile' && (
+          {mobileActiveTab === 'profile' && (
             <div className="space-y-6">
               <h3 className="font-semibold text-gray-900 flex items-center">
                 👤 Öğrenci Bilgileri
@@ -1309,7 +1598,7 @@ export default function StudentPage() {
           )}
 
           {/* Mobile Chat Tab */}
-          {activeTab === 'chat' && (
+          {mobileActiveTab === 'chat' && (
             <div className="space-y-6">
               <h3 className="font-semibold text-gray-900 flex items-center">
                 💬 Chat
@@ -1330,7 +1619,7 @@ export default function StudentPage() {
           )}
 
           {/* Mobile Video Tab */}
-          {activeTab === 'video' && (
+          {mobileActiveTab === 'video' && (
             <div className="space-y-6">
               <h3 className="font-semibold text-gray-900 flex items-center">
                 🎥 Video Görüşme
@@ -1351,7 +1640,7 @@ export default function StudentPage() {
           )}
 
           {/* Mobile Goals Tab */}
-          {activeTab === 'goals' && (
+          {mobileActiveTab === 'goals' && (
             <div className="space-y-6">
               <h3 className="font-semibold text-gray-900 flex items-center">
                 🎯 Hedeflerim
@@ -1365,7 +1654,7 @@ export default function StudentPage() {
           )}
 
           {/* Mobile Tools Tab */}
-          {activeTab === 'tools' && (
+          {mobileActiveTab === 'tools' && (
             <div className="space-y-6">
               <h3 className="font-semibold text-gray-900 flex items-center">
                 🛠️ Araçlar
@@ -1492,7 +1781,11 @@ export default function StudentPage() {
       )}
 
       {/* Mobile Bottom Navigation */}
-      <MobileBottomNav role="student" />
+      <MobileBottomNav 
+        role="student" 
+        activeTab={mobileActiveTab}
+        onTabChange={handleMobileTabChange}
+      />
     </div>
   )
 }

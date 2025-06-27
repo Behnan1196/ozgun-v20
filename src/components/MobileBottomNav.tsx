@@ -1,89 +1,73 @@
 'use client'
 
-import { useRouter, usePathname } from 'next/navigation'
 import { 
-  Home, 
+  BarChart3, 
   Calendar, 
   MessageCircle, 
-  BarChart3, 
   Settings,
   Users,
   UserCircle,
-  BookOpen,
-  Bell
+  Video,
+  Target
 } from 'lucide-react'
-
-interface NavItem {
-  icon: React.ComponentType<any>
-  label: string
-  href: string
-  activePattern: RegExp
-}
 
 interface MobileBottomNavProps {
   role: 'student' | 'coach' | 'admin'
+  activeTab?: string
+  onTabChange?: (tabId: string) => void
 }
 
-export default function MobileBottomNav({ role }: MobileBottomNavProps) {
-  const router = useRouter()
-  const pathname = usePathname()
+export default function MobileBottomNav({ role, activeTab, onTabChange }: MobileBottomNavProps) {
+  // Student tabs match the existing right panel tabs + plan
+  const studentTabs = [
+    { id: 'statistics', label: 'Gelişimim', icon: BarChart3 },
+    { id: 'plan', label: 'Plan', icon: Calendar },
+    { id: 'chat', label: 'Chat', icon: MessageCircle },
+    { id: 'video', label: 'Video', icon: Video },
+    { id: 'goals', label: 'Hedefler', icon: Target },
+    { id: 'profile', label: 'Profil', icon: UserCircle },
+    { id: 'tools', label: 'Araçlar', icon: Settings }
+  ]
 
-  const getNavItems = (): NavItem[] => {
-    switch (role) {
-      case 'student':
-        return [
-          { icon: Home, label: 'Ana Sayfa', href: '/student', activePattern: /^\/student$/ },
-          { icon: Calendar, label: 'Plan', href: '/student?tab=plan', activePattern: /\/student.*tab=plan/ },
-          { icon: MessageCircle, label: 'Chat', href: '/student?tab=chat', activePattern: /\/student.*tab=chat/ },
-          { icon: BarChart3, label: 'İlerleme', href: '/student?tab=progress', activePattern: /\/student.*tab=progress/ },
-          { icon: Settings, label: 'Ayarlar', href: '/student?tab=settings', activePattern: /\/student.*tab=settings/ }
-        ]
-      case 'coach':
-        return [
-          { icon: Home, label: 'Ana Sayfa', href: '/coach', activePattern: /^\/coach$/ },
-          { icon: Users, label: 'Öğrenciler', href: '/coach/students', activePattern: /\/coach\/students/ },
-          { icon: MessageCircle, label: 'Mesajlar', href: '/coach?tab=messages', activePattern: /\/coach.*tab=messages/ },
-          { icon: BarChart3, label: 'Analiz', href: '/coach?tab=analytics', activePattern: /\/coach.*tab=analytics/ },
-          { icon: Settings, label: 'Ayarlar', href: '/coach?tab=settings', activePattern: /\/coach.*tab=settings/ }
-        ]
-      case 'admin':
-        return [
-          { icon: Home, label: 'Ana Sayfa', href: '/admin', activePattern: /^\/admin$/ },
-          { icon: Users, label: 'Kullanıcılar', href: '/admin/users', activePattern: /\/admin\/users/ },
-          { icon: Bell, label: 'Duyurular', href: '/admin/announcements', activePattern: /\/admin\/announcements/ },
-          { icon: BookOpen, label: 'Kaynaklar', href: '/admin/resources', activePattern: /\/admin\/resources/ },
-          { icon: Settings, label: 'Ayarlar', href: '/admin/settings', activePattern: /\/admin\/settings/ }
-        ]
-      default:
-        return []
+  // Coach tabs match the existing right panel tabs + plan
+  const coachTabs = [
+    { id: 'statistics', label: 'Özet', icon: BarChart3 },
+    { id: 'plan', label: 'Plan', icon: Calendar },
+    { id: 'students', label: 'Öğrenciler', icon: Users },
+    { id: 'chat', label: 'Chat', icon: MessageCircle },
+    { id: 'video', label: 'Video', icon: Video },
+    { id: 'goals', label: 'Hedefler', icon: Target },
+    { id: 'tools', label: 'Araçlar', icon: Settings }
+  ]
+
+  // Admin doesn't need mobile nav (desktop only)
+  if (role === 'admin') {
+    return null
+  }
+
+  const tabs = role === 'student' ? studentTabs : coachTabs
+
+  const handleTabChange = (tabId: string) => {
+    if (onTabChange) {
+      onTabChange(tabId)
     }
   }
 
-  const navItems = getNavItems()
-
-  const isActive = (item: NavItem) => {
-    return item.activePattern.test(pathname + (typeof window !== 'undefined' ? window.location.search : ''))
-  }
-
-  const handleNavigation = (href: string) => {
-    router.push(href)
-  }
-
   return (
-    <nav className="mobile-bottom-nav md:hidden">
-      {navItems.map((item) => {
-        const Icon = item.icon
-        const active = isActive(item)
+    <nav className="mobile-bottom-nav">
+      {tabs.map((tab) => {
+        const Icon = tab.icon
+        const active = activeTab === tab.id
         
         return (
           <button
-            key={item.href}
-            onClick={() => handleNavigation(item.href)}
+            key={tab.id}
+            onClick={() => handleTabChange(tab.id)}
             className={`mobile-tab-button ${active ? 'active' : ''}`}
           >
             <Icon className={`h-5 w-5 mb-1 ${active ? 'text-blue-600' : 'text-gray-500'}`} />
             <span className={`text-xs ${active ? 'text-blue-600' : 'text-gray-500'}`}>
-              {item.label}
+              {tab.label}
             </span>
           </button>
         )
