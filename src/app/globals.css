@@ -1,0 +1,207 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Stream.io Chat CSS */
+@import 'stream-chat-react/dist/css/v2/index.css';
+
+/* Stream.io Video CSS */
+@import '@stream-io/video-react-sdk/dist/css/styles.css';
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}
+
+/* Material-UI and Tailwind compatibility */
+.MuiPaper-root {
+  @apply shadow-sm;
+}
+
+.MuiButton-root {
+  @apply transition-all duration-200;
+}
+
+/* Turkish text support */
+body {
+  font-family: 'Roboto', 'Segoe UI', 'Tahoma', 'Geneva', 'Verdana', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Admin panel specific styles */
+.admin-sidebar {
+  @apply bg-white shadow-lg border-r border-gray-200;
+}
+
+.admin-content {
+  @apply bg-gray-50 min-h-screen;
+}
+
+/* DataGrid custom styles */
+.MuiDataGrid-root {
+  @apply border-0 bg-white shadow-sm rounded-lg;
+}
+
+.MuiDataGrid-columnHeaders {
+  @apply bg-gray-50 border-b border-gray-200;
+}
+
+.MuiDataGrid-cell {
+  @apply border-b border-gray-100;
+}
+
+.MuiDataGrid-row:hover {
+  @apply bg-blue-50;
+}
+
+/* Responsive Weekly Calendar Grid */
+.weekly-calendar-grid {
+  /* Default: Try to fit 7 columns if space allows, otherwise wrap */
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  /* Allow rows to size naturally based on content */
+  grid-auto-rows: auto;
+}
+
+/* Responsive breakpoints for different panel widths */
+@media (max-width: 2400px) {
+  .weekly-calendar-grid {
+    /* Very wide screens: 7 columns */
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  }
+}
+
+@media (max-width: 2000px) {
+  .weekly-calendar-grid {
+    /* Wide screens: 5-6 columns */
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  }
+}
+
+@media (max-width: 1600px) {
+  .weekly-calendar-grid {
+    /* Medium screens: 4-5 columns */
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  }
+}
+
+@media (max-width: 1200px) {
+  .weekly-calendar-grid {
+    /* Smaller screens: 3-4 columns */
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  }
+}
+
+@media (max-width: 900px) {
+  .weekly-calendar-grid {
+    /* Small screens: 2-3 columns */
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  }
+}
+
+@media (max-width: 600px) {
+  .weekly-calendar-grid {
+    /* Mobile: 1-2 columns */
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  }
+}
+
+/* Additional improvements for small day cards */
+@media (max-width: 800px) {
+  .weekly-calendar-grid .day-card {
+    /* Reduce padding on smaller screens */
+    @apply p-2;
+  }
+  
+  .weekly-calendar-grid .day-header {
+    /* Compact header on mobile */
+    @apply py-2 px-2;
+  }
+  
+  .weekly-calendar-grid .task-card {
+    /* Smaller task cards */
+    @apply p-1.5;
+  }
+}
+
+/* Enhanced visual improvements */
+.day-card {
+  /* Subtle box shadow with depth */
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.08), 0 1px 2px 0 rgba(0, 0, 0, 0.02);
+}
+
+.day-card:hover {
+  /* Enhanced hover effect */
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.08), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  transform: translateY(-1px);
+}
+
+.task-card {
+  /* Subtle shadows for task cards */
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+}
+
+.task-card:hover {
+  /* Enhanced task card hover */
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  transform: translateY(-0.5px);
+}
+
+/* Improved completion status styling */
+.task-completed {
+  @apply bg-gradient-to-r from-green-50 to-green-100 border-green-200;
+}
+
+/* Better button styling */
+button:focus {
+  @apply outline-none ring-2 ring-blue-500 ring-opacity-50;
+}
+
+/* Fix autofill and placeholder issues */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0 30px white inset !important;
+  -webkit-text-fill-color: #000 !important;
+}
+
+/* Ensure placeholders are visible */
+input::placeholder,
+textarea::placeholder {
+  color: #9ca3af !important;
+  opacity: 1 !important;
+}
+
+/* Material-UI TextField placeholder fix */
+.MuiInputLabel-root {
+  color: #9ca3af !important;
+}
+
+.MuiInputLabel-root.Mui-focused {
+  color: #2563eb !important;
+}
+
+/* Fix for Material-UI autofill background */
+.MuiFilledInput-root:-webkit-autofill {
+  -webkit-box-shadow: 0 0 0 30px #f5f5f5 inset !important;
+}
+
+.MuiOutlinedInput-root:-webkit-autofill {
+  -webkit-box-shadow: 0 0 0 30px white inset !important;
+}
