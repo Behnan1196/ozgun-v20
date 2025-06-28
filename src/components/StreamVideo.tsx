@@ -76,23 +76,21 @@ export function StreamVideoCall({ partnerId, partnerName, className = '' }: Stre
     videoError,
     initializeVideo,
     startVideoCall,
+    isVideoInitialized,
     isStreamReady,
     isDemoMode
   } = useStream()
   
-  const [initialized, setInitialized] = useState(false)
-
-  // Initialize video when component mounts
+  // Initialize video when component mounts, but only if it hasn't been initialized before.
   useEffect(() => {
     const init = async () => {
-      if (isStreamReady && !initialized && partnerId) {
+      if (isStreamReady && partnerId && !isVideoInitialized(partnerId)) {
         await initializeVideo(partnerId)
-        setInitialized(true)
       }
     }
     
     init()
-  }, [isStreamReady, partnerId, initialized, initializeVideo])
+  }, [isStreamReady, partnerId, isVideoInitialized, initializeVideo])
 
   // When the component re-mounts (e.g., switching tabs), re-fetch the call state
   // to ensure the UI is in sync with the server.

@@ -31,6 +31,7 @@ interface StreamContextType {
   initializeVideo: (partnerId: string) => Promise<void>
   startVideoCall: () => Promise<void>
   endVideoCall: () => Promise<void>
+  isVideoInitialized: (partnerId: string) => boolean
   
   // Status
   isStreamReady: boolean
@@ -58,6 +59,7 @@ export function StreamProvider({ children }: StreamProviderProps) {
   const [videoCall, setVideoCall] = useState<Call | null>(null)
   const [videoLoading, setVideoLoading] = useState(false)
   const [videoError, setVideoError] = useState<string | null>(null)
+  const [initializedVideoPartners, setInitializedVideoPartners] = useState<Set<string>>(new Set())
   
   // General state
   const [isStreamReady, setIsStreamReady] = useState(false)
@@ -250,10 +252,12 @@ export function StreamProvider({ children }: StreamProviderProps) {
       setVideoError('Video client not ready')
       return
     }
-
-    // Check if trying to call self
-    if (user.id === partnerId) {
-      setVideoError('Cannot start a video call with yourself')
+    
+    if (initializedVideoPartners.has(partnerId)) {
+      console.log('📞 Video call already initialized for partner:', partnerId)
+      const call = createVideoCall(videoClient, user.id, partnerId)
+      setVideoCall(call)
+      await call.get()
       return
     }
 
@@ -282,9 +286,12 @@ export function StreamProvider({ children }: StreamProviderProps) {
       }
       
       const call = createVideoCall(videoClient, user.id, partnerId)
-      await call.create()
+      await call.getOrCreate()
       
       setVideoCall(call)
+      
+      setInitializedVideoPartners(prev => new Set(prev).add(partnerId))
+
       console.log('✅ Video call ready')
       
     } catch (error) {
@@ -362,6 +369,10 @@ export function StreamProvider({ children }: StreamProviderProps) {
     }
   }
 
+  const isVideoInitialized = (partnerId: string) => {
+    return initializedVideoPartners.has(partnerId)
+  }
+
   const value: StreamContextType = {
     // Chat
     chatClient,
@@ -380,6 +391,7 @@ export function StreamProvider({ children }: StreamProviderProps) {
     initializeVideo,
     startVideoCall,
     endVideoCall,
+    isVideoInitialized,
     
     // Status
     isStreamReady,
