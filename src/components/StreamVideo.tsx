@@ -227,21 +227,7 @@ export function StreamVideoCall({ partnerId, partnerName, className = '' }: Stre
                 <PaginatedGridLayout />
               </div>
               <div className="p-4 bg-gray-50 border-t">
-                <div className="flex justify-center gap-4 mb-4">
-                  <button
-                    onClick={handleStartCall}
-                    className="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 transition-colors"
-                  >
-                    📞 Ara
-                  </button>
-                  <button
-                    onClick={handleEndCall}
-                    className="bg-red-600 text-white px-6 py-2 rounded-lg hover:bg-red-700 transition-colors"
-                  >
-                    📞 Bitir
-                  </button>
-                </div>
-                <CallControls />
+                <CallControls onLeave={() => handleEndCall()} />
               </div>
             </div>
           </StreamTheme>
