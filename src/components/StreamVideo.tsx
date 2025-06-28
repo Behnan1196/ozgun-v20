@@ -8,7 +8,8 @@ import {
   SpeakerLayout, 
   CallParticipantsList,
   PaginatedGridLayout,
-  StreamTheme
+  StreamTheme,
+  CallingState
 } from '@stream-io/video-react-sdk'
 import { useStream } from '@/contexts/StreamContext'
 
@@ -33,6 +34,13 @@ export function StreamVideoCall({ partnerId, partnerName, className = '' }: Stre
   
   const [initialized, setInitialized] = useState(false)
   const [callActive, setCallActive] = useState(false)
+
+  // When the component mounts, check if the call from the context is already active
+  useEffect(() => {
+    if (videoCall?.state.callingState === CallingState.JOINED) {
+      setCallActive(true);
+    }
+  }, [videoCall]);
 
   // Initialize video when component mounts
   useEffect(() => {
