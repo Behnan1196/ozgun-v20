@@ -281,15 +281,12 @@ export function StreamProvider({ children }: StreamProviderProps) {
   // Initialize video call
   const initializeVideo = async (partnerId: string) => {
     if (!videoClient || !user) {
-      setVideoError('Video client not ready')
+      setVideoError('Video client or user not ready')
       return
     }
-    
+
     if (initializedVideoPartners.has(partnerId)) {
-      console.log('📞 Video call already initialized for partner:', partnerId)
-      const call = createVideoCall(videoClient, user.id, partnerId)
-      setVideoCall(call)
-      await call.get()
+      console.log('📹 Video already initialized for partner:', partnerId)
       return
     }
 
@@ -299,36 +296,28 @@ export function StreamProvider({ children }: StreamProviderProps) {
     try {
       console.log('📹 Initializing video call with partner:', partnerId)
       
-      // Ensure partner user exists (similar to chat)
-      try {
-        console.log('👤 Ensuring partner user exists for video call:', partnerId)
-        
-        const supabase = createClient()
-        const { data: partnerProfile } = await supabase
-          .from('user_profiles')
-          .select('*')
-          .eq('id', partnerId)
-          .single()
-        
-        if (partnerProfile) {
-          console.log('✅ Partner profile found for video call')
-        }
-      } catch (userError) {
-        console.warn('⚠️ Could not verify partner user for video, continuing anyway:', userError)
+      // Ensure partner exists
+      console.log('👤 Ensuring partner user exists for video call:', partnerId)
+      const { data: partnerProfile } = await supabase
+        .from('user_profiles')
+        .select('id, email, full_name')
+        .eq('id', partnerId)
+        .single()
+      
+      if (!partnerProfile) {
+        throw new Error('Partner profile not found')
       }
+      console.log('✅ Partner profile found for video call')
       
-      const call = createVideoCall(videoClient, user.id, partnerId)
-      await call.getOrCreate()
-      
+      const call = await createVideoCall(videoClient, user.id, partnerId)
       setVideoCall(call)
       
       setInitializedVideoPartners(prev => new Set(prev).add(partnerId))
-
       console.log('✅ Video call ready')
       
     } catch (error) {
       console.error('❌ Failed to initialize video call:', error)
-      setVideoError('Failed to initialize video call')
+      setVideoError(`Failed to initialize video call: ${error instanceof Error ? error.message : 'Unknown error'}`)
     } finally {
       setVideoLoading(false)
     }
