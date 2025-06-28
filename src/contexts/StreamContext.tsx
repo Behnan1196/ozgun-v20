@@ -53,17 +53,13 @@ interface StreamProviderProps {
   children: ReactNode
 }
 
-const RingingNotification = () => {
-  const calls = useCalls();
+const RingingNotification = ({ ringingCall }: { ringingCall: Call | null }) => {
+  if (!ringingCall) return null;
 
   return (
-    <>
-      {calls.map((call) => (
-        <StreamCall call={call} key={call.cid}>
-          <IncomingCallUI />
-        </StreamCall>
-      ))}
-    </>
+    <StreamCall call={ringingCall}>
+      <RingingCall />
+    </StreamCall>
   );
 };
 
@@ -92,6 +88,7 @@ export function StreamProvider({ children }: StreamProviderProps) {
   const [videoLoading, setVideoLoading] = useState(false)
   const [videoError, setVideoError] = useState<string | null>(null)
   const [initializedVideoPartners, setInitializedVideoPartners] = useState<Set<string>>(new Set())
+  const [ringingCall, setRingingCall] = useState<Call | null>(null);
   
   // General state
   const [isStreamReady, setIsStreamReady] = useState(false)
@@ -212,6 +209,25 @@ export function StreamProvider({ children }: StreamProviderProps) {
       // Don't cleanup immediately, but mark for cleanup if component unmounts
     }
   }, [user?.id]) // Only depend on user.id to prevent unnecessary re-renders
+
+  useEffect(() => {
+    if (!videoClient) return;
+
+    const handleRinging = async (event: any) => {
+      console.log(`📞 Incoming call event...`, event);
+      if (event.call_cid) {
+        const ringingCall = videoClient.call('default', event.call_cid.split(':')[1]);
+        await ringingCall.get();
+        setRingingCall(ringingCall);
+      }
+    };
+
+    videoClient.on('call.ring', handleRinging);
+
+    return () => {
+      videoClient.off('call.ring', handleRinging);
+    };
+  }, [videoClient]);
 
   // Initialize chat channel
   const initializeChat = async (partnerId: string) => {
@@ -424,7 +440,7 @@ export function StreamProvider({ children }: StreamProviderProps) {
       {videoClient ? (
         <StreamVideo client={videoClient}>
           {children}
-          {isStreamReady && <RingingNotification />}
+          <RingingNotification ringingCall={ringingCall} />
         </StreamVideo>
       ) : (
         children
