@@ -366,3 +366,9 @@ textarea::placeholder {
     display: block !important;
   }
 }
+
+.responsive-controls .str-video__call-controls {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+}

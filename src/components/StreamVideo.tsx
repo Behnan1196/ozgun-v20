@@ -11,8 +11,43 @@ import {
   StreamTheme,
   CallingState,
   useCallStateHooks,
+  ParticipantView,
+  ToggleMicrophoneButton,
+  ToggleCameraButton,
+  HangUpButton,
+  useCall,
+  StreamVideoParticipant,
 } from '@stream-io/video-react-sdk'
 import { useStream } from '@/contexts/StreamContext'
+
+const VerticalLayout = () => {
+  const { useParticipants } = useCallStateHooks();
+  const participants = useParticipants();
+  return (
+    <div className="flex flex-col h-full w-full gap-2 p-2">
+      {participants.map((p: StreamVideoParticipant) => (
+        <div key={p.sessionId} className="flex-1 rounded-lg overflow-hidden">
+          <ParticipantView participant={p} />
+        </div>
+      ))}
+    </div>
+  );
+};
+
+const CustomControls = () => {
+  const call = useCall();
+  const handleLeave = () => {
+    call?.leave();
+  };
+
+  return (
+    <div className="flex flex-wrap items-center justify-center gap-2">
+      <ToggleMicrophoneButton />
+      <ToggleCameraButton />
+      <HangUpButton onHangUp={handleLeave} />
+    </div>
+  );
+};
 
 interface StreamVideoCallProps {
   partnerId: string
@@ -29,6 +64,7 @@ const CallUI = ({
 }) => {
   const { useCallCallingState } = useCallStateHooks();
   const callingState = useCallCallingState();
+  const call = useCall();
 
   if (callingState !== CallingState.JOINED) {
     return (
@@ -58,10 +94,10 @@ const CallUI = ({
     <StreamTheme>
       <div className="h-full flex flex-col">
         <div className="flex-1">
-          <PaginatedGridLayout />
+          <VerticalLayout />
         </div>
-        <div className="p-4 bg-gray-50 border-t">
-          <CallControls onLeave={() => console.log('Call ended')} />
+        <div className="p-4 bg-gray-50 border-t responsive-controls">
+          <CallControls onLeave={() => call?.leave()} />
         </div>
       </div>
     </StreamTheme>
