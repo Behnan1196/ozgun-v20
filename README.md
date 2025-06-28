@@ -1,23 +1,55 @@
-# TYT-AYT Coaching Platform v3.0
+# TYT-AYT Coaching Platform
 
-A comprehensive coaching platform for TYT (Temel Yeterlilik Testi) and AYT (Alan Yeterlilik Testi) exam preparation, built with Next.js 14, Supabase, and Stream.io.
+A comprehensive coaching platform for TYT-AYT exam preparation with admin, coach, and student interfaces.
 
 ## Features
 
-- **Multi-Role System**: Admin, Coach, and Student interfaces
-- **Real-time Communication**: Chat and video calls between coaches and students
-- **Student Management**: Goal tracking, progress monitoring, and resource management
-- **Educational Resources**: Links, announcements, and study materials
-- **Exam Preparation**: Mock exams, problem tracking, and performance analytics
-- **Responsive Design**: Works seamlessly on desktop and mobile devices
+### PWA (Progressive Web App)
+- ✅ Offline support with service worker
+- ✅ Mobile-responsive design with 7-tab navigation
+- ✅ Push notifications ready
+- ✅ App-like experience on mobile devices
+- ✅ Background sync for offline data
+
+### Mobile-First Design
+- **Student Interface**: Dashboard, Plan, Chat, Video, Goals, Profile, Settings
+- **Coach Interface**: Dashboard, Plan, Students, Chat, Video, Goals, Settings  
+- **Admin Interface**: Desktop-optimized management panel
+
+### Core Functionality
+- Real-time chat and video calls (Stream.io)
+- Weekly task planning and tracking
+- Student-coach assignment system
+- Progress analytics and statistics
+- Mock exam result tracking
+- Educational resource management
 
 ## Tech Stack
 
-- **Frontend**: Next.js 14 with App Router, TypeScript, Tailwind CSS
-- **Backend**: Supabase (PostgreSQL, Authentication, Real-time)
+- **Frontend**: Next.js 14, React, TypeScript, Tailwind CSS
+- **Backend**: Supabase (PostgreSQL, Auth, Real-time)
 - **Communication**: Stream.io (Chat & Video)
-- **UI Components**: Material-UI, Lucide React Icons
-- **Deployment**: Vercel (recommended)
+- **Deployment**: Vercel with auto-deployment from GitHub
+- **PWA**: Service Worker, Web App Manifest
+
+## Live Demo
+
+🚀 **Production URL**: https://tyt-ayt-coaching-platform.vercel.app/login
+
+## Deployment Info
+
+- Auto-deploys from `main` branch
+- PWA features fully functional
+- Mobile-responsive across all interfaces
+- Last deployment: 2024-12-19
+
+## Usage
+
+1. **Admin Login**: Full platform management
+2. **Coach Login**: Student management and communication  
+3. **Student Login**: Task tracking and coach interaction
+
+All interfaces are fully mobile-responsive with native app-like navigation on mobile devices.
 
 ## Quick Start
 
