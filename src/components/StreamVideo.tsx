@@ -9,7 +9,8 @@ import {
   CallParticipantsList,
   PaginatedGridLayout,
   StreamTheme,
-  CallingState
+  CallingState,
+  useCallStateHooks,
 } from '@stream-io/video-react-sdk'
 import { useStream } from '@/contexts/StreamContext'
 
@@ -19,6 +20,54 @@ interface StreamVideoCallProps {
   className?: string
 }
 
+const CallUI = ({
+  partnerName,
+  onStartCall,
+}: {
+  partnerName: string;
+  onStartCall: () => void;
+}) => {
+  const { useCallCallingState } = useCallStateHooks();
+  const callingState = useCallCallingState();
+
+  if (callingState !== CallingState.JOINED) {
+    return (
+      <div className="flex-1 flex items-center justify-center">
+        <div className="text-center space-y-6">
+          <div className="text-6xl">📹</div>
+          <div>
+            <h3 className="text-xl font-medium text-gray-900 mb-2">
+              Video Görüşme
+            </h3>
+            <p className="text-gray-600">
+              {partnerName} ile video görüşme başlatın
+            </p>
+          </div>
+          <button
+            onClick={onStartCall}
+            className="px-6 py-3 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700"
+          >
+            📞 Görüşmeyi Başlat
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <StreamTheme>
+      <div className="h-full flex flex-col">
+        <div className="flex-1">
+          <PaginatedGridLayout />
+        </div>
+        <div className="p-4 bg-gray-50 border-t">
+          <CallControls onLeave={() => console.log('Call ended')} />
+        </div>
+      </div>
+    </StreamTheme>
+  );
+};
+
 export function StreamVideoCall({ partnerId, partnerName, className = '' }: StreamVideoCallProps) {
   const {
     videoClient,
@@ -27,20 +76,11 @@ export function StreamVideoCall({ partnerId, partnerName, className = '' }: Stre
     videoError,
     initializeVideo,
     startVideoCall,
-    endVideoCall,
     isStreamReady,
     isDemoMode
   } = useStream()
   
   const [initialized, setInitialized] = useState(false)
-  const [callActive, setCallActive] = useState(false)
-
-  // When the component mounts, check if the call from the context is already active
-  useEffect(() => {
-    if (videoCall?.state.callingState === CallingState.JOINED) {
-      setCallActive(true);
-    }
-  }, [videoCall]);
 
   // Initialize video when component mounts
   useEffect(() => {
@@ -57,16 +97,9 @@ export function StreamVideoCall({ partnerId, partnerName, className = '' }: Stre
   const handleStartCall = async () => {
     try {
       await startVideoCall()
-      setCallActive(true)
     } catch (error) {
       console.error('Failed to start call:', error)
     }
-  }
-
-  const handleEndCall = () => {
-    // The `CallControls` onLeave callback handles the call termination.
-    // We just need to update our local state to hide the call UI.
-    setCallActive(false)
   }
 
   // Camera troubleshooting tips
@@ -194,48 +227,13 @@ export function StreamVideoCall({ partnerId, partnerName, className = '' }: Stre
     )
   }
 
-  // Pre-call state
-  if (!callActive) {
-    return (
-      <div className={`flex flex-col h-full ${className}`}>
-        <div className="flex-1 flex items-center justify-center">
-          <div className="text-center space-y-6">
-            <div className="text-6xl">📹</div>
-            <div>
-              <h3 className="text-xl font-medium text-gray-900 mb-2">
-                Video Görüşme
-              </h3>
-              <p className="text-gray-600">
-                {partnerName} ile video görüşme başlatın
-              </p>
-            </div>
-            <button
-              onClick={handleStartCall}
-              className="px-6 py-3 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700"
-            >
-              📞 Görüşmeyi Başlat
-            </button>
-          </div>
-        </div>
-      </div>
-    )
-  }
-
-  // Active call
+  // Always render the providers, and let the inner CallUI component
+  // decide what to show based on the real-time call state.
   return (
-    <div className={`h-full ${className}`}>
+    <div className={`h-full flex flex-col ${className}`}>
       <StreamVideo client={videoClient}>
         <StreamCall call={videoCall}>
-          <StreamTheme>
-            <div className="h-full flex flex-col">
-              <div className="flex-1">
-                <PaginatedGridLayout />
-              </div>
-              <div className="p-4 bg-gray-50 border-t">
-                <CallControls onLeave={() => handleEndCall()} />
-              </div>
-            </div>
-          </StreamTheme>
+          <CallUI partnerName={partnerName} onStartCall={handleStartCall} />
         </StreamCall>
       </StreamVideo>
     </div>
