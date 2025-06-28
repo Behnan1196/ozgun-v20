@@ -122,7 +122,16 @@ export const createVideoCall = (videoClient: StreamVideoClient, coachId: string,
   const shortStudentId = studentId.substring(0, 8)
   const callId = `call-${[shortCoachId, shortStudentId].sort().join('-')}`
   
-  return videoClient.call('default', callId)
+  const call = videoClient.call('default', callId)
+  call.getOrCreate({
+    data: {
+      members: [
+        { user_id: coachId },
+        { user_id: studentId },
+      ],
+    },
+  })
+  return call
 }
 
 // Stream.io utility functions
