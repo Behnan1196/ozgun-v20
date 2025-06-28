@@ -115,7 +115,7 @@ export const createCoachStudentChannel = (chatClient: StreamChat, coachId: strin
 }
 
 // Helper function to create a video call between coach and student
-export const createVideoCall = (videoClient: StreamVideoClient, coachId: string, studentId: string) => {
+export const createVideoCall = async (videoClient: StreamVideoClient, coachId: string, studentId: string) => {
   // Create a unique but short call ID for the coach-student pair
   // Use first 8 chars of each UUID to keep under 64 char limit
   const shortCoachId = coachId.substring(0, 8)
@@ -123,7 +123,7 @@ export const createVideoCall = (videoClient: StreamVideoClient, coachId: string,
   const callId = `call-${[shortCoachId, shortStudentId].sort().join('-')}`
   
   const call = videoClient.call('default', callId)
-  call.getOrCreate({
+  await call.getOrCreate({
     data: {
       members: [
         { user_id: coachId },
