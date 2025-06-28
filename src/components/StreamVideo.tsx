@@ -55,13 +55,10 @@ export function StreamVideoCall({ partnerId, partnerName, className = '' }: Stre
     }
   }
 
-  const handleEndCall = async () => {
-    try {
-      await endVideoCall()
-      setCallActive(false)
-    } catch (error) {
-      console.error('Failed to end call:', error)
-    }
+  const handleEndCall = () => {
+    // The `CallControls` onLeave callback handles the call termination.
+    // We just need to update our local state to hide the call UI.
+    setCallActive(false)
   }
 
   // Camera troubleshooting tips
