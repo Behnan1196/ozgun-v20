@@ -2,7 +2,16 @@
 
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react'
 import { StreamChat, Channel, User as StreamUser } from 'stream-chat'
-import { StreamVideoClient, Call } from '@stream-io/video-react-sdk'
+import { 
+  StreamVideo,
+  StreamVideoClient, 
+  Call,
+  useCalls,
+  StreamCall,
+  RingingCall,
+  CallingState,
+  useCallStateHooks,
+} from '@stream-io/video-react-sdk'
 import { createClient } from '@/lib/supabase/client'
 import { 
   createStreamChatClient, 
@@ -43,6 +52,29 @@ const StreamContext = createContext<StreamContextType | undefined>(undefined)
 interface StreamProviderProps {
   children: ReactNode
 }
+
+const RingingNotification = () => {
+  const calls = useCalls();
+
+  return (
+    <>
+      {calls.map((call) => (
+        <StreamCall call={call} key={call.cid}>
+          <IncomingCallUI />
+        </StreamCall>
+      ))}
+    </>
+  );
+};
+
+const IncomingCallUI = () => {
+  const { useCallCallingState } = useCallStateHooks();
+  const callingState = useCallCallingState();
+
+  if (callingState !== CallingState.RINGING) return null;
+
+  return <RingingCall />;
+};
 
 export function StreamProvider({ children }: StreamProviderProps) {
   const [user, setUser] = useState<any>(null)
@@ -400,7 +432,10 @@ export function StreamProvider({ children }: StreamProviderProps) {
 
   return (
     <StreamContext.Provider value={value}>
-      {children}
+      <StreamVideo client={videoClient}>
+        {children}
+        {isStreamReady && <RingingNotification />}
+      </StreamVideo>
     </StreamContext.Provider>
   )
 }
