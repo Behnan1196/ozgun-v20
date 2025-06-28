@@ -94,6 +94,16 @@ export function StreamVideoCall({ partnerId, partnerName, className = '' }: Stre
     init()
   }, [isStreamReady, partnerId, initialized, initializeVideo])
 
+  // When the component re-mounts (e.g., switching tabs), re-fetch the call state
+  // to ensure the UI is in sync with the server.
+  useEffect(() => {
+    if (videoCall) {
+      videoCall.get().catch(err => {
+        console.error('Failed to re-sync call state on mount:', err);
+      });
+    }
+  }, [videoCall]);
+
   const handleStartCall = async () => {
     try {
       await startVideoCall()
