@@ -104,6 +104,30 @@ export function StreamProvider({ children }: StreamProviderProps) {
         return
       }
 
+      // Skip if already initialized for this user
+      if (chatClient && videoClient && isStreamReady) {
+        console.log('🔄 Stream clients already initialized for user:', user.id)
+        return
+      }
+
+      // Clean up existing clients if they exist for a different user
+      if (chatClient || videoClient) {
+        console.log('🧹 Cleaning up existing Stream clients...')
+        try {
+          if (chatClient) {
+            await chatClient.disconnectUser()
+            setChatClient(null)
+          }
+          if (videoClient) {
+            await videoClient.disconnectUser()
+            setVideoClient(null)
+          }
+        } catch (error) {
+          console.warn('⚠️ Error cleaning up existing clients:', error)
+        }
+        setIsStreamReady(false)
+      }
+
       try {
         console.log('🌊 Initializing Stream.io clients for user:', user.id)
         
@@ -148,7 +172,12 @@ export function StreamProvider({ children }: StreamProviderProps) {
     }
 
     initializeStreamClients()
-  }, [user])
+    
+    // Cleanup function to prevent memory leaks
+    return () => {
+      // Don't cleanup immediately, but mark for cleanup if component unmounts
+    }
+  }, [user?.id]) // Only depend on user.id to prevent unnecessary re-renders
 
   // Initialize chat channel
   const initializeChat = async (partnerId: string) => {

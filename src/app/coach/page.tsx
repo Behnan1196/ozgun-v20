@@ -3179,15 +3179,17 @@ export default function CoachPage() {
                           {dayNames[index]}
                         </div>
                         
-                        {/* Right: Add Task Button */}
-                        <button
-                          disabled={!selectedStudent}
-                          onClick={() => openTaskModal(date)}
-                          className="text-blue-600 hover:text-blue-800 hover:bg-blue-50 p-1.5 rounded-full transition-colors group disabled:opacity-50 disabled:cursor-not-allowed"
-                          title="Görev Ekle"
-                        >
-                          <Plus className="h-3.5 w-3.5" />
-                        </button>
+                        {/* Right: Add Task Button - Only show for coaches */}
+                        {userRole === 'coach' && (
+                          <button
+                            disabled={!selectedStudent}
+                            onClick={() => openTaskModal(date)}
+                            className="text-blue-600 hover:text-blue-800 hover:bg-blue-50 p-1.5 rounded-full transition-colors group disabled:opacity-50 disabled:cursor-not-allowed"
+                            title="Görev Ekle"
+                          >
+                            <Plus className="h-3.5 w-3.5" />
+                          </button>
+                        )}
                       </div>
                       
                       {/* Bottom row: Completion status centered */}
@@ -3259,22 +3261,27 @@ export default function CoachPage() {
                                 </span>
                               </div>
                               <div className="flex items-center space-x-1">
-                                {/* Edit Button */}
-                                <button
-                                  onClick={(e) => openEditModal(task, e)}
-                                  className="p-1 hover:bg-white hover:bg-opacity-50 rounded opacity-0 group-hover:opacity-100 transition-opacity"
-                                  title="Düzenle"
-                                >
-                                  <Edit className="h-3 w-3 text-gray-600 hover:text-blue-600" />
-                                </button>
-                                {/* Delete Button */}
-                                <button
-                                  onClick={(e) => deleteTask(task, e)}
-                                  className="p-1 hover:bg-white hover:bg-opacity-50 rounded opacity-0 group-hover:opacity-100 transition-opacity"
-                                  title="Sil"
-                                >
-                                  <Trash2 className="h-3 w-3 text-gray-600 hover:text-red-600" />
-                                </button>
+                                {/* Edit and Delete Buttons - Only show for coaches */}
+                                {userRole === 'coach' && (
+                                  <>
+                                    {/* Edit Button */}
+                                    <button
+                                      onClick={(e) => openEditModal(task, e)}
+                                      className="p-1 hover:bg-white hover:bg-opacity-50 rounded opacity-0 group-hover:opacity-100 transition-opacity"
+                                      title="Düzenle"
+                                    >
+                                      <Edit className="h-3 w-3 text-gray-600 hover:text-blue-600" />
+                                    </button>
+                                    {/* Delete Button */}
+                                    <button
+                                      onClick={(e) => deleteTask(task, e)}
+                                      className="p-1 hover:bg-white hover:bg-opacity-50 rounded opacity-0 group-hover:opacity-100 transition-opacity"
+                                      title="Sil"
+                                    >
+                                      <Trash2 className="h-3 w-3 text-gray-600 hover:text-red-600" />
+                                    </button>
+                                  </>
+                                )}
                                 {/* Completion Status */}
                                 {task.status === 'completed' ? (
                                   <CheckCircle className="h-4 w-4 text-green-600" />

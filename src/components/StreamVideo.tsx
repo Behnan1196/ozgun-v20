@@ -232,13 +232,13 @@ export function StreamVideoCall({ partnerId, partnerName, className = '' }: Stre
                     onClick={handleStartCall}
                     className="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 transition-colors"
                   >
-                    📞 Start Call
+                    📞 Ara
                   </button>
                   <button
                     onClick={handleEndCall}
                     className="bg-red-600 text-white px-6 py-2 rounded-lg hover:bg-red-700 transition-colors"
                   >
-                    📞 End Call
+                    📞 Bitir
                   </button>
                 </div>
                 <CallControls />

@@ -23,13 +23,40 @@ export const createStreamChatClient = () => {
   return StreamChat.getInstance(STREAM_CONFIG.API_KEY)
 }
 
+// Store video client instance to prevent duplicates
+let videoClientInstance: StreamVideoClient | null = null
+let currentUserId: string | null = null
+
 // Create Stream Video client
 export const createStreamVideoClient = (user: { id: string; name: string }, token: string) => {
-  return new StreamVideoClient({
+  // If a client already exists for this user, return it
+  if (videoClientInstance && currentUserId === user.id) {
+    console.log('🔄 Reusing existing StreamVideoClient for user:', user.id)
+    return videoClientInstance
+  }
+  
+  // Clean up previous instance if it exists
+  if (videoClientInstance) {
+    console.log('🧹 Cleaning up previous StreamVideoClient instance')
+    try {
+      videoClientInstance.disconnectUser()
+    } catch (error) {
+      console.warn('⚠️ Error cleaning up previous video client:', error)
+    }
+    videoClientInstance = null
+    currentUserId = null
+  }
+  
+  // Create new instance
+  console.log('🆕 Creating new StreamVideoClient for user:', user.id)
+  videoClientInstance = new StreamVideoClient({
     apiKey: STREAM_CONFIG.API_KEY,
     user,
     token,
   })
+  currentUserId = user.id
+  
+  return videoClientInstance
 }
 
 // Generate user token
