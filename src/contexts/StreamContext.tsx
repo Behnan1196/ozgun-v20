@@ -432,10 +432,14 @@ export function StreamProvider({ children }: StreamProviderProps) {
 
   return (
     <StreamContext.Provider value={value}>
-      <StreamVideo client={videoClient}>
-        {children}
-        {isStreamReady && <RingingNotification />}
-      </StreamVideo>
+      {videoClient ? (
+        <StreamVideo client={videoClient}>
+          {children}
+          {isStreamReady && <RingingNotification />}
+        </StreamVideo>
+      ) : (
+        children
+      )}
     </StreamContext.Provider>
   )
 }
