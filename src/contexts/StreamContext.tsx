@@ -358,7 +358,7 @@ export function StreamProvider({ children }: StreamProviderProps) {
       }
       
       // Join the video call
-      await videoCall.join()
+      await videoCall.join({ create: true })
       console.log('✅ Video call started')
       
     } catch (error: any) {
