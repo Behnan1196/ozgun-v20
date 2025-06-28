@@ -5,16 +5,10 @@ import {
   StreamVideo, 
   StreamCall, 
   CallControls, 
-  SpeakerLayout, 
-  CallParticipantsList,
-  PaginatedGridLayout,
-  StreamTheme,
+  StreamTheme, 
   CallingState,
   useCallStateHooks,
   ParticipantView,
-  ToggleMicrophoneButton,
-  ToggleCameraButton,
-  HangUpButton,
   useCall,
   StreamVideoParticipant,
 } from '@stream-io/video-react-sdk'
@@ -30,21 +24,6 @@ const VerticalLayout = () => {
           <ParticipantView participant={p} />
         </div>
       ))}
-    </div>
-  );
-};
-
-const CustomControls = () => {
-  const call = useCall();
-  const handleLeave = () => {
-    call?.leave();
-  };
-
-  return (
-    <div className="flex flex-wrap items-center justify-center gap-2">
-      <ToggleMicrophoneButton />
-      <ToggleCameraButton />
-      <HangUpButton onHangUp={handleLeave} />
     </div>
   );
 };
