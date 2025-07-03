@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { redirect, useRouter } from 'next/navigation'
 import { 
@@ -438,6 +438,11 @@ export default function CoachPage() {
   })
 
   const [showStatsMonthly, setShowStatsMonthly] = useState(false)
+  
+  // Calendar responsive state
+  const [calendarContainerWidth, setCalendarContainerWidth] = useState<number>(0)
+  const calendarContainerRef = useRef<HTMLDivElement>(null)
+  const gridContainerRef = useRef<HTMLDivElement>(null)
 
   const supabase = createClient()
 
@@ -954,6 +959,109 @@ export default function CoachPage() {
 
     loadEducationalLinks()
   }, [])
+
+  // Calendar responsive width tracking
+  useEffect(() => {
+    const updateContainerWidth = () => {
+      // Measure the grid container (actual available space)
+      const gridElement = gridContainerRef.current
+      const containerElement = calendarContainerRef.current
+      
+      if (gridElement) {
+        const width = gridElement.clientWidth
+        console.log('Measuring grid width:', width)
+        setCalendarContainerWidth(width)
+      } else if (containerElement) {
+        const width = containerElement.clientWidth
+        console.log('Measuring container width:', width)
+        setCalendarContainerWidth(width)
+      }
+    }
+
+    // Initial measurement with small delay to ensure DOM is ready
+    const timer = setTimeout(updateContainerWidth, 100)
+
+    const resizeObserver = new ResizeObserver(entries => {
+      for (let entry of entries) {
+        const { width } = entry.contentRect
+        console.log('ResizeObserver width:', width)
+        setCalendarContainerWidth(width)
+      }
+    })
+
+    const setupObserver = () => {
+      // Observe both the container and grid for changes
+      if (gridContainerRef.current) {
+        resizeObserver.observe(gridContainerRef.current)
+        console.log('Observing grid container')
+      }
+      if (calendarContainerRef.current) {
+        resizeObserver.observe(calendarContainerRef.current)
+        console.log('Observing calendar container')
+      }
+    }
+
+    // Setup observer with delay
+    setTimeout(setupObserver, 100)
+
+    // Also listen to window resize as fallback
+    window.addEventListener('resize', updateContainerWidth)
+    
+    // Add mutation observer to detect when resizable panels change
+    const mutationObserver = new MutationObserver(() => {
+      setTimeout(updateContainerWidth, 50)
+    })
+    
+    if (calendarContainerRef.current) {
+      mutationObserver.observe(calendarContainerRef.current.closest('[data-panel-group]') || document.body, {
+        attributes: true,
+        attributeFilter: ['style'],
+        childList: false,
+        subtree: true
+      })
+    }
+    
+    // Add interval-based checking for resizable panel changes
+    const interval = setInterval(updateContainerWidth, 500)
+
+    return () => {
+      clearTimeout(timer)
+      clearInterval(interval)
+      resizeObserver.disconnect()
+      mutationObserver.disconnect()
+      window.removeEventListener('resize', updateContainerWidth)
+    }
+  }, [])
+
+  // Force re-render when container width changes
+  useEffect(() => {
+    console.log('Container width state changed:', calendarContainerWidth)
+  }, [calendarContainerWidth])
+
+  // Calculate dynamic grid columns based on container width
+  const getGridColumns = () => {
+    // Get current width from multiple sources
+    let currentWidth = calendarContainerWidth
+    
+    if (!currentWidth && gridContainerRef.current) {
+      currentWidth = gridContainerRef.current.clientWidth
+    }
+    
+    if (!currentWidth && calendarContainerRef.current) {
+      currentWidth = calendarContainerRef.current.clientWidth
+    }
+    
+    console.log('Getting columns - State width:', calendarContainerWidth, 'Current width:', currentWidth) // Debug log
+    
+    // Define breakpoints based on container width, not viewport
+    if (currentWidth < 600) return 1      // Very small: 1 column
+    if (currentWidth < 800) return 2      // Small: 2 columns  
+    if (currentWidth < 1000) return 3     // Medium: 3 columns
+    if (currentWidth < 1200) return 4     // Large: 4 columns
+    if (currentWidth < 1400) return 5     // X-Large: 5 columns
+    if (currentWidth < 1600) return 6     // XX-Large: 6 columns
+    return 7                              // Full size: 7 columns (all days)
+  }
 
   // Helper functions
   const getWeekStart = (date: Date) => {
@@ -1906,7 +2014,7 @@ export default function CoachPage() {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600">Koç paneli yükleniyor...</p>
+                      <p className="text-gray-600">{userRole === 'coach' ? 'Koç paneli yükleniyor...' : 'Öğrenci paneli yükleniyor...'}</p>
         </div>
       </div>
     )
@@ -3600,7 +3708,7 @@ export default function CoachPage() {
        <div className="h-[calc(100vh-4rem)]">
          <ResizablePanelGroup direction="horizontal" className="h-full">
                      {/* Left Panel - Weekly Plan */}
-          <ResizablePanel defaultSize={75} minSize={50} className="bg-white h-full">
+          <ResizablePanel defaultSize={75} minSize={30} className="bg-white h-full">
           <div className="p-4 h-full flex flex-col min-h-0">
             {/* Week Navigation */}
             <div className="flex items-center justify-between mb-4 bg-white rounded-lg p-3 shadow-sm border border-blue-200">
@@ -3630,9 +3738,26 @@ export default function CoachPage() {
               </div>
             </div>
 
-            {/* Weekly Calendar Grid - Container Query Layout */}
-            <div className="flex-1 bg-slate-100 p-3 rounded-lg min-h-0 overflow-y-auto" style={{ containerType: 'inline-size', containerName: 'calendar-container' }}>
-              <div className="weekly-calendar-grid h-fit">
+            {/* Weekly Calendar Grid - Responsive Layout */}
+            <div 
+              ref={calendarContainerRef}
+              className="flex-1 bg-slate-100 p-3 rounded-lg min-h-0 overflow-y-auto"
+            >
+              <div 
+                ref={gridContainerRef}
+                className="h-fit gap-3"
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: `repeat(${getGridColumns()}, 1fr)`
+                }}
+              >
+                {/* Debug info - remove in production */}
+                <div className="col-span-full text-xs text-gray-500 p-2 bg-yellow-100 rounded mb-2">
+                  Debug: State width: {calendarContainerWidth}px | 
+                  Grid width: {gridContainerRef.current?.clientWidth || 0}px | 
+                  Container width: {calendarContainerRef.current?.clientWidth || 0}px | 
+                  Columns: {getGridColumns()}
+                </div>
                 {weekDates.map((date, index) => {
                   const dayTasks = getTasksForDay(date)
                   const completedTasks = dayTasks.filter(t => t.status === 'completed').length
@@ -3839,7 +3964,7 @@ export default function CoachPage() {
         <ResizableHandle withHandle />
 
         {/* Right Panel - Tabbed Interface */}
-        <ResizablePanel defaultSize={25} minSize={20} maxSize={40} className="bg-white">
+        <ResizablePanel defaultSize={25} minSize={20} maxSize={70} className="bg-white">
           <div className="h-full flex flex-col pb-6">
             {/* Tab Headers */}
             <div className="border-b">

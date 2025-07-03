@@ -177,34 +177,8 @@ body {
   @apply bg-blue-50;
 }
 
-/* Mobile-First Responsive Weekly Calendar Grid */
-.weekly-calendar-grid {
-  display: grid;
-  gap: 1rem;
-  /* Use auto-fit with a minimum width for cards */
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
-  container-type: inline-size;
-  container-name: calendar-grid;
-}
-
-/* Progressive enhancement based on container width */
-@container calendar-grid (min-width: 640px) {
-  .weekly-calendar-grid {
-    grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
-  }
-}
-
-@container calendar-grid (min-width: 1024px) {
-  .weekly-calendar-grid {
-    grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
-  }
-}
-
-@container calendar-grid (min-width: 1280px) {
-  .weekly-calendar-grid {
-    grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
-  }
-}
+/* Container-based responsive weekly calendar is now handled by JavaScript */
+/* The grid layout dynamically adapts to the actual container width using ResizeObserver */
 
 /* Mobile-optimized day cards */
 @media (max-width: 639px) {
@@ -223,6 +197,29 @@ body {
   
   .task-time {
     @apply text-xs;
+  }
+}
+
+/* iPad and tablet optimizations */
+@media (min-width: 640px) and (max-width: 1023px) {
+  .day-card {
+    @apply p-3;
+    min-height: 220px;
+    /* Ensure cards don't become too narrow */
+    min-width: 200px;
+  }
+  
+  .day-header {
+    @apply py-2.5 px-3 text-sm font-semibold;
+  }
+  
+  .task-card {
+    @apply p-2.5 mb-2 text-sm;
+  }
+  
+  /* Better touch targets for iPad */
+  .task-card {
+    min-height: 44px;
   }
 }
 
