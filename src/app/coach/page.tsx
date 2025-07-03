@@ -3751,13 +3751,7 @@ export default function CoachPage() {
                   gridTemplateColumns: `repeat(${getGridColumns()}, 1fr)`
                 }}
               >
-                {/* Debug info - remove in production */}
-                <div className="col-span-full text-xs text-gray-500 p-2 bg-yellow-100 rounded mb-2">
-                  Debug: State width: {calendarContainerWidth}px | 
-                  Grid width: {gridContainerRef.current?.clientWidth || 0}px | 
-                  Container width: {calendarContainerRef.current?.clientWidth || 0}px | 
-                  Columns: {getGridColumns()}
-                </div>
+
                 {weekDates.map((date, index) => {
                   const dayTasks = getTasksForDay(date)
                   const completedTasks = dayTasks.filter(t => t.status === 'completed').length
