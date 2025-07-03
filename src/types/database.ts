@@ -2,6 +2,7 @@
 export type UserRole = 'admin' | 'coach' | 'student'
 export type TaskStatus = 'pending' | 'in_progress' | 'completed' | 'cancelled'
 export type ResourceCategory = 'video' | 'document' | 'pdf' | 'application'
+export type DifficultyLevel = 'baslangic' | 'orta' | 'ileri' | 'uzman'
 
 export interface UserProfile {
   id: string
@@ -48,6 +49,7 @@ export interface Resource {
   created_by: string
   is_active: boolean
   created_at: string
+  difficulty_level?: DifficultyLevel
 }
 
 export interface Task {

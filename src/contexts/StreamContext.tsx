@@ -1,6 +1,6 @@
 'use client'
 
-import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react'
+import React, { createContext, useContext, useEffect, useState, useRef, ReactNode } from 'react'
 import { StreamChat, Channel, User as StreamUser } from 'stream-chat'
 import { 
   StreamVideo,
@@ -75,6 +75,11 @@ const IncomingCallUI = () => {
 export function StreamProvider({ children }: StreamProviderProps) {
   const [user, setUser] = useState<any>(null)
   const supabase = createClient()
+  const initializationInProgress = useRef(false)
+  const isBrowser = typeof window !== 'undefined'
+  const isMounted = useRef(false)
+  const hasInitialized = useRef(false)
+  const initializationPromise = useRef<Promise<void> | null>(null)
   
   // Chat state
   const [chatClient, setChatClient] = useState<StreamChat | null>(null)
@@ -92,123 +97,379 @@ export function StreamProvider({ children }: StreamProviderProps) {
   
   // General state
   const [isStreamReady, setIsStreamReady] = useState(false)
-  const isDemoMode = StreamUtils.isDemoMode()
+  const isDemoMode = isBrowser ? StreamUtils.isDemoMode() : false
 
-  // Get current user
+  // Track mount state
   useEffect(() => {
-    const getUser = async () => {
-      const { data: { user: authUser } } = await supabase.auth.getUser()
-      if (authUser) {
-        const { data: profile } = await supabase
-          .from('user_profiles')
-          .select('*')
-          .eq('id', authUser.id)
-          .single()
-        
-        if (profile) {
-          setUser({
+    isMounted.current = true;
+    return () => {
+      isMounted.current = false;
+    };
+  }, []);
+
+  // Initialize Stream clients when component mounts
+  useEffect(() => {
+    if (!isBrowser) return;
+    
+    let isSubscribed = true;
+    isMounted.current = true;
+    
+    // Track initialization state
+    let initializationAttempt = 0;
+    const MAX_ATTEMPTS = 3;
+    let initializationTimeout: NodeJS.Timeout | null = null;
+    
+    const initializeStreamClients = async (source: 'auth' | 'session') => {
+      // Clear any pending initialization timeout
+      if (initializationTimeout) {
+        clearTimeout(initializationTimeout);
+        initializationTimeout = null;
+      }
+
+      // If initialization is already in progress, wait for it
+      if (initializationPromise.current) {
+        console.log(`⏳ [${source}] Waiting for existing initialization to complete...`)
+        try {
+          await initializationPromise.current
+          return
+        } catch (error) {
+          if (!isMounted.current) {
+            console.log(`⏭️ [${source}] Previous initialization failed, but component unmounted`)
+            return;
+          }
+          console.log(`⚠️ [${source}] Previous initialization failed, proceeding with new attempt`)
+        }
+      }
+
+      if (!isMounted.current) {
+        console.log(`⏭️ [${source}] Skipping initialization - component not mounted`)
+        return;
+      }
+
+      if (initializationInProgress.current || hasInitialized.current) {
+        console.log(`⏭️ [${source}] Skipping initialization:`, {
+          inProgress: initializationInProgress.current,
+          hasInitialized: hasInitialized.current
+        })
+        return;
+      }
+
+      // Create a new initialization promise
+      initializationPromise.current = (async () => {
+        try {
+          // Set in-progress flag before any async operations
+          initializationInProgress.current = true;
+
+          // Check for existing session first
+          const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+          if (!isMounted.current) {
+            console.log(`⏭️ [${source}] Canceling initialization - component unmounted during session check`)
+            return;
+          }
+          if (sessionError) {
+            console.log(`⏭️ [${source}] No auth session yet, skipping Stream initialization`)
+            return;
+          }
+          if (!session) {
+            console.log(`⏭️ [${source}] No active session, skipping Stream initialization`)
+            return;
+          }
+
+          console.log(`🔄 [${source}] Starting Stream initialization...`)
+          
+          // Get current user
+          console.log('🔑 Fetching auth user...')
+          let authResponse;
+          try {
+            authResponse = await supabase.auth.getUser()
+            console.log('📝 Auth response:', {
+              hasData: !!authResponse.data,
+              hasUser: !!authResponse.data?.user,
+              error: authResponse.error
+            })
+          } catch (authError) {
+            console.error('❌ Auth call failed:', authError)
+            throw new Error(`Auth call failed: ${authError}`)
+          }
+
+          const { data: { user: authUser }, error: authError } = authResponse
+          if (authError) {
+            console.error('❌ Auth error:', authError)
+            throw new Error(`Auth error: ${authError.message}`)
+          }
+          if (!authUser) {
+            console.error('❌ No auth user found')
+            throw new Error('No authenticated user found')
+          }
+          if (!authUser.email) {
+            console.error('❌ Auth user has no email:', authUser)
+            throw new Error('Auth user has no email')
+          }
+          if (!isSubscribed || !isMounted.current) {
+            console.error('❌ Component unmounted during auth')
+            throw new Error('Component unmounted during auth')
+          }
+          console.log('✅ Auth user found:', authUser.id)
+          
+          // Get user profile
+          console.log('👤 Fetching user profile...')
+          let profileResponse;
+          try {
+            profileResponse = await supabase
+              .from('user_profiles')
+              .select('*')
+              .eq('id', authUser.id)
+              .single()
+            console.log('📝 Profile response:', {
+              hasData: !!profileResponse.data,
+              error: profileResponse.error
+            })
+          } catch (profileError) {
+            console.error('❌ Profile query failed:', profileError)
+            throw new Error(`Profile query failed: ${profileError}`)
+          }
+
+          const { data: profile, error: profileError } = profileResponse
+          if (profileError) {
+            console.error('❌ Profile error:', profileError)
+            throw new Error(`Profile error: ${profileError.message}`)
+          }
+          if (!profile) {
+            console.error('❌ No user profile found')
+            throw new Error('No user profile found')
+          }
+          if (!isSubscribed || !isMounted.current) {
+            console.error('❌ Component unmounted during profile fetch')
+            throw new Error('Component unmounted during profile fetch')
+          }
+          console.log('✅ User profile found:', profile.id)
+          
+          const currentUser = {
             id: authUser.id,
             email: authUser.email,
             username: profile.email?.split('@')[0] || 'user',
             full_name: profile.full_name
-          })
-        }
-      }
-    }
-    getUser()
-  }, [])
+          }
+          console.log('👤 Current user:', currentUser)
+          
+          setUser(currentUser)
+          
+          // Skip if already initialized for this user
+          if (chatClient?.userID === currentUser.id && isStreamReady) {
+            console.log('⏭️ Stream already initialized for user:', currentUser.id)
+            return;
+          }
 
-  // Initialize Stream clients when user logs in
-  useEffect(() => {
-    const initializeStreamClients = async () => {
-      if (!user) {
-        // Clean up if user logs out
-        if (chatClient) {
-          await chatClient.disconnectUser()
-          setChatClient(null)
-        }
-        if (videoClient) {
-          await videoClient.disconnectUser()
-          setVideoClient(null)
-        }
-        setIsStreamReady(false)
-        return
-      }
-
-      // Skip if already initialized for this user
-      if (chatClient && videoClient && isStreamReady) {
-        console.log('🔄 Stream clients already initialized for user:', user.id)
-        return
-      }
-
-      // Clean up existing clients if they exist for a different user
-      if (chatClient || videoClient) {
-        console.log('🧹 Cleaning up existing Stream clients...')
-        try {
+          console.log('🌊 Initializing Stream.io clients for user:', currentUser.id)
+          
+          // Format user for Stream.io
+          const streamUser = StreamUtils.formatStreamUser(currentUser)
+          console.log('👤 Stream user formatted:', streamUser)
+          
+          // Generate token
+          console.log('🔑 Generating token...')
+          const token = await generateUserToken(currentUser.id)
+          if (!isSubscribed || !isMounted.current) {
+            console.error('❌ Component unmounted during token generation')
+            return;
+          }
+          console.log('🔑 Token generated, length:', token.length)
+          
+          // Clean up existing clients if they exist
           if (chatClient) {
+            console.log('🧹 Cleaning up existing chat client...')
             await chatClient.disconnectUser()
-            setChatClient(null)
           }
           if (videoClient) {
+            console.log('🧹 Cleaning up existing video client...')
             await videoClient.disconnectUser()
-            setVideoClient(null)
+          }
+          
+          // Initialize Chat Client
+          const chat = createStreamChatClient()
+          console.log('💬 Connecting to Stream Chat with user:', streamUser.id)
+          
+          await chat.connectUser(streamUser as StreamUser, token)
+          if (!isSubscribed || !isMounted.current) {
+            console.error('❌ Component unmounted during chat connection')
+            await chat.disconnectUser()
+            return;
+          }
+          setChatClient(chat)
+          console.log('💬 Stream Chat client initialized successfully')
+          
+          // Initialize Video Client
+          const video = createStreamVideoClient({ 
+            id: currentUser.id, 
+            name: currentUser.full_name || currentUser.username 
+          }, token)
+          if (!isSubscribed || !isMounted.current) {
+            console.error('❌ Component unmounted during video setup')
+            await chat.disconnectUser()
+            return;
+          }
+          setVideoClient(video)
+          console.log('📹 Stream Video client initialized successfully')
+          
+          setIsStreamReady(true)
+          hasInitialized.current = true
+          console.log('✅ Stream.io clients ready')
+          
+        } catch (error) {
+          if (!isSubscribed || !isMounted.current) return;
+          console.error('❌ Failed to initialize Stream.io clients:', error)
+          console.error('❌ Error details:', {
+            message: error instanceof Error ? error.message : 'Unknown error',
+            stack: error instanceof Error ? error.stack : undefined,
+            isDemoMode: StreamUtils.isDemoMode()
+          })
+          setChatError(`Failed to initialize chat: ${error instanceof Error ? error.message : 'Unknown error'}`)
+          setVideoError(`Failed to initialize video: ${error instanceof Error ? error.message : 'Unknown error'}`)
+          // Reset initialization flags so we can try again
+          hasInitialized.current = false
+          setIsStreamReady(false)
+          throw error // Re-throw to mark the promise as failed
+        } finally {
+          initializationInProgress.current = false;
+          initializationPromise.current = null;
+        }
+      })()
+
+      // Wait for initialization to complete
+      try {
+        await initializationPromise.current
+      } catch (error) {
+        console.error('❌ Initialization failed:', error)
+      }
+    }
+
+    // Set up auth state listener
+    let authTimeout: NodeJS.Timeout | null = null;
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      // Clear any pending timeouts
+      if (authTimeout) {
+        clearTimeout(authTimeout)
+      }
+      if (initializationTimeout) {
+        clearTimeout(initializationTimeout)
+      }
+
+      // Handle auth state changes
+      if (event === 'SIGNED_IN' && session) {
+        console.log('🔐 Auth state changed: SIGNED_IN')
+        
+        // Wait briefly to allow any route changes to complete
+        authTimeout = setTimeout(() => {
+          if (isMounted.current && !hasInitialized.current) {
+            initializeStreamClients('auth')
+          }
+        }, 100)
+      } else if (event === 'SIGNED_OUT') {
+        console.log('🔐 Auth state changed: SIGNED_OUT')
+        // Reset initialization state
+        initializationAttempt = 0;
+        // Clean up Stream clients
+        if (chatClient) {
+          chatClient.disconnectUser()
+        }
+        if (videoClient) {
+          videoClient.disconnectUser()
+        }
+        setChatClient(null)
+        setVideoClient(null)
+        setIsStreamReady(false)
+        hasInitialized.current = false
+        initializationPromise.current = null
+      }
+    })
+
+    // Initial check for existing session
+    const checkSession = async () => {
+      if (!isMounted.current) return;
+      
+      try {
+        const { data: { session } } = await supabase.auth.getSession()
+        if (session && !hasInitialized.current && isMounted.current) {
+          console.log('✅ Found existing session, starting initialization')
+          // Wait briefly to ensure component is stable
+          initializationTimeout = setTimeout(() => {
+            if (isMounted.current && !hasInitialized.current) {
+              initializeStreamClients('session')
+            }
+          }, 100)
+        } else {
+          console.log('⏭️ No active session or already initialized')
+        }
+      } catch (error) {
+        console.error('❌ Error checking session:', error)
+      }
+    }
+    
+    // Start initial session check
+    checkSession()
+
+    return () => {
+      console.log('🧹 Starting cleanup...')
+      
+      // Immediately mark as unmounted to prevent new operations
+      isMounted.current = false
+      isSubscribed = false
+      
+      // Clear any pending timeouts
+      if (authTimeout) {
+        console.log('🧹 Clearing auth timeout')
+        clearTimeout(authTimeout)
+      }
+      if (initializationTimeout) {
+        console.log('🧹 Clearing initialization timeout')
+        clearTimeout(initializationTimeout)
+      }
+      
+      // Clean up auth subscription
+      if (subscription) {
+        console.log('🧹 Cleaning up auth subscription')
+        subscription.unsubscribe()
+      }
+      
+      // Cancel any ongoing initialization
+      if (initializationPromise.current || initializationInProgress.current) {
+        console.log('🧹 Canceling pending initialization')
+        initializationInProgress.current = false
+        initializationPromise.current = null
+      }
+      
+      // Reset all state
+      hasInitialized.current = false
+      setIsStreamReady(false)
+      setChatClient(null)
+      setVideoClient(null)
+      
+      // Clean up Stream clients
+      const cleanup = async () => {
+        try {
+          if (chatClient) {
+            console.log('🧹 Disconnecting chat client...')
+            await chatClient.disconnectUser()
+          }
+          if (videoClient) {
+            console.log('🧹 Disconnecting video client...')
+            await videoClient.disconnectUser()
           }
         } catch (error) {
-          console.warn('⚠️ Error cleaning up existing clients:', error)
+          console.warn('⚠️ Error during cleanup:', error)
         }
-        setIsStreamReady(false)
       }
-
-      try {
-        console.log('🌊 Initializing Stream.io clients for user:', user.id)
-        
-        // Format user for Stream.io
-        const streamUser = StreamUtils.formatStreamUser(user)
-        console.log('👤 Stream user formatted:', streamUser)
-        
-        // Generate token
-        const token = await generateUserToken(user.id)
-        console.log('🔑 Token generated, length:', token.length)
-        
-        // Initialize Chat Client
-        const chat = createStreamChatClient()
-        console.log('💬 Connecting to Stream Chat with user:', streamUser.id)
-        
-        await chat.connectUser(streamUser as StreamUser, token)
-        setChatClient(chat)
-        console.log('💬 Stream Chat client initialized successfully')
-        
-        // Initialize Video Client
-        const video = createStreamVideoClient({ 
-          id: user.id, 
-          name: user.full_name || user.username 
-        }, token)
-        setVideoClient(video)
-        console.log('📹 Stream Video client initialized successfully')
-        
-        setIsStreamReady(true)
-        console.log('✅ Stream.io clients ready')
-        
-      } catch (error) {
-        console.error('❌ Failed to initialize Stream.io clients:', error)
-        console.error('❌ Error details:', {
-          message: error instanceof Error ? error.message : 'Unknown error',
-          stack: error instanceof Error ? error.stack : undefined,
-          user: user.id,
-          isDemoMode: StreamUtils.isDemoMode()
-        })
-        setChatError(`Failed to initialize chat: ${error instanceof Error ? error.message : 'Unknown error'}`)
-        setVideoError(`Failed to initialize video: ${error instanceof Error ? error.message : 'Unknown error'}`)
-      }
+      
+      // Run cleanup synchronously to ensure it happens before unmount
+      cleanup().catch(error => {
+        console.warn('⚠️ Error during final cleanup:', error)
+      })
+      
+      console.log('🧹 Cleanup complete')
     }
-
-    initializeStreamClients()
-    
-    // Cleanup function to prevent memory leaks
-    return () => {
-      // Don't cleanup immediately, but mark for cleanup if component unmounts
-    }
-  }, [user?.id]) // Only depend on user.id to prevent unnecessary re-renders
+  }, [])
 
   useEffect(() => {
     if (!videoClient) return;

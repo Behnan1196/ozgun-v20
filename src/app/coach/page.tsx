@@ -49,6 +49,7 @@ import {
   Sun,
   Monitor
 } from 'lucide-react'
+import { ProfileAvatar } from '@/components/ui/avatar'
 import { 
   ResizablePanelGroup, 
   ResizablePanel, 
@@ -56,6 +57,7 @@ import {
 } from '@/components/ui/resizable'
 import StreamChat from '@/components/StreamChat'
 import StreamVideo from '@/components/StreamVideo'
+import PomodoroTimer from '@/components/PomodoroTimer'
 
 // Interfaces
 interface Student {
@@ -151,55 +153,128 @@ interface Goal {
   updated_at: string
 }
 
+interface ExamForm {
+  exam_type: 'TYT' | 'AYT' | 'Tarama'
+  exam_date: string
+  exam_name: string
+  exam_duration: number
+  
+  // TYT Scores - Türkçe
+  tyt_turkce_correct: number
+  tyt_turkce_wrong: number
+  
+  // TYT Scores - Matematik
+  tyt_matematik_correct: number
+  tyt_matematik_wrong: number
+  tyt_geometri_correct: number
+  tyt_geometri_wrong: number
+  
+  // TYT Scores - Sosyal Bilimler
+  tyt_tarih_correct: number
+  tyt_tarih_wrong: number
+  tyt_cografya_correct: number
+  tyt_cografya_wrong: number
+  tyt_felsefe_correct: number
+  tyt_felsefe_wrong: number
+  tyt_din_correct: number
+  tyt_din_wrong: number
+  
+  // TYT Scores - Fen Bilimleri
+  tyt_fizik_correct: number
+  tyt_fizik_wrong: number
+  tyt_kimya_correct: number
+  tyt_kimya_wrong: number
+  tyt_biyoloji_correct: number
+  tyt_biyoloji_wrong: number
+  
+  // AYT Scores
+  ayt_matematik_correct: number
+  ayt_matematik_wrong: number
+  ayt_geometri_correct: number
+  ayt_geometri_wrong: number
+  
+  // Tarama Scores
+  tarama_lessons: Array<{
+    subject: string
+    question_count: number
+    correct: number
+    wrong: number
+  }>
+  
+  notes: string
+}
+
 interface MockExamResult {
   id: string
   student_id: string
   coach_id: string
-  exam_type: 'TYT' | 'AYT'
+  exam_type: 'TYT' | 'AYT' | 'Tarama'
   exam_date: string
   exam_name: string
   exam_duration?: number
   
-  // TYT Scores
+  // TYT Scores - Türkçe
   tyt_turkce_correct?: number
   tyt_turkce_wrong?: number
+  tyt_turkce_net?: number
+
+  // TYT Scores - Matematik
   tyt_matematik_correct?: number
   tyt_matematik_wrong?: number
-  tyt_fen_correct?: number
-  tyt_fen_wrong?: number
-  tyt_sosyal_correct?: number
-  tyt_sosyal_wrong?: number
+  tyt_matematik_net?: number
+  tyt_geometri_correct?: number
+  tyt_geometri_wrong?: number
+  tyt_geometri_net?: number
+
+  // TYT Scores - Sosyal Bilimler
+  tyt_tarih_correct?: number
+  tyt_tarih_wrong?: number
+  tyt_tarih_net?: number
+  tyt_cografya_correct?: number
+  tyt_cografya_wrong?: number
+  tyt_cografya_net?: number
+  tyt_felsefe_correct?: number
+  tyt_felsefe_wrong?: number
+  tyt_felsefe_net?: number
+  tyt_din_correct?: number
+  tyt_din_wrong?: number
+  tyt_din_net?: number
+
+  // TYT Scores - Fen Bilimleri
+  tyt_fizik_correct?: number
+  tyt_fizik_wrong?: number
+  tyt_fizik_net?: number
+  tyt_kimya_correct?: number
+  tyt_kimya_wrong?: number
+  tyt_kimya_net?: number
+  tyt_biyoloji_correct?: number
+  tyt_biyoloji_wrong?: number
+  tyt_biyoloji_net?: number
+
+  // TYT Group Totals
+  tyt_total_net?: number
+  tyt_matematik_total_net?: number
+  tyt_sosyal_total_net?: number
+  tyt_fen_total_net?: number
   
   // AYT Scores
   ayt_matematik_correct?: number
   ayt_matematik_wrong?: number
-  ayt_fizik_correct?: number
-  ayt_fizik_wrong?: number
-  ayt_kimya_correct?: number
-  ayt_kimya_wrong?: number
-  ayt_biyoloji_correct?: number
-  ayt_biyoloji_wrong?: number
-  ayt_edebiyat_correct?: number
-  ayt_edebiyat_wrong?: number
-  ayt_tarih_correct?: number
-  ayt_tarih_wrong?: number
-  ayt_cografya_correct?: number
-  ayt_cografya_wrong?: number
-  ayt_felsefe_correct?: number
-  ayt_felsefe_wrong?: number
-  ayt_din_correct?: number
-  ayt_din_wrong?: number
-  
-  // Calculated Net Scores
-  tyt_turkce_net?: number
-  tyt_matematik_net?: number
-  tyt_fen_net?: number
-  tyt_sosyal_net?: number
-  tyt_total_net?: number
   ayt_matematik_net?: number
-  ayt_fen_net?: number
-  ayt_sosyal_net?: number
+  ayt_geometri_correct?: number
+  ayt_geometri_wrong?: number
+  ayt_geometri_net?: number
   ayt_total_net?: number
+  
+  // Tarama Scores
+  tarama_lessons?: Array<{
+    subject: string
+    question_count: number
+    correct: number
+    wrong: number
+    net: number
+  }>
+  tarama_total_net?: number
   
   notes?: string
   is_active: boolean
@@ -265,7 +340,7 @@ export default function CoachPage() {
   // Exam management states
   const [showExamModal, setShowExamModal] = useState(false)
   const [editingExam, setEditingExam] = useState<MockExamResult | null>(null)
-  const [examModalTab, setExamModalTab] = useState<'TYT' | 'AYT'>('TYT')
+  const [examModalTab, setExamModalTab] = useState<'TYT' | 'AYT' | 'Tarama'>('TYT')
   const [goalForm, setGoalForm] = useState({
     goal_type: 'custom' as 'tyt_target' | 'ayt_target' | 'university_target' | 'department_target' | 'study_hours' | 'custom',
     title: '',
@@ -277,41 +352,48 @@ export default function CoachPage() {
     status: 'active' as 'active' | 'completed' | 'paused' | 'cancelled'
   })
 
-  const [examForm, setExamForm] = useState({
-    exam_type: 'TYT' as 'TYT' | 'AYT',
+  const [examForm, setExamForm] = useState<ExamForm>({
+    exam_type: 'TYT',
     exam_date: '',
     exam_name: '',
     exam_duration: 180,
     
-    // TYT Scores
+    // TYT Scores - Türkçe
     tyt_turkce_correct: 0,
     tyt_turkce_wrong: 0,
+    
+    // TYT Scores - Matematik
     tyt_matematik_correct: 0,
     tyt_matematik_wrong: 0,
-    tyt_fen_correct: 0,
-    tyt_fen_wrong: 0,
-    tyt_sosyal_correct: 0,
-    tyt_sosyal_wrong: 0,
+    tyt_geometri_correct: 0,
+    tyt_geometri_wrong: 0,
+    
+    // TYT Scores - Sosyal Bilimler
+    tyt_tarih_correct: 0,
+    tyt_tarih_wrong: 0,
+    tyt_cografya_correct: 0,
+    tyt_cografya_wrong: 0,
+    tyt_felsefe_correct: 0,
+    tyt_felsefe_wrong: 0,
+    tyt_din_correct: 0,
+    tyt_din_wrong: 0,
+    
+    // TYT Scores - Fen Bilimleri
+    tyt_fizik_correct: 0,
+    tyt_fizik_wrong: 0,
+    tyt_kimya_correct: 0,
+    tyt_kimya_wrong: 0,
+    tyt_biyoloji_correct: 0,
+    tyt_biyoloji_wrong: 0,
     
     // AYT Scores
     ayt_matematik_correct: 0,
     ayt_matematik_wrong: 0,
-    ayt_fizik_correct: 0,
-    ayt_fizik_wrong: 0,
-    ayt_kimya_correct: 0,
-    ayt_kimya_wrong: 0,
-    ayt_biyoloji_correct: 0,
-    ayt_biyoloji_wrong: 0,
-    ayt_edebiyat_correct: 0,
-    ayt_edebiyat_wrong: 0,
-    ayt_tarih_correct: 0,
-    ayt_tarih_wrong: 0,
-    ayt_cografya_correct: 0,
-    ayt_cografya_wrong: 0,
-    ayt_felsefe_correct: 0,
-    ayt_felsefe_wrong: 0,
-    ayt_din_correct: 0,
-    ayt_din_wrong: 0,
+    ayt_geometri_correct: 0,
+    ayt_geometri_wrong: 0,
+    
+    // Tarama Scores
+    tarama_lessons: [],
     
     notes: ''
   })
@@ -345,7 +427,7 @@ export default function CoachPage() {
     full_name: '',
     email: '',
     phone: '',
-    avatar_url: '',
+    avatar_url: '' as string | null,
     theme: 'system', // light, dark, system
     language: 'tr',
     notifications_enabled: true,
@@ -354,6 +436,8 @@ export default function CoachPage() {
     new_password: '',
     confirm_password: ''
   })
+
+  const [showStatsMonthly, setShowStatsMonthly] = useState(false)
 
   const supabase = createClient()
 
@@ -429,8 +513,34 @@ export default function CoachPage() {
     }
   }
 
+  const handleRemoveAvatar = () => {
+    setAvatarPreview(null)
+    setSettingsForm(prev => ({ ...prev, avatar_url: null }))
+  }
+
   const updateProfile = async () => {
     try {
+      // If we're removing an existing avatar, delete it from storage
+      if (profile?.avatar_url && !settingsForm.avatar_url) {
+        try {
+          // Extract the file path from the URL
+          const url = new URL(profile.avatar_url)
+          const pathParts = url.pathname.split('/')
+          const avatarPath = pathParts[pathParts.length - 1]
+
+          if (avatarPath) {
+            const { error: storageError } = await supabase.storage
+              .from('avatars')
+              .remove([avatarPath])
+            if (storageError) {
+              console.error('Error removing old avatar:', storageError)
+            }
+          }
+        } catch (error) {
+          console.error('Error parsing avatar URL:', error)
+        }
+      }
+
       const updates = {
         full_name: settingsForm.full_name,
         phone: settingsForm.phone,
@@ -730,7 +840,6 @@ export default function CoachPage() {
           return
         }
 
-        console.log('Goals loaded successfully:', goals)
         setGoals(goals || [])
       } catch (error) {
         console.error('Error loading goals:', error)
@@ -761,7 +870,6 @@ export default function CoachPage() {
           return
         }
 
-        console.log('Exam results loaded successfully:', examResults)
         setMockExamResults(examResults || [])
       } catch (error) {
         console.error('Error loading exam results:', error)
@@ -1307,32 +1415,44 @@ export default function CoachPage() {
       exam_date: new Date().toISOString().split('T')[0],
       exam_name: '',
       exam_duration: 180,
+      
+      // TYT Scores - Türkçe
       tyt_turkce_correct: 0,
       tyt_turkce_wrong: 0,
+      
+      // TYT Scores - Matematik
       tyt_matematik_correct: 0,
       tyt_matematik_wrong: 0,
-      tyt_fen_correct: 0,
-      tyt_fen_wrong: 0,
-      tyt_sosyal_correct: 0,
-      tyt_sosyal_wrong: 0,
+      tyt_geometri_correct: 0,
+      tyt_geometri_wrong: 0,
+      
+      // TYT Scores - Sosyal Bilimler
+      tyt_tarih_correct: 0,
+      tyt_tarih_wrong: 0,
+      tyt_cografya_correct: 0,
+      tyt_cografya_wrong: 0,
+      tyt_felsefe_correct: 0,
+      tyt_felsefe_wrong: 0,
+      tyt_din_correct: 0,
+      tyt_din_wrong: 0,
+      
+      // TYT Scores - Fen Bilimleri
+      tyt_fizik_correct: 0,
+      tyt_fizik_wrong: 0,
+      tyt_kimya_correct: 0,
+      tyt_kimya_wrong: 0,
+      tyt_biyoloji_correct: 0,
+      tyt_biyoloji_wrong: 0,
+      
+      // AYT Scores
       ayt_matematik_correct: 0,
       ayt_matematik_wrong: 0,
-      ayt_fizik_correct: 0,
-      ayt_fizik_wrong: 0,
-      ayt_kimya_correct: 0,
-      ayt_kimya_wrong: 0,
-      ayt_biyoloji_correct: 0,
-      ayt_biyoloji_wrong: 0,
-      ayt_edebiyat_correct: 0,
-      ayt_edebiyat_wrong: 0,
-      ayt_tarih_correct: 0,
-      ayt_tarih_wrong: 0,
-      ayt_cografya_correct: 0,
-      ayt_cografya_wrong: 0,
-      ayt_felsefe_correct: 0,
-      ayt_felsefe_wrong: 0,
-      ayt_din_correct: 0,
-      ayt_din_wrong: 0,
+      ayt_geometri_correct: 0,
+      ayt_geometri_wrong: 0,
+      
+      // Tarama Scores
+      tarama_lessons: [],
+      
       notes: ''
     })
     setExamModalTab('TYT')
@@ -1346,32 +1466,44 @@ export default function CoachPage() {
       exam_date: examResult.exam_date,
       exam_name: examResult.exam_name,
       exam_duration: examResult.exam_duration || 180,
+      
+      // TYT Scores - Türkçe
       tyt_turkce_correct: examResult.tyt_turkce_correct || 0,
       tyt_turkce_wrong: examResult.tyt_turkce_wrong || 0,
+      
+      // TYT Scores - Matematik
       tyt_matematik_correct: examResult.tyt_matematik_correct || 0,
       tyt_matematik_wrong: examResult.tyt_matematik_wrong || 0,
-      tyt_fen_correct: examResult.tyt_fen_correct || 0,
-      tyt_fen_wrong: examResult.tyt_fen_wrong || 0,
-      tyt_sosyal_correct: examResult.tyt_sosyal_correct || 0,
-      tyt_sosyal_wrong: examResult.tyt_sosyal_wrong || 0,
+      tyt_geometri_correct: examResult.tyt_geometri_correct || 0,
+      tyt_geometri_wrong: examResult.tyt_geometri_wrong || 0,
+      
+      // TYT Scores - Sosyal Bilimler
+      tyt_tarih_correct: examResult.tyt_tarih_correct || 0,
+      tyt_tarih_wrong: examResult.tyt_tarih_wrong || 0,
+      tyt_cografya_correct: examResult.tyt_cografya_correct || 0,
+      tyt_cografya_wrong: examResult.tyt_cografya_wrong || 0,
+      tyt_felsefe_correct: examResult.tyt_felsefe_correct || 0,
+      tyt_felsefe_wrong: examResult.tyt_felsefe_wrong || 0,
+      tyt_din_correct: examResult.tyt_din_correct || 0,
+      tyt_din_wrong: examResult.tyt_din_wrong || 0,
+      
+      // TYT Scores - Fen Bilimleri
+      tyt_fizik_correct: examResult.tyt_fizik_correct || 0,
+      tyt_fizik_wrong: examResult.tyt_fizik_wrong || 0,
+      tyt_kimya_correct: examResult.tyt_kimya_correct || 0,
+      tyt_kimya_wrong: examResult.tyt_kimya_wrong || 0,
+      tyt_biyoloji_correct: examResult.tyt_biyoloji_correct || 0,
+      tyt_biyoloji_wrong: examResult.tyt_biyoloji_wrong || 0,
+      
+      // AYT Scores
       ayt_matematik_correct: examResult.ayt_matematik_correct || 0,
       ayt_matematik_wrong: examResult.ayt_matematik_wrong || 0,
-      ayt_fizik_correct: examResult.ayt_fizik_correct || 0,
-      ayt_fizik_wrong: examResult.ayt_fizik_wrong || 0,
-      ayt_kimya_correct: examResult.ayt_kimya_correct || 0,
-      ayt_kimya_wrong: examResult.ayt_kimya_wrong || 0,
-      ayt_biyoloji_correct: examResult.ayt_biyoloji_correct || 0,
-      ayt_biyoloji_wrong: examResult.ayt_biyoloji_wrong || 0,
-      ayt_edebiyat_correct: examResult.ayt_edebiyat_correct || 0,
-      ayt_edebiyat_wrong: examResult.ayt_edebiyat_wrong || 0,
-      ayt_tarih_correct: examResult.ayt_tarih_correct || 0,
-      ayt_tarih_wrong: examResult.ayt_tarih_wrong || 0,
-      ayt_cografya_correct: examResult.ayt_cografya_correct || 0,
-      ayt_cografya_wrong: examResult.ayt_cografya_wrong || 0,
-      ayt_felsefe_correct: examResult.ayt_felsefe_correct || 0,
-      ayt_felsefe_wrong: examResult.ayt_felsefe_wrong || 0,
-      ayt_din_correct: examResult.ayt_din_correct || 0,
-      ayt_din_wrong: examResult.ayt_din_wrong || 0,
+      ayt_geometri_correct: examResult.ayt_geometri_correct || 0,
+      ayt_geometri_wrong: examResult.ayt_geometri_wrong || 0,
+      
+      // Tarama Scores
+      tarama_lessons: examResult.tarama_lessons || [],
+      
       notes: examResult.notes || ''
     })
     setExamModalTab(examResult.exam_type)
@@ -1399,35 +1531,47 @@ export default function CoachPage() {
           exam_name: examForm.exam_name.trim(),
           exam_duration: examForm.exam_duration,
           
-          // Only include relevant scores based on exam type
+                    // Only include relevant scores based on exam type
           ...(examForm.exam_type === 'TYT' ? {
+            // TYT Scores - Türkçe
             tyt_turkce_correct: examForm.tyt_turkce_correct,
             tyt_turkce_wrong: examForm.tyt_turkce_wrong,
+            
+            // TYT Scores - Matematik
             tyt_matematik_correct: examForm.tyt_matematik_correct,
             tyt_matematik_wrong: examForm.tyt_matematik_wrong,
-            tyt_fen_correct: examForm.tyt_fen_correct,
-            tyt_fen_wrong: examForm.tyt_fen_wrong,
-            tyt_sosyal_correct: examForm.tyt_sosyal_correct,
-            tyt_sosyal_wrong: examForm.tyt_sosyal_wrong,
-          } : {
+            tyt_geometri_correct: examForm.tyt_geometri_correct,
+            tyt_geometri_wrong: examForm.tyt_geometri_wrong,
+            
+            // TYT Scores - Sosyal Bilimler
+            tyt_tarih_correct: examForm.tyt_tarih_correct,
+            tyt_tarih_wrong: examForm.tyt_tarih_wrong,
+            tyt_cografya_correct: examForm.tyt_cografya_correct,
+            tyt_cografya_wrong: examForm.tyt_cografya_wrong,
+            tyt_felsefe_correct: examForm.tyt_felsefe_correct,
+            tyt_felsefe_wrong: examForm.tyt_felsefe_wrong,
+            tyt_din_correct: examForm.tyt_din_correct,
+            tyt_din_wrong: examForm.tyt_din_wrong,
+            
+            // TYT Scores - Fen Bilimleri
+            tyt_fizik_correct: examForm.tyt_fizik_correct,
+            tyt_fizik_wrong: examForm.tyt_fizik_wrong,
+            tyt_kimya_correct: examForm.tyt_kimya_correct,
+            tyt_kimya_wrong: examForm.tyt_kimya_wrong,
+            tyt_biyoloji_correct: examForm.tyt_biyoloji_correct,
+            tyt_biyoloji_wrong: examForm.tyt_biyoloji_wrong,
+          } : examForm.exam_type === 'AYT' ? {
             ayt_matematik_correct: examForm.ayt_matematik_correct,
             ayt_matematik_wrong: examForm.ayt_matematik_wrong,
-            ayt_fizik_correct: examForm.ayt_fizik_correct,
-            ayt_fizik_wrong: examForm.ayt_fizik_wrong,
-            ayt_kimya_correct: examForm.ayt_kimya_correct,
-            ayt_kimya_wrong: examForm.ayt_kimya_wrong,
-            ayt_biyoloji_correct: examForm.ayt_biyoloji_correct,
-            ayt_biyoloji_wrong: examForm.ayt_biyoloji_wrong,
-            ayt_edebiyat_correct: examForm.ayt_edebiyat_correct,
-            ayt_edebiyat_wrong: examForm.ayt_edebiyat_wrong,
-            ayt_tarih_correct: examForm.ayt_tarih_correct,
-            ayt_tarih_wrong: examForm.ayt_tarih_wrong,
-            ayt_cografya_correct: examForm.ayt_cografya_correct,
-            ayt_cografya_wrong: examForm.ayt_cografya_wrong,
-            ayt_felsefe_correct: examForm.ayt_felsefe_correct,
-            ayt_felsefe_wrong: examForm.ayt_felsefe_wrong,
-            ayt_din_correct: examForm.ayt_din_correct,
-            ayt_din_wrong: examForm.ayt_din_wrong,
+            ayt_geometri_correct: examForm.ayt_geometri_correct,
+            ayt_geometri_wrong: examForm.ayt_geometri_wrong,
+          } : {
+            // Tarama Scores
+            tarama_lessons: examForm.tarama_lessons.map(lesson => ({
+              ...lesson,
+              net: lesson.correct - lesson.wrong / 4
+            })),
+            tarama_total_net: examForm.tarama_lessons.reduce((sum, lesson) => sum + (lesson.correct - lesson.wrong / 4), 0),
           }),
           
           notes: examForm.notes.trim() || null
@@ -1469,68 +1613,109 @@ export default function CoachPage() {
           
           // Only include relevant scores based on exam type
           ...(examForm.exam_type === 'TYT' ? {
+            // TYT Scores - Türkçe
             tyt_turkce_correct: examForm.tyt_turkce_correct,
             tyt_turkce_wrong: examForm.tyt_turkce_wrong,
+            
+            // TYT Scores - Matematik
             tyt_matematik_correct: examForm.tyt_matematik_correct,
             tyt_matematik_wrong: examForm.tyt_matematik_wrong,
-            tyt_fen_correct: examForm.tyt_fen_correct,
-            tyt_fen_wrong: examForm.tyt_fen_wrong,
-            tyt_sosyal_correct: examForm.tyt_sosyal_correct,
-            tyt_sosyal_wrong: examForm.tyt_sosyal_wrong,
-            // Clear AYT fields if switching from AYT to TYT
+            tyt_geometri_correct: examForm.tyt_geometri_correct,
+            tyt_geometri_wrong: examForm.tyt_geometri_wrong,
+            
+            // TYT Scores - Sosyal Bilimler
+            tyt_tarih_correct: examForm.tyt_tarih_correct,
+            tyt_tarih_wrong: examForm.tyt_tarih_wrong,
+            tyt_cografya_correct: examForm.tyt_cografya_correct,
+            tyt_cografya_wrong: examForm.tyt_cografya_wrong,
+            tyt_felsefe_correct: examForm.tyt_felsefe_correct,
+            tyt_felsefe_wrong: examForm.tyt_felsefe_wrong,
+            tyt_din_correct: examForm.tyt_din_correct,
+            tyt_din_wrong: examForm.tyt_din_wrong,
+            
+            // TYT Scores - Fen Bilimleri
+            tyt_fizik_correct: examForm.tyt_fizik_correct,
+            tyt_fizik_wrong: examForm.tyt_fizik_wrong,
+            tyt_kimya_correct: examForm.tyt_kimya_correct,
+            tyt_kimya_wrong: examForm.tyt_kimya_wrong,
+            tyt_biyoloji_correct: examForm.tyt_biyoloji_correct,
+            tyt_biyoloji_wrong: examForm.tyt_biyoloji_wrong,
+            
+            // Clear AYT and Tarama fields
             ayt_matematik_correct: null,
             ayt_matematik_wrong: null,
-            ayt_fizik_correct: null,
-            ayt_fizik_wrong: null,
-            ayt_kimya_correct: null,
-            ayt_kimya_wrong: null,
-            ayt_biyoloji_correct: null,
-            ayt_biyoloji_wrong: null,
-            ayt_edebiyat_correct: null,
-            ayt_edebiyat_wrong: null,
-            ayt_tarih_correct: null,
-            ayt_tarih_wrong: null,
-            ayt_cografya_correct: null,
-            ayt_cografya_wrong: null,
-            ayt_felsefe_correct: null,
-            ayt_felsefe_wrong: null,
-            ayt_din_correct: null,
-            ayt_din_wrong: null,
-          } : {
+            ayt_geometri_correct: null,
+            ayt_geometri_wrong: null,
+            tarama_lessons: null,
+          } : examForm.exam_type === 'AYT' ? {
+            // AYT Scores
             ayt_matematik_correct: examForm.ayt_matematik_correct,
             ayt_matematik_wrong: examForm.ayt_matematik_wrong,
-            ayt_fizik_correct: examForm.ayt_fizik_correct,
-            ayt_fizik_wrong: examForm.ayt_fizik_wrong,
-            ayt_kimya_correct: examForm.ayt_kimya_correct,
-            ayt_kimya_wrong: examForm.ayt_kimya_wrong,
-            ayt_biyoloji_correct: examForm.ayt_biyoloji_correct,
-            ayt_biyoloji_wrong: examForm.ayt_biyoloji_wrong,
-            ayt_edebiyat_correct: examForm.ayt_edebiyat_correct,
-            ayt_edebiyat_wrong: examForm.ayt_edebiyat_wrong,
-            ayt_tarih_correct: examForm.ayt_tarih_correct,
-            ayt_tarih_wrong: examForm.ayt_tarih_wrong,
-            ayt_cografya_correct: examForm.ayt_cografya_correct,
-            ayt_cografya_wrong: examForm.ayt_cografya_wrong,
-            ayt_felsefe_correct: examForm.ayt_felsefe_correct,
-            ayt_felsefe_wrong: examForm.ayt_felsefe_wrong,
-            ayt_din_correct: examForm.ayt_din_correct,
-            ayt_din_wrong: examForm.ayt_din_wrong,
-             // Clear TYT fields if switching from TYT to AYT
-             tyt_turkce_correct: null,
-             tyt_turkce_wrong: null,
-             tyt_matematik_correct: null,
-             tyt_matematik_wrong: null,
-             tyt_fen_correct: null,
-             tyt_fen_wrong: null,
-             tyt_sosyal_correct: null,
-             tyt_sosyal_wrong: null,
-           }),
-           
-           notes: examForm.notes.trim() || null,
-           updated_at: new Date().toISOString()
-         })
-         .eq('id', editingExam.id)
-         .select()
+            ayt_geometri_correct: examForm.ayt_geometri_correct,
+            ayt_geometri_wrong: examForm.ayt_geometri_wrong,
+            
+            // Clear TYT and Tarama fields
+            tyt_turkce_correct: null,
+            tyt_turkce_wrong: null,
+            tyt_matematik_correct: null,
+            tyt_matematik_wrong: null,
+            tyt_geometri_correct: null,
+            tyt_geometri_wrong: null,
+            tyt_tarih_correct: null,
+            tyt_tarih_wrong: null,
+            tyt_cografya_correct: null,
+            tyt_cografya_wrong: null,
+            tyt_felsefe_correct: null,
+            tyt_felsefe_wrong: null,
+            tyt_din_correct: null,
+            tyt_din_wrong: null,
+            tyt_fizik_correct: null,
+            tyt_fizik_wrong: null,
+            tyt_kimya_correct: null,
+            tyt_kimya_wrong: null,
+            tyt_biyoloji_correct: null,
+            tyt_biyoloji_wrong: null,
+            tarama_lessons: null,
+          } : {
+            // Tarama Scores
+            tarama_lessons: examForm.tarama_lessons.map(lesson => ({
+              ...lesson,
+              net: lesson.correct - lesson.wrong / 4
+            })),
+            tarama_total_net: examForm.tarama_lessons.reduce((sum, lesson) => sum + (lesson.correct - lesson.wrong / 4), 0),
+            
+            // Clear TYT and AYT fields
+            tyt_turkce_correct: null,
+            tyt_turkce_wrong: null,
+            tyt_matematik_correct: null,
+            tyt_matematik_wrong: null,
+            tyt_geometri_correct: null,
+            tyt_geometri_wrong: null,
+            tyt_tarih_correct: null,
+            tyt_tarih_wrong: null,
+            tyt_cografya_correct: null,
+            tyt_cografya_wrong: null,
+            tyt_felsefe_correct: null,
+            tyt_felsefe_wrong: null,
+            tyt_din_correct: null,
+            tyt_din_wrong: null,
+            tyt_fizik_correct: null,
+            tyt_fizik_wrong: null,
+            tyt_kimya_correct: null,
+            tyt_kimya_wrong: null,
+            tyt_biyoloji_correct: null,
+            tyt_biyoloji_wrong: null,
+            ayt_matematik_correct: null,
+            ayt_matematik_wrong: null,
+            ayt_geometri_correct: null,
+            ayt_geometri_wrong: null,
+          }),
+          
+          notes: examForm.notes.trim() || null,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', editingExam.id)
+        .select()
 
        if (error) {
          console.error('Exam result update error:', error)
@@ -1654,6 +1839,67 @@ export default function CoachPage() {
 
   const dayNames = ['Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi', 'Pazar']
   const weekDates = getWeekDates(currentWeek)
+
+  // Place these at the top level of the component, with other useState hooks
+  const [selectedTaramaSubject, setSelectedTaramaSubject] = React.useState('');
+  const [selectedTaramaQuestionCount, setSelectedTaramaQuestionCount] = React.useState(10);
+  const [showMonthlyStats, setShowMonthlyStats] = React.useState(false);
+
+  // Add this function after other helper functions
+  const calculateMonthlyStats = () => {
+    if (!selectedStudent || !weeklyTasks.length) return []
+
+    const monthStart = new Date(currentWeek)
+    monthStart.setDate(1)
+    const monthEnd = new Date(monthStart)
+    monthEnd.setMonth(monthStart.getMonth() + 1)
+    monthEnd.setDate(0)
+
+    // Filter tasks for the current month
+    const monthlyTasks = weeklyTasks.filter(task => {
+      const taskDate = new Date(task.scheduled_date)
+      return taskDate >= monthStart && taskDate <= monthEnd && task.status === 'completed'
+    })
+
+    // Group by subject and calculate total problems
+    const subjectStats = subjects.map(subject => {
+      const subjectTasks = monthlyTasks.filter(task => task.subject_id === subject.id)
+      const totalProblems = subjectTasks.reduce((sum, task) => sum + (task.problem_count || 0), 0)
+      return {
+        subject: subject.name,
+        totalProblems
+      }
+    }).filter(stat => stat.totalProblems > 0)
+
+    return subjectStats
+  }
+
+  // Add this function to calculate weekly stats
+  const calculateWeeklyStats = () => {
+    if (!selectedStudent || !weeklyTasks.length) return []
+
+    const weekStart = getWeekStart(currentWeek)
+    const weekEnd = new Date(weekStart)
+    weekEnd.setDate(weekStart.getDate() + 6)
+
+    // Filter tasks for the current week
+    const weekTasks = weeklyTasks.filter(task => {
+      const taskDate = new Date(task.scheduled_date)
+      return taskDate >= weekStart && taskDate <= weekEnd && task.status === 'completed'
+    })
+
+    // Group by subject and calculate total problems
+    const subjectStats = subjects.map(subject => {
+      const subjectTasks = weekTasks.filter(task => task.subject_id === subject.id)
+      const totalProblems = subjectTasks.reduce((sum, task) => sum + (task.problem_count || 0), 0)
+      return {
+        subject: subject.name,
+        totalProblems
+      }
+    }).filter(stat => stat.totalProblems > 0)
+
+    return subjectStats
+  }
 
   if (loading) {
     return (
@@ -1980,9 +2226,9 @@ export default function CoachPage() {
       {/* Goal Creation/Edit Modal */}
       {showGoalModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold">
+          <div className="bg-white rounded-lg p-4 w-full max-w-md mx-2">
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-base font-semibold">
                 {editingGoal ? 'Hedef Düzenle' : 'Yeni Hedef'}
               </h3>
               <button
@@ -1992,147 +2238,128 @@ export default function CoachPage() {
                 ✕
               </button>
             </div>
-
-            <div className="space-y-4">
-              {/* Goal Type */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Hedef Türü *
-                </label>
-                <select
-                  value={goalForm.goal_type}
-                  onChange={(e) => setGoalForm(prev => ({ ...prev, goal_type: e.target.value as any }))}
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="custom">Özel Hedef</option>
-                  <option value="tyt_target">TYT Puan Hedefi</option>
-                  <option value="ayt_target">AYT Puan Hedefi</option>
-                  <option value="university_target">Üniversite Hedefi</option>
-                  <option value="department_target">Bölüm Hedefi</option>
-                  <option value="study_hours">Çalışma Saati Hedefi</option>
-                </select>
+            <form
+              onSubmit={e => { e.preventDefault(); (editingGoal ? updateGoal() : createGoal()); }}
+              className="space-y-2"
+            >
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                {/* Goal Type */}
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-0.5">Hedef Türü *</label>
+                  <select
+                    value={goalForm.goal_type}
+                    onChange={e => setGoalForm(prev => ({ ...prev, goal_type: e.target.value as any }))}
+                    className="w-full border border-gray-300 rounded px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="custom">Özel Hedef</option>
+                    <option value="tyt_target">TYT Puan Hedefi</option>
+                    <option value="ayt_target">AYT Puan Hedefi</option>
+                    <option value="university_target">Üniversite Hedefi</option>
+                    <option value="department_target">Bölüm Hedefi</option>
+                    <option value="study_hours">Çalışma Saati Hedefi</option>
+                  </select>
+                </div>
+                {/* Goal Title */}
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-0.5">Hedef Başlığı *</label>
+                  <input
+                    type="text"
+                    value={goalForm.title}
+                    onChange={e => setGoalForm(prev => ({ ...prev, title: e.target.value }))}
+                    className="w-full border border-gray-300 rounded px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="Hedef başlığı..."
+                    required
+                  />
+                </div>
+                {/* Target Value */}
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-0.5">Hedef Değeri</label>
+                  <input
+                    type="text"
+                    value={goalForm.target_value}
+                    onChange={e => setGoalForm(prev => ({ ...prev, target_value: e.target.value }))}
+                    className="w-full border border-gray-300 rounded px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="Örn: 450, 8 saat, vs..."
+                  />
+                </div>
+                {/* Current Value */}
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-0.5">Mevcut Değer</label>
+                  <input
+                    type="text"
+                    value={goalForm.current_value}
+                    onChange={e => setGoalForm(prev => ({ ...prev, current_value: e.target.value }))}
+                    className="w-full border border-gray-300 rounded px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="Mevcut durum..."
+                  />
+                </div>
+                {/* Target Date */}
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-0.5">Hedef Tarihi</label>
+                  <input
+                    type="date"
+                    value={goalForm.target_date}
+                    onChange={e => setGoalForm(prev => ({ ...prev, target_date: e.target.value }))}
+                    className="w-full border border-gray-300 rounded px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                {/* Priority */}
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-0.5">Öncelik *</label>
+                  <select
+                    value={goalForm.priority}
+                    onChange={e => setGoalForm(prev => ({ ...prev, priority: e.target.value as any }))}
+                    className="w-full border border-gray-300 rounded px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="low">Düşük</option>
+                    <option value="medium">Orta</option>
+                    <option value="high">Yüksek</option>
+                  </select>
+                </div>
+                {/* Status */}
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-0.5">Durum *</label>
+                  <select
+                    value={goalForm.status}
+                    onChange={e => setGoalForm(prev => ({ ...prev, status: e.target.value as any }))}
+                    className="w-full border border-gray-300 rounded px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="active">Aktif</option>
+                    <option value="completed">Tamamlandı</option>
+                    <option value="paused">Duraklatıldı</option>
+                    <option value="cancelled">İptal Edildi</option>
+                  </select>
+                </div>
               </div>
-
-              {/* Goal Title */}
+              {/* Description - full width */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Hedef Başlığı *
-                </label>
-                <input
-                  type="text"
-                  value={goalForm.title}
-                  onChange={(e) => setGoalForm(prev => ({ ...prev, title: e.target.value }))}
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Hedef başlığı..."
-                  required
-                />
-              </div>
-
-              {/* Goal Description */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Açıklama (Opsiyonel)
-                </label>
+                <label className="block text-xs font-medium text-gray-700 mb-0.5">Açıklama</label>
                 <textarea
                   value={goalForm.description}
-                  onChange={(e) => setGoalForm(prev => ({ ...prev, description: e.target.value }))}
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  onChange={e => setGoalForm(prev => ({ ...prev, description: e.target.value }))}
+                  className="w-full border border-gray-300 rounded px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
                   placeholder="Hedef açıklaması..."
-                  rows={3}
+                  rows={2}
                 />
               </div>
-
-              {/* Target Value */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Hedef Değeri (Opsiyonel)
-                </label>
-                <input
-                  type="text"
-                  value={goalForm.target_value}
-                  onChange={(e) => setGoalForm(prev => ({ ...prev, target_value: e.target.value }))}
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Örn: 450, 8 saat, vs..."
-                />
-              </div>
-
-              {/* Current Value */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Mevcut Değer (Opsiyonel)
-                </label>
-                <input
-                  type="text"
-                  value={goalForm.current_value}
-                  onChange={(e) => setGoalForm(prev => ({ ...prev, current_value: e.target.value }))}
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Mevcut durum..."
-                />
-              </div>
-
-              {/* Target Date */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Hedef Tarihi (Opsiyonel)
-                </label>
-                <input
-                  type="date"
-                  value={goalForm.target_date}
-                  onChange={(e) => setGoalForm(prev => ({ ...prev, target_date: e.target.value }))}
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-
-              {/* Priority */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Öncelik *
-                </label>
-                <select
-                  value={goalForm.priority}
-                  onChange={(e) => setGoalForm(prev => ({ ...prev, priority: e.target.value as any }))}
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              {/* Modal Actions */}
+              <div className="flex items-center justify-end space-x-2 mt-2">
+                <button
+                  type="button"
+                  onClick={closeGoalModal}
+                  className="px-3 py-1 text-gray-600 hover:bg-gray-100 rounded-md text-xs"
                 >
-                  <option value="low">Düşük</option>
-                  <option value="medium">Orta</option>
-                  <option value="high">Yüksek</option>
-                </select>
-              </div>
-
-              {/* Status */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Durum *
-                </label>
-                <select
-                  value={goalForm.status}
-                  onChange={(e) => setGoalForm(prev => ({ ...prev, status: e.target.value as any }))}
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  İptal
+                </button>
+                <button
+                  type="submit"
+                  disabled={!selectedStudent || !goalForm.title.trim()}
+                  className="px-3 py-1 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-xs"
                 >
-                  <option value="active">Aktif</option>
-                  <option value="completed">Tamamlandı</option>
-                  <option value="paused">Duraklatıldı</option>
-                  <option value="cancelled">İptal Edildi</option>
-                </select>
+                  {editingGoal ? 'Güncelle' : 'Oluştur'}
+                </button>
               </div>
-            </div>
-
-            {/* Modal Actions */}
-            <div className="flex items-center justify-end space-x-3 mt-6">
-              <button
-                onClick={closeGoalModal}
-                className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-md"
-              >
-                İptal
-              </button>
-              <button
-                onClick={editingGoal ? updateGoal : createGoal}
-                disabled={!selectedStudent || !goalForm.title.trim()}
-                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {editingGoal ? 'Güncelle' : 'Oluştur'}
-              </button>
-            </div>
+            </form>
           </div>
         </div>
       )}
@@ -2227,6 +2454,19 @@ export default function CoachPage() {
                   >
                     AYT Sınavı
                   </button>
+                  <button
+                    onClick={() => {
+                      setExamModalTab('Tarama')
+                      setExamForm(prev => ({ ...prev, exam_type: 'Tarama' }))
+                    }}
+                    className={`px-6 py-3 font-medium border-b-2 transition-colors ${
+                      examModalTab === 'Tarama'
+                        ? 'border-green-500 text-green-600 bg-green-50'
+                        : 'border-transparent text-gray-500 hover:text-gray-700'
+                    }`}
+                  >
+                    Tarama Sınavı
+                  </button>
                 </div>
 
                 {/* TYT Scores */}
@@ -2240,7 +2480,7 @@ export default function CoachPage() {
                       {/* Türkçe */}
                       <div className="border rounded-lg p-4 bg-blue-50">
                         <h5 className="font-medium text-blue-800 mb-3 flex items-center">
-                          📚 Türkçe (40 Soru)
+                          📚 Türkçe (40)
                         </h5>
                         <div className="grid grid-cols-2 gap-3">
                           <div>
@@ -2272,7 +2512,7 @@ export default function CoachPage() {
                       {/* Matematik */}
                       <div className="border rounded-lg p-4 bg-green-50">
                         <h5 className="font-medium text-green-800 mb-3 flex items-center">
-                          🔢 Matematik (36 Soru)
+                          🔢 Matematik (30)
                         </h5>
                         <div className="grid grid-cols-2 gap-3">
                           <div>
@@ -2280,9 +2520,9 @@ export default function CoachPage() {
                             <input
                               type="number"
                               value={examForm.tyt_matematik_correct}
-                              onChange={(e) => setExamForm(prev => ({ ...prev, tyt_matematik_correct: Math.max(0, Math.min(36, parseInt(e.target.value) || 0)) }))}
+                              onChange={(e) => setExamForm(prev => ({ ...prev, tyt_matematik_correct: Math.max(0, Math.min(30, parseInt(e.target.value) || 0)) }))}
                               className="w-full border border-green-200 rounded px-2 py-1 text-sm"
-                              min="0" max="36"
+                              min="0" max="30"
                             />
                           </div>
                           <div>
@@ -2290,9 +2530,9 @@ export default function CoachPage() {
                             <input
                               type="number"
                               value={examForm.tyt_matematik_wrong}
-                              onChange={(e) => setExamForm(prev => ({ ...prev, tyt_matematik_wrong: Math.max(0, Math.min(36, parseInt(e.target.value) || 0)) }))}
+                              onChange={(e) => setExamForm(prev => ({ ...prev, tyt_matematik_wrong: Math.max(0, Math.min(30, parseInt(e.target.value) || 0)) }))}
                               className="w-full border border-green-200 rounded px-2 py-1 text-sm"
-                              min="0" max="36"
+                              min="0" max="30"
                             />
                           </div>
                         </div>
@@ -2301,67 +2541,259 @@ export default function CoachPage() {
                         </div>
                       </div>
 
-                      {/* Fen Bilimleri */}
-                      <div className="border rounded-lg p-4 bg-orange-50">
-                        <h5 className="font-medium text-orange-800 mb-3 flex items-center">
-                          🧪 Fen Bilimleri (20 Soru)
+                      {/* Geometri */}
+                      <div className="border rounded-lg p-4 bg-green-50">
+                        <h5 className="font-medium text-green-800 mb-3 flex items-center">
+                          📐 Geometri (10)
                         </h5>
                         <div className="grid grid-cols-2 gap-3">
                           <div>
-                            <label className="block text-sm text-orange-700 mb-1">Doğru</label>
+                            <label className="block text-sm text-green-700 mb-1">Doğru</label>
                             <input
                               type="number"
-                              value={examForm.tyt_fen_correct}
-                              onChange={(e) => setExamForm(prev => ({ ...prev, tyt_fen_correct: Math.max(0, Math.min(20, parseInt(e.target.value) || 0)) }))}
-                              className="w-full border border-orange-200 rounded px-2 py-1 text-sm"
-                              min="0" max="20"
+                              value={examForm.tyt_geometri_correct}
+                              onChange={(e) => setExamForm(prev => ({ ...prev, tyt_geometri_correct: Math.max(0, Math.min(10, parseInt(e.target.value) || 0)) }))}
+                              className="w-full border border-green-200 rounded px-2 py-1 text-sm"
+                              min="0" max="10"
                             />
                           </div>
                           <div>
-                            <label className="block text-sm text-orange-700 mb-1">Yanlış</label>
+                            <label className="block text-sm text-green-700 mb-1">Yanlış</label>
                             <input
                               type="number"
-                              value={examForm.tyt_fen_wrong}
-                              onChange={(e) => setExamForm(prev => ({ ...prev, tyt_fen_wrong: Math.max(0, Math.min(20, parseInt(e.target.value) || 0)) }))}
-                              className="w-full border border-orange-200 rounded px-2 py-1 text-sm"
-                              min="0" max="20"
+                              value={examForm.tyt_geometri_wrong}
+                              onChange={(e) => setExamForm(prev => ({ ...prev, tyt_geometri_wrong: Math.max(0, Math.min(10, parseInt(e.target.value) || 0)) }))}
+                              className="w-full border border-green-200 rounded px-2 py-1 text-sm"
+                              min="0" max="10"
                             />
                           </div>
                         </div>
-                        <div className="mt-2 text-sm text-orange-600">
-                          Net: {(examForm.tyt_fen_correct - examForm.tyt_fen_wrong / 4).toFixed(1)}
+                        <div className="mt-2 text-sm text-green-600">
+                          Net: {(examForm.tyt_geometri_correct - examForm.tyt_geometri_wrong / 4).toFixed(1)}
                         </div>
                       </div>
 
-                      {/* Sosyal Bilimler */}
+                      {/* Tarih */}
                       <div className="border rounded-lg p-4 bg-purple-50">
                         <h5 className="font-medium text-purple-800 mb-3 flex items-center">
-                          🏛️ Sosyal Bilimler (24 Soru)
+                          📜 Tarih (5)
                         </h5>
                         <div className="grid grid-cols-2 gap-3">
                           <div>
                             <label className="block text-sm text-purple-700 mb-1">Doğru</label>
                             <input
                               type="number"
-                              value={examForm.tyt_sosyal_correct}
-                              onChange={(e) => setExamForm(prev => ({ ...prev, tyt_sosyal_correct: Math.max(0, Math.min(24, parseInt(e.target.value) || 0)) }))}
+                              value={examForm.tyt_tarih_correct}
+                              onChange={(e) => setExamForm(prev => ({ ...prev, tyt_tarih_correct: Math.max(0, Math.min(5, parseInt(e.target.value) || 0)) }))}
                               className="w-full border border-purple-200 rounded px-2 py-1 text-sm"
-                              min="0" max="24"
+                              min="0" max="5"
                             />
                           </div>
                           <div>
                             <label className="block text-sm text-purple-700 mb-1">Yanlış</label>
                             <input
                               type="number"
-                              value={examForm.tyt_sosyal_wrong}
-                              onChange={(e) => setExamForm(prev => ({ ...prev, tyt_sosyal_wrong: Math.max(0, Math.min(24, parseInt(e.target.value) || 0)) }))}
+                              value={examForm.tyt_tarih_wrong}
+                              onChange={(e) => setExamForm(prev => ({ ...prev, tyt_tarih_wrong: Math.max(0, Math.min(5, parseInt(e.target.value) || 0)) }))}
                               className="w-full border border-purple-200 rounded px-2 py-1 text-sm"
-                              min="0" max="24"
+                              min="0" max="5"
                             />
                           </div>
                         </div>
                         <div className="mt-2 text-sm text-purple-600">
-                          Net: {(examForm.tyt_sosyal_correct - examForm.tyt_sosyal_wrong / 4).toFixed(1)}
+                          Net: {(examForm.tyt_tarih_correct - examForm.tyt_tarih_wrong / 4).toFixed(1)}
+                        </div>
+                      </div>
+
+                      {/* Coğrafya */}
+                      <div className="border rounded-lg p-4 bg-purple-50">
+                        <h5 className="font-medium text-purple-800 mb-3 flex items-center">
+                          🌍 Coğrafya (5)
+                        </h5>
+                        <div className="grid grid-cols-2 gap-3">
+                          <div>
+                            <label className="block text-sm text-purple-700 mb-1">Doğru</label>
+                            <input
+                              type="number"
+                              value={examForm.tyt_cografya_correct}
+                              onChange={(e) => setExamForm(prev => ({ ...prev, tyt_cografya_correct: Math.max(0, Math.min(5, parseInt(e.target.value) || 0)) }))}
+                              className="w-full border border-purple-200 rounded px-2 py-1 text-sm"
+                              min="0" max="5"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm text-purple-700 mb-1">Yanlış</label>
+                            <input
+                              type="number"
+                              value={examForm.tyt_cografya_wrong}
+                              onChange={(e) => setExamForm(prev => ({ ...prev, tyt_cografya_wrong: Math.max(0, Math.min(5, parseInt(e.target.value) || 0)) }))}
+                              className="w-full border border-purple-200 rounded px-2 py-1 text-sm"
+                              min="0" max="5"
+                            />
+                          </div>
+                        </div>
+                        <div className="mt-2 text-sm text-purple-600">
+                          Net: {(examForm.tyt_cografya_correct - examForm.tyt_cografya_wrong / 4).toFixed(1)}
+                        </div>
+                      </div>
+
+                      {/* Felsefe */}
+                      <div className="border rounded-lg p-4 bg-purple-50">
+                        <h5 className="font-medium text-purple-800 mb-3 flex items-center">
+                          🤔 Felsefe (5)
+                        </h5>
+                        <div className="grid grid-cols-2 gap-3">
+                          <div>
+                            <label className="block text-sm text-purple-700 mb-1">Doğru</label>
+                            <input
+                              type="number"
+                              value={examForm.tyt_felsefe_correct}
+                              onChange={(e) => setExamForm(prev => ({ ...prev, tyt_felsefe_correct: Math.max(0, Math.min(5, parseInt(e.target.value) || 0)) }))}
+                              className="w-full border border-purple-200 rounded px-2 py-1 text-sm"
+                              min="0" max="5"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm text-purple-700 mb-1">Yanlış</label>
+                            <input
+                              type="number"
+                              value={examForm.tyt_felsefe_wrong}
+                              onChange={(e) => setExamForm(prev => ({ ...prev, tyt_felsefe_wrong: Math.max(0, Math.min(5, parseInt(e.target.value) || 0)) }))}
+                              className="w-full border border-purple-200 rounded px-2 py-1 text-sm"
+                              min="0" max="5"
+                            />
+                          </div>
+                        </div>
+                        <div className="mt-2 text-sm text-purple-600">
+                          Net: {(examForm.tyt_felsefe_correct - examForm.tyt_felsefe_wrong / 4).toFixed(1)}
+                        </div>
+                      </div>
+
+                      {/* Din Bilgisi */}
+                      <div className="border rounded-lg p-4 bg-purple-50">
+                        <h5 className="font-medium text-purple-800 mb-3 flex items-center">
+                          🕌 Din Bilgisi (5)
+                        </h5>
+                        <div className="grid grid-cols-2 gap-3">
+                          <div>
+                            <label className="block text-sm text-purple-700 mb-1">Doğru</label>
+                            <input
+                              type="number"
+                              value={examForm.tyt_din_correct}
+                              onChange={(e) => setExamForm(prev => ({ ...prev, tyt_din_correct: Math.max(0, Math.min(5, parseInt(e.target.value) || 0)) }))}
+                              className="w-full border border-purple-200 rounded px-2 py-1 text-sm"
+                              min="0" max="5"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm text-purple-700 mb-1">Yanlış</label>
+                            <input
+                              type="number"
+                              value={examForm.tyt_din_wrong}
+                              onChange={(e) => setExamForm(prev => ({ ...prev, tyt_din_wrong: Math.max(0, Math.min(5, parseInt(e.target.value) || 0)) }))}
+                              className="w-full border border-purple-200 rounded px-2 py-1 text-sm"
+                              min="0" max="5"
+                            />
+                          </div>
+                        </div>
+                        <div className="mt-2 text-sm text-purple-600">
+                          Net: {(examForm.tyt_din_correct - examForm.tyt_din_wrong / 4).toFixed(1)}
+                        </div>
+                      </div>
+
+                      {/* Fizik */}
+                      <div className="border rounded-lg p-4 bg-orange-50">
+                        <h5 className="font-medium text-orange-800 mb-3 flex items-center">
+                          ⚡ Fizik (7)
+                        </h5>
+                        <div className="grid grid-cols-2 gap-3">
+                          <div>
+                            <label className="block text-sm text-orange-700 mb-1">Doğru</label>
+                            <input
+                              type="number"
+                              value={examForm.tyt_fizik_correct}
+                              onChange={(e) => setExamForm(prev => ({ ...prev, tyt_fizik_correct: Math.max(0, Math.min(7, parseInt(e.target.value) || 0)) }))}
+                              className="w-full border border-orange-200 rounded px-2 py-1 text-sm"
+                              min="0" max="7"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm text-orange-700 mb-1">Yanlış</label>
+                            <input
+                              type="number"
+                              value={examForm.tyt_fizik_wrong}
+                              onChange={(e) => setExamForm(prev => ({ ...prev, tyt_fizik_wrong: Math.max(0, Math.min(7, parseInt(e.target.value) || 0)) }))}
+                              className="w-full border border-orange-200 rounded px-2 py-1 text-sm"
+                              min="0" max="7"
+                            />
+                          </div>
+                        </div>
+                        <div className="mt-2 text-sm text-orange-600">
+                          Net: {(examForm.tyt_fizik_correct - examForm.tyt_fizik_wrong / 4).toFixed(1)}
+                        </div>
+                      </div>
+
+                      {/* Kimya */}
+                      <div className="border rounded-lg p-4 bg-orange-50">
+                        <h5 className="font-medium text-orange-800 mb-3 flex items-center">
+                          🧪 Kimya (7)
+                        </h5>
+                        <div className="grid grid-cols-2 gap-3">
+                          <div>
+                            <label className="block text-sm text-orange-700 mb-1">Doğru</label>
+                            <input
+                              type="number"
+                              value={examForm.tyt_kimya_correct}
+                              onChange={(e) => setExamForm(prev => ({ ...prev, tyt_kimya_correct: Math.max(0, Math.min(7, parseInt(e.target.value) || 0)) }))}
+                              className="w-full border border-orange-200 rounded px-2 py-1 text-sm"
+                              min="0" max="7"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm text-orange-700 mb-1">Yanlış</label>
+                            <input
+                              type="number"
+                              value={examForm.tyt_kimya_wrong}
+                              onChange={(e) => setExamForm(prev => ({ ...prev, tyt_kimya_wrong: Math.max(0, Math.min(7, parseInt(e.target.value) || 0)) }))}
+                              className="w-full border border-orange-200 rounded px-2 py-1 text-sm"
+                              min="0" max="7"
+                            />
+                          </div>
+                        </div>
+                        <div className="mt-2 text-sm text-orange-600">
+                          Net: {(examForm.tyt_kimya_correct - examForm.tyt_kimya_wrong / 4).toFixed(1)}
+                        </div>
+                      </div>
+
+                      {/* Biyoloji */}
+                      <div className="border rounded-lg p-4 bg-orange-50">
+                        <h5 className="font-medium text-orange-800 mb-3 flex items-center">
+                          🧬 Biyoloji (6)
+                        </h5>
+                        <div className="grid grid-cols-2 gap-3">
+                          <div>
+                            <label className="block text-sm text-orange-700 mb-1">Doğru</label>
+                            <input
+                              type="number"
+                              value={examForm.tyt_biyoloji_correct}
+                              onChange={(e) => setExamForm(prev => ({ ...prev, tyt_biyoloji_correct: Math.max(0, Math.min(6, parseInt(e.target.value) || 0)) }))}
+                              className="w-full border border-orange-200 rounded px-2 py-1 text-sm"
+                              min="0" max="6"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm text-orange-700 mb-1">Yanlış</label>
+                            <input
+                              type="number"
+                              value={examForm.tyt_biyoloji_wrong}
+                              onChange={(e) => setExamForm(prev => ({ ...prev, tyt_biyoloji_wrong: Math.max(0, Math.min(6, parseInt(e.target.value) || 0)) }))}
+                              className="w-full border border-orange-200 rounded px-2 py-1 text-sm"
+                              min="0" max="6"
+                            />
+                          </div>
+                        </div>
+                        <div className="mt-2 text-sm text-orange-600">
+                          Net: {(examForm.tyt_biyoloji_correct - examForm.tyt_biyoloji_wrong / 4).toFixed(1)}
                         </div>
                       </div>
                     </div>
@@ -2370,12 +2802,67 @@ export default function CoachPage() {
                     <div className="bg-gradient-to-r from-indigo-50 to-blue-50 border border-indigo-200 rounded-lg p-4">
                       <div className="text-center">
                         <h5 className="font-bold text-indigo-800 text-lg">TYT Toplam Net</h5>
+                        <div className="grid grid-cols-4 gap-4 mb-4">
+                          {/* Türkçe */}
+                          <div>
+                            <div className="text-sm font-medium text-blue-800">Türkçe</div>
+                            <div className="text-lg font-bold text-blue-600">
+                              {(examForm.tyt_turkce_correct - examForm.tyt_turkce_wrong / 4).toFixed(1)}
+                            </div>
+                          </div>
+                          
+                          {/* Matematik */}
+                          <div>
+                            <div className="text-sm font-medium text-green-800">Matematik</div>
+                            <div className="text-lg font-bold text-green-600">
+                              {(
+                                (examForm.tyt_matematik_correct - examForm.tyt_matematik_wrong / 4) +
+                                (examForm.tyt_geometri_correct - examForm.tyt_geometri_wrong / 4)
+                              ).toFixed(1)}
+                            </div>
+                          </div>
+                          
+                          {/* Sosyal */}
+                          <div>
+                            <div className="text-sm font-medium text-purple-800">Sosyal</div>
+                            <div className="text-lg font-bold text-purple-600">
+                              {(
+                                (examForm.tyt_tarih_correct - examForm.tyt_tarih_wrong / 4) +
+                                (examForm.tyt_cografya_correct - examForm.tyt_cografya_wrong / 4) +
+                                (examForm.tyt_felsefe_correct - examForm.tyt_felsefe_wrong / 4) +
+                                (examForm.tyt_din_correct - examForm.tyt_din_wrong / 4)
+                              ).toFixed(1)}
+                            </div>
+                          </div>
+                          
+                          {/* Fen */}
+                          <div>
+                            <div className="text-sm font-medium text-orange-800">Fen</div>
+                            <div className="text-lg font-bold text-orange-600">
+                              {(
+                                (examForm.tyt_fizik_correct - examForm.tyt_fizik_wrong / 4) +
+                                (examForm.tyt_kimya_correct - examForm.tyt_kimya_wrong / 4) +
+                                (examForm.tyt_biyoloji_correct - examForm.tyt_biyoloji_wrong / 4)
+                              ).toFixed(1)}
+                            </div>
+                          </div>
+                        </div>
                         <div className="text-2xl font-bold text-indigo-600 mt-1">
                           {(
+                            // Türkçe
                             (examForm.tyt_turkce_correct - examForm.tyt_turkce_wrong / 4) +
+                            // Matematik
                             (examForm.tyt_matematik_correct - examForm.tyt_matematik_wrong / 4) +
-                            (examForm.tyt_fen_correct - examForm.tyt_fen_wrong / 4) +
-                            (examForm.tyt_sosyal_correct - examForm.tyt_sosyal_wrong / 4)
+                            (examForm.tyt_geometri_correct - examForm.tyt_geometri_wrong / 4) +
+                            // Sosyal
+                            (examForm.tyt_tarih_correct - examForm.tyt_tarih_wrong / 4) +
+                            (examForm.tyt_cografya_correct - examForm.tyt_cografya_wrong / 4) +
+                            (examForm.tyt_felsefe_correct - examForm.tyt_felsefe_wrong / 4) +
+                            (examForm.tyt_din_correct - examForm.tyt_din_wrong / 4) +
+                            // Fen
+                            (examForm.tyt_fizik_correct - examForm.tyt_fizik_wrong / 4) +
+                            (examForm.tyt_kimya_correct - examForm.tyt_kimya_wrong / 4) +
+                            (examForm.tyt_biyoloji_correct - examForm.tyt_biyoloji_wrong / 4)
                           ).toFixed(1)}
                         </div>
                       </div>
@@ -2390,19 +2877,19 @@ export default function CoachPage() {
                       📝 AYT Sınav Sonuçları
                     </h4>
                     
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       {/* AYT Matematik */}
                       <div className="border rounded-lg p-4 bg-blue-50">
-                        <h5 className="font-medium text-blue-800 mb-3">🔢 Matematik (40)</h5>
+                        <h5 className="font-medium text-blue-800 mb-3">🔢 Matematik (30)</h5>
                         <div className="grid grid-cols-2 gap-2">
                           <div>
                             <label className="block text-xs text-blue-700 mb-1">Doğru</label>
                             <input
                               type="number"
                               value={examForm.ayt_matematik_correct}
-                              onChange={(e) => setExamForm(prev => ({ ...prev, ayt_matematik_correct: Math.max(0, Math.min(40, parseInt(e.target.value) || 0)) }))}
+                              onChange={(e) => setExamForm(prev => ({ ...prev, ayt_matematik_correct: Math.max(0, Math.min(30, parseInt(e.target.value) || 0)) }))}
                               className="w-full border border-blue-200 rounded px-2 py-1 text-sm"
-                              min="0" max="40"
+                              min="0" max="30"
                             />
                           </div>
                           <div>
@@ -2410,9 +2897,9 @@ export default function CoachPage() {
                             <input
                               type="number"
                               value={examForm.ayt_matematik_wrong}
-                              onChange={(e) => setExamForm(prev => ({ ...prev, ayt_matematik_wrong: Math.max(0, Math.min(40, parseInt(e.target.value) || 0)) }))}
+                              onChange={(e) => setExamForm(prev => ({ ...prev, ayt_matematik_wrong: Math.max(0, Math.min(30, parseInt(e.target.value) || 0)) }))}
                               className="w-full border border-blue-200 rounded px-2 py-1 text-sm"
-                              min="0" max="40"
+                              min="0" max="30"
                             />
                           </div>
                         </div>
@@ -2421,243 +2908,33 @@ export default function CoachPage() {
                         </div>
                       </div>
 
-                      {/* Fizik */}
+                      {/* Geometri */}
                       <div className="border rounded-lg p-4 bg-green-50">
-                        <h5 className="font-medium text-green-800 mb-3">⚛️ Fizik (14)</h5>
+                        <h5 className="font-medium text-green-800 mb-3">📐 Geometri (10)</h5>
                         <div className="grid grid-cols-2 gap-2">
                           <div>
                             <label className="block text-xs text-green-700 mb-1">Doğru</label>
                             <input
                               type="number"
-                              value={examForm.ayt_fizik_correct}
-                              onChange={(e) => setExamForm(prev => ({ ...prev, ayt_fizik_correct: Math.max(0, Math.min(14, parseInt(e.target.value) || 0)) }))}
+                              value={examForm.ayt_geometri_correct}
+                              onChange={(e) => setExamForm(prev => ({ ...prev, ayt_geometri_correct: Math.max(0, Math.min(10, parseInt(e.target.value) || 0)) }))}
                               className="w-full border border-green-200 rounded px-2 py-1 text-sm"
-                              min="0" max="14"
+                              min="0" max="10"
                             />
                           </div>
                           <div>
                             <label className="block text-xs text-green-700 mb-1">Yanlış</label>
                             <input
                               type="number"
-                              value={examForm.ayt_fizik_wrong}
-                              onChange={(e) => setExamForm(prev => ({ ...prev, ayt_fizik_wrong: Math.max(0, Math.min(14, parseInt(e.target.value) || 0)) }))}
+                              value={examForm.ayt_geometri_wrong}
+                              onChange={(e) => setExamForm(prev => ({ ...prev, ayt_geometri_wrong: Math.max(0, Math.min(10, parseInt(e.target.value) || 0)) }))}
                               className="w-full border border-green-200 rounded px-2 py-1 text-sm"
-                              min="0" max="14"
+                              min="0" max="10"
                             />
                           </div>
                         </div>
                         <div className="mt-2 text-sm text-green-600">
-                          Net: {(examForm.ayt_fizik_correct - examForm.ayt_fizik_wrong / 4).toFixed(1)}
-                        </div>
-                      </div>
-
-                      {/* Kimya */}
-                      <div className="border rounded-lg p-4 bg-yellow-50">
-                        <h5 className="font-medium text-yellow-800 mb-3">🧪 Kimya (13)</h5>
-                        <div className="grid grid-cols-2 gap-2">
-                          <div>
-                            <label className="block text-xs text-yellow-700 mb-1">Doğru</label>
-                            <input
-                              type="number"
-                              value={examForm.ayt_kimya_correct}
-                              onChange={(e) => setExamForm(prev => ({ ...prev, ayt_kimya_correct: Math.max(0, Math.min(13, parseInt(e.target.value) || 0)) }))}
-                              className="w-full border border-yellow-200 rounded px-2 py-1 text-sm"
-                              min="0" max="13"
-                            />
-                          </div>
-                          <div>
-                            <label className="block text-xs text-yellow-700 mb-1">Yanlış</label>
-                            <input
-                              type="number"
-                              value={examForm.ayt_kimya_wrong}
-                              onChange={(e) => setExamForm(prev => ({ ...prev, ayt_kimya_wrong: Math.max(0, Math.min(13, parseInt(e.target.value) || 0)) }))}
-                              className="w-full border border-yellow-200 rounded px-2 py-1 text-sm"
-                              min="0" max="13"
-                            />
-                          </div>
-                        </div>
-                        <div className="mt-2 text-sm text-yellow-600">
-                          Net: {(examForm.ayt_kimya_correct - examForm.ayt_kimya_wrong / 4).toFixed(1)}
-                        </div>
-                      </div>
-
-                      {/* Biyoloji */}
-                      <div className="border rounded-lg p-4 bg-emerald-50">
-                        <h5 className="font-medium text-emerald-800 mb-3">🌱 Biyoloji (13)</h5>
-                        <div className="grid grid-cols-2 gap-2">
-                          <div>
-                            <label className="block text-xs text-emerald-700 mb-1">Doğru</label>
-                            <input
-                              type="number"
-                              value={examForm.ayt_biyoloji_correct}
-                              onChange={(e) => setExamForm(prev => ({ ...prev, ayt_biyoloji_correct: Math.max(0, Math.min(13, parseInt(e.target.value) || 0)) }))}
-                              className="w-full border border-emerald-200 rounded px-2 py-1 text-sm"
-                              min="0" max="13"
-                            />
-                          </div>
-                          <div>
-                            <label className="block text-xs text-emerald-700 mb-1">Yanlış</label>
-                            <input
-                              type="number"
-                              value={examForm.ayt_biyoloji_wrong}
-                              onChange={(e) => setExamForm(prev => ({ ...prev, ayt_biyoloji_wrong: Math.max(0, Math.min(13, parseInt(e.target.value) || 0)) }))}
-                              className="w-full border border-emerald-200 rounded px-2 py-1 text-sm"
-                              min="0" max="13"
-                            />
-                          </div>
-                        </div>
-                        <div className="mt-2 text-sm text-emerald-600">
-                          Net: {(examForm.ayt_biyoloji_correct - examForm.ayt_biyoloji_wrong / 4).toFixed(1)}
-                        </div>
-                      </div>
-
-                      {/* Edebiyat */}
-                      <div className="border rounded-lg p-4 bg-purple-50">
-                        <h5 className="font-medium text-purple-800 mb-3">📖 Edebiyat (24)</h5>
-                        <div className="grid grid-cols-2 gap-2">
-                          <div>
-                            <label className="block text-xs text-purple-700 mb-1">Doğru</label>
-                            <input
-                              type="number"
-                              value={examForm.ayt_edebiyat_correct}
-                              onChange={(e) => setExamForm(prev => ({ ...prev, ayt_edebiyat_correct: Math.max(0, Math.min(24, parseInt(e.target.value) || 0)) }))}
-                              className="w-full border border-purple-200 rounded px-2 py-1 text-sm"
-                              min="0" max="24"
-                            />
-                          </div>
-                          <div>
-                            <label className="block text-xs text-purple-700 mb-1">Yanlış</label>
-                            <input
-                              type="number"
-                              value={examForm.ayt_edebiyat_wrong}
-                              onChange={(e) => setExamForm(prev => ({ ...prev, ayt_edebiyat_wrong: Math.max(0, Math.min(24, parseInt(e.target.value) || 0)) }))}
-                              className="w-full border border-purple-200 rounded px-2 py-1 text-sm"
-                              min="0" max="24"
-                            />
-                          </div>
-                        </div>
-                        <div className="mt-2 text-sm text-purple-600">
-                          Net: {(examForm.ayt_edebiyat_correct - examForm.ayt_edebiyat_wrong / 4).toFixed(1)}
-                        </div>
-                      </div>
-
-                      {/* Tarih */}
-                      <div className="border rounded-lg p-4 bg-orange-50">
-                        <h5 className="font-medium text-orange-800 mb-3">🏛️ Tarih (10)</h5>
-                        <div className="grid grid-cols-2 gap-2">
-                          <div>
-                            <label className="block text-xs text-orange-700 mb-1">Doğru</label>
-                            <input
-                              type="number"
-                              value={examForm.ayt_tarih_correct}
-                              onChange={(e) => setExamForm(prev => ({ ...prev, ayt_tarih_correct: Math.max(0, Math.min(10, parseInt(e.target.value) || 0)) }))}
-                              className="w-full border border-orange-200 rounded px-2 py-1 text-sm"
-                              min="0" max="10"
-                            />
-                          </div>
-                          <div>
-                            <label className="block text-xs text-orange-700 mb-1">Yanlış</label>
-                            <input
-                              type="number"
-                              value={examForm.ayt_tarih_wrong}
-                              onChange={(e) => setExamForm(prev => ({ ...prev, ayt_tarih_wrong: Math.max(0, Math.min(10, parseInt(e.target.value) || 0)) }))}
-                              className="w-full border border-orange-200 rounded px-2 py-1 text-sm"
-                              min="0" max="10"
-                            />
-                          </div>
-                        </div>
-                        <div className="mt-2 text-sm text-orange-600">
-                          Net: {(examForm.ayt_tarih_correct - examForm.ayt_tarih_wrong / 4).toFixed(1)}
-                        </div>
-                      </div>
-
-                      {/* Coğrafya */}
-                      <div className="border rounded-lg p-4 bg-teal-50">
-                        <h5 className="font-medium text-teal-800 mb-3">🌍 Coğrafya (6)</h5>
-                        <div className="grid grid-cols-2 gap-2">
-                          <div>
-                            <label className="block text-xs text-teal-700 mb-1">Doğru</label>
-                            <input
-                              type="number"
-                              value={examForm.ayt_cografya_correct}
-                              onChange={(e) => setExamForm(prev => ({ ...prev, ayt_cografya_correct: Math.max(0, Math.min(6, parseInt(e.target.value) || 0)) }))}
-                              className="w-full border border-teal-200 rounded px-2 py-1 text-sm"
-                              min="0" max="6"
-                            />
-                          </div>
-                          <div>
-                            <label className="block text-xs text-teal-700 mb-1">Yanlış</label>
-                            <input
-                              type="number"
-                              value={examForm.ayt_cografya_wrong}
-                              onChange={(e) => setExamForm(prev => ({ ...prev, ayt_cografya_wrong: Math.max(0, Math.min(6, parseInt(e.target.value) || 0)) }))}
-                              className="w-full border border-teal-200 rounded px-2 py-1 text-sm"
-                              min="0" max="6"
-                            />
-                          </div>
-                        </div>
-                        <div className="mt-2 text-sm text-teal-600">
-                          Net: {(examForm.ayt_cografya_correct - examForm.ayt_cografya_wrong / 4).toFixed(1)}
-                        </div>
-                      </div>
-
-                      {/* Felsefe */}
-                      <div className="border rounded-lg p-4 bg-indigo-50">
-                        <h5 className="font-medium text-indigo-800 mb-3">🤔 Felsefe (12)</h5>
-                        <div className="grid grid-cols-2 gap-2">
-                          <div>
-                            <label className="block text-xs text-indigo-700 mb-1">Doğru</label>
-                            <input
-                              type="number"
-                              value={examForm.ayt_felsefe_correct}
-                              onChange={(e) => setExamForm(prev => ({ ...prev, ayt_felsefe_correct: Math.max(0, Math.min(12, parseInt(e.target.value) || 0)) }))}
-                              className="w-full border border-indigo-200 rounded px-2 py-1 text-sm"
-                              min="0" max="12"
-                            />
-                          </div>
-                          <div>
-                            <label className="block text-xs text-indigo-700 mb-1">Yanlış</label>
-                            <input
-                              type="number"
-                              value={examForm.ayt_felsefe_wrong}
-                              onChange={(e) => setExamForm(prev => ({ ...prev, ayt_felsefe_wrong: Math.max(0, Math.min(12, parseInt(e.target.value) || 0)) }))}
-                              className="w-full border border-indigo-200 rounded px-2 py-1 text-sm"
-                              min="0" max="12"
-                            />
-                          </div>
-                        </div>
-                        <div className="mt-2 text-sm text-indigo-600">
-                          Net: {(examForm.ayt_felsefe_correct - examForm.ayt_felsefe_wrong / 4).toFixed(1)}
-                        </div>
-                      </div>
-
-                      {/* Din */}
-                      <div className="border rounded-lg p-4 bg-rose-50">
-                        <h5 className="font-medium text-rose-800 mb-3">☪️ Din (6)</h5>
-                        <div className="grid grid-cols-2 gap-2">
-                          <div>
-                            <label className="block text-xs text-rose-700 mb-1">Doğru</label>
-                            <input
-                              type="number"
-                              value={examForm.ayt_din_correct}
-                              onChange={(e) => setExamForm(prev => ({ ...prev, ayt_din_correct: Math.max(0, Math.min(6, parseInt(e.target.value) || 0)) }))}
-                              className="w-full border border-rose-200 rounded px-2 py-1 text-sm"
-                              min="0" max="6"
-                            />
-                          </div>
-                          <div>
-                            <label className="block text-xs text-rose-700 mb-1">Yanlış</label>
-                            <input
-                              type="number"
-                              value={examForm.ayt_din_wrong}
-                              onChange={(e) => setExamForm(prev => ({ ...prev, ayt_din_wrong: Math.max(0, Math.min(6, parseInt(e.target.value) || 0)) }))}
-                              className="w-full border border-rose-200 rounded px-2 py-1 text-sm"
-                              min="0" max="6"
-                            />
-                          </div>
-                        </div>
-                        <div className="mt-2 text-sm text-rose-600">
-                          Net: {(examForm.ayt_din_correct - examForm.ayt_din_wrong / 4).toFixed(1)}
+                          Net: {(examForm.ayt_geometri_correct - examForm.ayt_geometri_wrong / 4).toFixed(1)}
                         </div>
                       </div>
                     </div>
@@ -2669,18 +2946,234 @@ export default function CoachPage() {
                         <div className="text-2xl font-bold text-purple-600 mt-1">
                           {(
                             (examForm.ayt_matematik_correct - examForm.ayt_matematik_wrong / 4) +
-                            (examForm.ayt_fizik_correct - examForm.ayt_fizik_wrong / 4) +
-                            (examForm.ayt_kimya_correct - examForm.ayt_kimya_wrong / 4) +
-                            (examForm.ayt_biyoloji_correct - examForm.ayt_biyoloji_wrong / 4) +
-                            (examForm.ayt_edebiyat_correct - examForm.ayt_edebiyat_wrong / 4) +
-                            (examForm.ayt_tarih_correct - examForm.ayt_tarih_wrong / 4) +
-                            (examForm.ayt_cografya_correct - examForm.ayt_cografya_wrong / 4) +
-                            (examForm.ayt_felsefe_correct - examForm.ayt_felsefe_wrong / 4) +
-                            (examForm.ayt_din_correct - examForm.ayt_din_wrong / 4)
+                            (examForm.ayt_geometri_correct - examForm.ayt_geometri_wrong / 4)
                           ).toFixed(1)}
                         </div>
                       </div>
                     </div>
+                  </div>
+                )}
+
+                {/* Tarama Scores */}
+                {examModalTab === 'Tarama' && (
+                  <div className="mt-6 space-y-4">
+                    <h4 className="font-medium text-gray-800 flex items-center">
+                      🔍 Tarama Sınav Sonuçları
+                    </h4>
+
+                    {/* Add New Lesson - Simplified */}
+                    <div className="border rounded-lg p-4 bg-green-50">
+                      <h5 className="font-medium text-green-800 mb-3 flex items-center">
+                        ➕ Ders Ekle
+                      </h5>
+                      <div className="flex flex-col md:flex-row md:items-end gap-3">
+                        <div>
+                          <label className="block text-sm text-green-700 mb-1">Ders</label>
+                          <select
+                            value={selectedTaramaSubject}
+                            onChange={e => setSelectedTaramaSubject(e.target.value)}
+                            className="w-full border border-green-200 rounded px-2 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                          >
+                            <option value="">Ders Seçiniz</option>
+                            {['Türkçe', 'Matematik', 'Geometri', 'Tarih', 'Coğrafya', 'Felsefe', 'Din Bilgisi', 'Fizik', 'Kimya', 'Biyoloji']
+                              .filter(subject => !examForm.tarama_lessons.some(lesson => lesson.subject === subject))
+                              .map(subject => (
+                                <option key={subject} value={subject}>{subject}</option>
+                              ))}
+                          </select>
+                        </div>
+                        <div>
+                          <label className="block text-sm text-green-700 mb-1">Soru Sayısı</label>
+                          <input
+                            type="number"
+                            min={1}
+                            max={100}
+                            value={selectedTaramaQuestionCount}
+                            onChange={e => setSelectedTaramaQuestionCount(Math.max(1, Math.min(100, parseInt(e.target.value) || 1)))}
+                            className="w-full border border-green-200 rounded px-2 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                          />
+                        </div>
+                        <div className="pt-5 md:pt-0">
+                          <button
+                            type="button"
+                            className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50"
+                            disabled={!selectedTaramaSubject || !selectedTaramaQuestionCount || examForm.tarama_lessons.some(lesson => lesson.subject === selectedTaramaSubject)}
+                            onClick={() => {
+                              if (!selectedTaramaSubject || !selectedTaramaQuestionCount) return;
+                              const newLesson = {
+                                subject: selectedTaramaSubject,
+                                question_count: selectedTaramaQuestionCount,
+                                correct: 0,
+                                wrong: 0
+                              };
+                              setExamForm(prev => ({
+                                ...prev,
+                                tarama_lessons: [...prev.tarama_lessons, newLesson]
+                              }));
+                              setSelectedTaramaSubject('');
+                              setSelectedTaramaQuestionCount(10);
+                            }}
+                          >
+                            Ekle
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Lesson Cards - TYT Style */}
+                    {examForm.tarama_lessons.length > 0 && (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {examForm.tarama_lessons.map((lesson, index) => {
+                          // Get subject icon
+                          const getSubjectIcon = (subject: string) => {
+                            switch(subject) {
+                              case 'Türkçe': return '📘'
+                              case 'Matematik': return '🔢'
+                              case 'Geometri': return '📐'
+                              case 'Tarih': return '📜'
+                              case 'Coğrafya': return '🌍'
+                              case 'Felsefe': return '🤔'
+                              case 'Din Bilgisi': return '☪️'
+                              case 'Fizik': return '⚡'
+                              case 'Kimya': return '🧪'
+                              case 'Biyoloji': return '🧬'
+                              default: return '📚'
+                            }
+                          }
+
+                          // Get subject color
+                          const getSubjectColor = (subject: string) => {
+                            switch(subject) {
+                              case 'Türkçe': return 'blue'
+                              case 'Matematik': return 'green'
+                              case 'Geometri': return 'green'
+                              case 'Tarih': return 'purple'
+                              case 'Coğrafya': return 'purple'
+                              case 'Felsefe': return 'purple'
+                              case 'Din Bilgisi': return 'purple'
+                              case 'Fizik': return 'orange'
+                              case 'Kimya': return 'orange'
+                              case 'Biyoloji': return 'orange'
+                              default: return 'gray'
+                            }
+                          }
+
+                          const color = getSubjectColor(lesson.subject)
+                          
+                          return (
+                            <div key={index} className={`border rounded-lg p-4 bg-${color}-50 relative`}>
+                              <button
+                                onClick={() => {
+                                  setExamForm(prev => ({
+                                    ...prev,
+                                    tarama_lessons: prev.tarama_lessons.filter((_, i) => i !== index)
+                                  }))
+                                }}
+                                className="absolute top-2 right-2 text-red-500 hover:text-red-700 p-1"
+                                title="Dersi Kaldır"
+                              >
+                                ✕
+                              </button>
+                              
+                              <h5 className={`font-medium text-${color}-800 mb-3 flex items-center`}>
+                                {getSubjectIcon(lesson.subject)} {lesson.subject} ({lesson.question_count})
+                              </h5>
+                              
+                              <div className="grid grid-cols-2 gap-3 mb-3">
+                                <div>
+                                  <label className={`block text-sm text-${color}-700 mb-1`}>Doğru</label>
+                                  <input
+                                    type="number"
+                                    value={lesson.correct}
+                                    onChange={(e) => {
+                                      const newCorrect = Math.max(0, Math.min(lesson.question_count, parseInt(e.target.value) || 0))
+                                      setExamForm(prev => ({
+                                        ...prev,
+                                        tarama_lessons: prev.tarama_lessons.map((l, i) => 
+                                          i === index ? { ...l, correct: newCorrect } : l
+                                        )
+                                      }))
+                                    }}
+                                    className={`w-full border border-${color}-200 rounded px-2 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-${color}-500`}
+                                    min="0"
+                                    max={lesson.question_count}
+                                    placeholder="0"
+                                  />
+                                </div>
+                                <div>
+                                  <label className={`block text-sm text-${color}-700 mb-1`}>Yanlış</label>
+                                  <input
+                                    type="number"
+                                    value={lesson.wrong}
+                                    onChange={(e) => {
+                                      const newWrong = Math.max(0, Math.min(lesson.question_count, parseInt(e.target.value) || 0))
+                                      setExamForm(prev => ({
+                                        ...prev,
+                                        tarama_lessons: prev.tarama_lessons.map((l, i) => 
+                                          i === index ? { ...l, wrong: newWrong } : l
+                                        )
+                                      }))
+                                    }}
+                                    className={`w-full border border-${color}-200 rounded px-2 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-${color}-500`}
+                                    min="0"
+                                    max={lesson.question_count}
+                                    placeholder="0"
+                                  />
+                                </div>
+                              </div>
+                              
+                              <div className={`mt-2 text-sm text-${color}-600`}>
+                                Net: {(lesson.correct - lesson.wrong / 4).toFixed(1)}
+                              </div>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    )}
+
+                    {/* Tarama Summary */}
+                    {examForm.tarama_lessons.length > 0 && (
+                      <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-lg p-4">
+                        <div className="text-center">
+                          <h5 className="font-bold text-green-800 text-lg mb-3">
+                            Tarama Sınavı Özeti
+                          </h5>
+                          <div className="grid grid-cols-4 gap-4 mb-4">
+                            <div>
+                              <div className="text-sm font-medium text-gray-800">Toplam Ders</div>
+                              <div className="text-lg font-bold text-gray-600">
+                                {examForm.tarama_lessons.length}
+                              </div>
+                            </div>
+                            <div>
+                              <div className="text-sm font-medium text-blue-800">Toplam Doğru</div>
+                              <div className="text-lg font-bold text-blue-600">
+                                {examForm.tarama_lessons.reduce((sum, lesson) => sum + lesson.correct, 0)}
+                              </div>
+                            </div>
+                            <div>
+                              <div className="text-sm font-medium text-red-800">Toplam Yanlış</div>
+                              <div className="text-lg font-bold text-red-600">
+                                {examForm.tarama_lessons.reduce((sum, lesson) => sum + lesson.wrong, 0)}
+                              </div>
+                            </div>
+                            <div>
+                              <div className="text-sm font-medium text-green-800">Toplam Net</div>
+                              <div className="text-2xl font-bold text-green-600">
+                                {examForm.tarama_lessons.reduce((sum, lesson) => sum + (lesson.correct - lesson.wrong / 4), 0).toFixed(1)}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {examForm.tarama_lessons.length === 0 && (
+                      <div className="text-center py-8 text-gray-500">
+                        <div className="text-4xl mb-2">📚</div>
+                        <p>Henüz ders eklenmedi. Yukarıdaki dropdown'dan ders seçerek başlayın.</p>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
@@ -2710,7 +3203,8 @@ export default function CoachPage() {
               </button>
               <button
                 onClick={editingExam ? updateExamResult : createExamResult}
-                disabled={!selectedStudent || !examForm.exam_name.trim() || !examForm.exam_date}
+                disabled={!selectedStudent || !examForm.exam_name.trim() || !examForm.exam_date || 
+                  (examForm.exam_type === 'Tarama' && examForm.tarama_lessons.length === 0)}
                 className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {editingExam ? 'Sınav Sonucunu Güncelle' : 'Sınav Sonucunu Kaydet'}
@@ -2802,30 +3296,12 @@ export default function CoachPage() {
                           Profil Fotoğrafı
                         </label>
                         <div className="flex items-center space-x-4">
-                          <div className="relative">
-                            <div className="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center overflow-hidden">
-                              {avatarPreview || profile?.avatar_url ? (
-                                <img
-                                  src={avatarPreview || profile?.avatar_url}
-                                  alt="Avatar"
-                                  className="w-full h-full object-cover"
-                                />
-                              ) : (
-                                <span className="text-2xl font-medium text-blue-600">
-                                  {profile?.full_name?.charAt(0)?.toUpperCase() || 'K'}
-                                </span>
-                              )}
-                            </div>
-                            <label className="absolute bottom-0 right-0 bg-blue-600 text-white rounded-full p-1.5 cursor-pointer hover:bg-blue-700 transition-colors">
-                              <Camera className="h-3 w-3" />
-                              <input
-                                type="file"
-                                accept="image/*"
-                                onChange={handleAvatarUpload}
-                                className="hidden"
-                              />
-                            </label>
-                          </div>
+                          <ProfileAvatar
+                            src={avatarPreview || profile?.avatar_url}
+                            fallback={profile?.full_name}
+                            onUpload={(file: File) => handleAvatarUpload({ target: { files: [file] } } as any)}
+                            onRemove={handleRemoveAvatar}
+                          />
                           <div className="text-sm text-gray-600">
                             <p>JPG, PNG veya GIF formatında</p>
                             <p>Maksimum 5MB</p>
@@ -3154,230 +3630,216 @@ export default function CoachPage() {
               </div>
             </div>
 
-            {/* Weekly Calendar Grid - Responsive Card Layout */}
-            {selectedStudent ? (
-              <div className="flex-1 bg-slate-100 p-3 rounded-lg min-h-0 overflow-y-auto">
-                <div className="grid gap-4 weekly-calendar-grid h-fit">
-              {weekDates.map((date, index) => {
-                const dayTasks = getTasksForDay(date)
-                const completedTasks = dayTasks.filter(t => t.status === 'completed').length
-                const totalTasks = dayTasks.length
-                
-                return (
-                  <div key={index} className="day-card flex flex-col bg-white rounded-xl shadow-md border border-gray-300 hover:shadow-xl transition-all duration-200 overflow-hidden">
-                    {/* Day Header - New Clean Design */}
-                    <div className="day-header bg-gradient-to-br from-slate-50 to-gray-100 border-b border-gray-200">
-                      {/* Top row: Date | Day Name | Plus Button */}
-                      <div className="flex items-center justify-between px-3 py-2">
-                        {/* Left: Date */}
-                        <div className="text-xs text-slate-500 font-medium">
-                          {formatDate(date)}
-                        </div>
-                        
-                        {/* Center: Day Name */}
-                        <div className="text-sm font-semibold text-slate-700">
-                          {dayNames[index]}
-                        </div>
-                        
-                        {/* Right: Add Task Button - Only show for coaches */}
-                        {userRole === 'coach' && (
-                          <button
-                            disabled={!selectedStudent}
-                            onClick={() => openTaskModal(date)}
-                            className="text-blue-600 hover:text-blue-800 hover:bg-blue-50 p-1.5 rounded-full transition-colors group disabled:opacity-50 disabled:cursor-not-allowed"
-                            title="Görev Ekle"
-                          >
-                            <Plus className="h-3.5 w-3.5" />
-                          </button>
-                        )}
-                      </div>
-                      
-                      {/* Bottom row: Completion status centered */}
-                      <div className="flex justify-center pb-2">
-                        <div className="text-xs">
-                          {totalTasks > 0 ? (
-                            <span className="bg-blue-500 text-white px-2 py-0.5 rounded-full text-xs font-medium shadow-sm">
-                              {completedTasks}/{totalTasks}
-                            </span>
-                          ) : (
-                            <span className="text-slate-400 text-xs">Görev yok</span>
+            {/* Weekly Calendar Grid - Container Query Layout */}
+            <div className="flex-1 bg-slate-100 p-3 rounded-lg min-h-0 overflow-y-auto" style={{ containerType: 'inline-size', containerName: 'calendar-container' }}>
+              <div className="weekly-calendar-grid h-fit">
+                {weekDates.map((date, index) => {
+                  const dayTasks = getTasksForDay(date)
+                  const completedTasks = dayTasks.filter(t => t.status === 'completed').length
+                  const totalTasks = dayTasks.length
+                  
+                  return (
+                    <div key={index} className="day-card flex flex-col bg-white rounded-xl shadow-md border border-gray-300 hover:shadow-xl transition-all duration-200 overflow-hidden">
+                      {/* Day Header - New Clean Design */}
+                      <div className="day-header bg-gradient-to-br from-slate-50 to-gray-100 border-b border-gray-200">
+                        {/* Top row: Date | Day Name | Plus Button */}
+                        <div className="flex items-center justify-between px-3 py-2">
+                          {/* Left: Date */}
+                          <div className="text-xs text-slate-500 font-medium">
+                            {formatDate(date)}
+                          </div>
+                          
+                          {/* Center: Day Name */}
+                          <div className="text-sm font-semibold text-slate-700">
+                            {dayNames[index]}
+                          </div>
+                          
+                          {/* Right: Add Task Button - Only show for coaches */}
+                          {userRole === 'coach' && (
+                            <button
+                              disabled={!selectedStudent}
+                              onClick={() => openTaskModal(date)}
+                              className="text-blue-600 hover:text-blue-800 hover:bg-blue-50 p-1.5 rounded-full transition-colors group disabled:opacity-50 disabled:cursor-not-allowed"
+                              title="Görev Ekle"
+                            >
+                              <Plus className="h-3.5 w-3.5" />
+                            </button>
                           )}
                         </div>
+                        
+                        {/* Bottom row: Completion status centered */}
+                        <div className="flex justify-center pb-2">
+                          <div className="text-xs">
+                            {totalTasks > 0 ? (
+                              <span className="bg-blue-500 text-white px-2 py-0.5 rounded-full text-xs font-medium shadow-sm">
+                                {completedTasks}/{totalTasks}
+                              </span>
+                            ) : (
+                              <span className="text-slate-400 text-xs">Görev yok</span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                      
+                      {/* Day Content - More space for tasks */}
+                      <div className="space-y-2.5 p-3 min-h-0 overflow-y-auto">
+                        
+                        {/* Task Cards */}
+                        {dayTasks.map((task) => {
+                          const subject = subjects.find(s => s.id === task.subject_id)
+                          const topic = topics.find(t => t.id === task.topic_id)
+                          const resource = resources.find(r => r.id === task.resource_id)
+                          
+                          // Define task type colors and styles - Improved Completion Design
+                          const getTaskTypeStyle = (taskType: string, isCompleted: boolean) => {
+                            const baseStyle = "p-3 border-l-4 rounded-lg transition-all hover:shadow-md cursor-pointer border border-gray-200"
+                            
+                            if (isCompleted) {
+                              // Completed tasks: Gray background with green accent and checkmark pattern
+                              return `${baseStyle} border-l-green-500 bg-gray-100 opacity-90 border-gray-300 relative`
+                            }
+                            
+                            switch (taskType) {
+                              case 'study':
+                                return `${baseStyle} border-l-blue-500 bg-blue-50 hover:bg-blue-100 hover:border-blue-300`
+                              case 'practice':
+                                return `${baseStyle} border-l-orange-500 bg-orange-50 hover:bg-orange-100 hover:border-orange-300`
+                              case 'exam':
+                                return `${baseStyle} border-l-red-500 bg-red-50 hover:bg-red-100 hover:border-red-300`
+                              case 'review':
+                                return `${baseStyle} border-l-purple-500 bg-purple-50 hover:bg-purple-100 hover:border-purple-300`
+                              case 'resource':
+                                return `${baseStyle} border-l-indigo-500 bg-indigo-50 hover:bg-indigo-100 hover:border-indigo-300`
+                              default:
+                                return `${baseStyle} border-l-gray-500 bg-gray-50 hover:bg-gray-100 hover:border-gray-300`
+                            }
+                          }
+                          
+                          return (
+                            <div 
+                              key={task.id} 
+                              onClick={() => handleTaskClick(task)}
+                              className={`task-card group ${getTaskTypeStyle(task.task_type, task.status === 'completed')}`}
+                            >
+                              <div className="flex items-start justify-between mb-1">
+                                <div className="flex items-center space-x-1">
+                                  {task.task_type === 'study' && <BookOpen className="h-3 w-3 text-blue-600" />}
+                                  {task.task_type === 'practice' && <Calculator className="h-3 w-3 text-orange-600" />}
+                                  {task.task_type === 'exam' && <FileText className="h-3 w-3 text-red-600" />}
+                                  {task.task_type === 'review' && <BarChart3 className="h-3 w-3 text-purple-600" />}
+                                  {task.task_type === 'resource' && <Link className="h-3 w-3 text-indigo-600" />}
+                                  <span className="text-xs font-semibold text-gray-700">
+                                    {task.task_type === 'study' ? 'ÇALIŞMA' :
+                                     task.task_type === 'practice' ? 'SORU ÇÖZ' :
+                                     task.task_type === 'exam' ? 'SINAV' :
+                                     task.task_type === 'resource' ? 'KAYNAK' : 'TEKRAR'}
+                                  </span>
+                                </div>
+                                <div className="flex items-center space-x-1">
+                                  {/* Edit and Delete Buttons - Only show for coaches */}
+                                  {userRole === 'coach' && (
+                                    <>
+                                      {/* Edit Button */}
+                                      <button
+                                        onClick={(e) => openEditModal(task, e)}
+                                        className="p-1 hover:bg-white hover:bg-opacity-50 rounded opacity-0 group-hover:opacity-100 transition-opacity"
+                                        title="Düzenle"
+                                      >
+                                        <Edit className="h-3 w-3 text-gray-600 hover:text-blue-600" />
+                                      </button>
+                                      {/* Delete Button */}
+                                      <button
+                                        onClick={(e) => deleteTask(task, e)}
+                                        className="p-1 hover:bg-white hover:bg-opacity-50 rounded opacity-0 group-hover:opacity-100 transition-opacity"
+                                        title="Sil"
+                                      >
+                                        <Trash2 className="h-3 w-3 text-gray-600 hover:text-red-600" />
+                                      </button>
+                                    </>
+                                  )}
+                                  {/* Completion Status */}
+                                  {task.status === 'completed' ? (
+                                    <CheckCircle className="h-4 w-4 text-green-600" />
+                                  ) : (
+                                    <div className="h-4 w-4 border-2 border-gray-400 rounded-full hover:border-gray-600 transition-colors"></div>
+                                  )}
+                                </div>
+                              </div>
+                              
+                              {/* Show resource, subject-topic, or custom title */}
+                              {resource ? (
+                                <div className="text-xs text-indigo-700 mb-1 font-medium">
+                                  <span 
+                                    onClick={(e) => {
+                                      e.stopPropagation()
+                                      window.open(resource.url, '_blank')
+                                    }}
+                                    className="cursor-pointer hover:underline"
+                                  >
+                                    {resource.name}
+                                  </span>
+                                  <span className="text-gray-600 ml-1">({resource.category.toUpperCase()})</span>
+                                </div>
+                              ) : (subject || topic) ? (
+                                <div className="text-xs text-gray-700 mb-1 font-medium">
+                                  {subject && topic ? `${subject.name} - ${topic.name}` :
+                                   subject ? subject.name :
+                                   topic ? topic.name : ''}
+                                </div>
+                              ) : task.title !== 'Görev' && (
+                                <div className={`text-xs font-medium mb-1 line-clamp-2 ${
+                                  task.status === 'completed' ? 'text-gray-600 line-through' : 'text-gray-800'
+                                }`}>
+                                  {task.title}
+                                </div>
+                              )}
+
+                              {/* Show task description if it exists and is not empty */}
+                              {task.description && task.description.trim() && (
+                                <div className={`text-xs mb-1 line-clamp-2 ${
+                                  task.status === 'completed' ? 'text-gray-500' : 'text-gray-600'
+                                }`}>
+                                  {task.description}
+                                </div>
+                              )}
+                              
+                              {/* Problem count on separate line if exists */}
+                              {task.task_type === 'practice' && task.problem_count && (
+                                <div className="flex items-center space-x-1 text-xs text-orange-700 mb-1 font-medium">
+                                  <Calculator className="h-3 w-3" />
+                                  <span>{task.problem_count} soru</span>
+                                </div>
+                              )}
+                              
+                              {/* Time and duration at the bottom */}
+                              <div className="flex items-center justify-between text-xs text-gray-600">
+                                <div className="flex items-center space-x-1">
+                                  <Clock className="h-3 w-3" />
+                                  <span className="font-medium">
+                                    {task.scheduled_start_time || '--:--'}
+                                  </span>
+                                </div>
+                                <div className="flex items-center space-x-1">
+                                  <Timer className="h-3 w-3" />
+                                  <span className="font-medium">{task.estimated_duration}dk</span>
+                                </div>
+                              </div>
+                            </div>
+                          )
+                        })}
                       </div>
                     </div>
-                    
-                    {/* Day Content - More space for tasks */}
-                    <div className="space-y-2.5 p-3 min-h-0 overflow-y-auto">
-                      
-                      {/* Task Cards */}
-                      {dayTasks.map((task) => {
-                        const subject = subjects.find(s => s.id === task.subject_id)
-                        const topic = topics.find(t => t.id === task.topic_id)
-                        const resource = resources.find(r => r.id === task.resource_id)
-                        
-                        // Define task type colors and styles - Improved Completion Design
-                        const getTaskTypeStyle = (taskType: string, isCompleted: boolean) => {
-                          const baseStyle = "p-3 border-l-4 rounded-lg transition-all hover:shadow-md cursor-pointer border border-gray-200"
-                          
-                          if (isCompleted) {
-                            // Completed tasks: Gray background with green accent and checkmark pattern
-                            return `${baseStyle} border-l-green-500 bg-gray-100 opacity-90 border-gray-300 relative`
-                          }
-                          
-                          switch (taskType) {
-                            case 'study':
-                              return `${baseStyle} border-l-blue-500 bg-blue-50 hover:bg-blue-100 hover:border-blue-300`
-                            case 'practice':
-                              return `${baseStyle} border-l-orange-500 bg-orange-50 hover:bg-orange-100 hover:border-orange-300`
-                            case 'exam':
-                              return `${baseStyle} border-l-red-500 bg-red-50 hover:bg-red-100 hover:border-red-300`
-                            case 'review':
-                              return `${baseStyle} border-l-purple-500 bg-purple-50 hover:bg-purple-100 hover:border-purple-300`
-                            case 'resource':
-                              return `${baseStyle} border-l-indigo-500 bg-indigo-50 hover:bg-indigo-100 hover:border-indigo-300`
-                            default:
-                              return `${baseStyle} border-l-gray-500 bg-gray-50 hover:bg-gray-100 hover:border-gray-300`
-                          }
-                        }
-                        
-                        return (
-                          <div 
-                            key={task.id} 
-                            onClick={() => handleTaskClick(task)}
-                            className={`task-card group ${getTaskTypeStyle(task.task_type, task.status === 'completed')}`}
-                          >
-                            <div className="flex items-start justify-between mb-1">
-                              <div className="flex items-center space-x-1">
-                                {task.task_type === 'study' && <BookOpen className="h-3 w-3 text-blue-600" />}
-                                {task.task_type === 'practice' && <Calculator className="h-3 w-3 text-orange-600" />}
-                                {task.task_type === 'exam' && <FileText className="h-3 w-3 text-red-600" />}
-                                {task.task_type === 'review' && <BarChart3 className="h-3 w-3 text-purple-600" />}
-                                {task.task_type === 'resource' && <Link className="h-3 w-3 text-indigo-600" />}
-                                <span className="text-xs font-semibold text-gray-700">
-                                  {task.task_type === 'study' ? 'ÇALIŞMA' :
-                                   task.task_type === 'practice' ? 'SORU ÇÖZ' :
-                                   task.task_type === 'exam' ? 'SINAV' :
-                                   task.task_type === 'resource' ? 'KAYNAK' : 'TEKRAR'}
-                                </span>
-                              </div>
-                              <div className="flex items-center space-x-1">
-                                {/* Edit and Delete Buttons - Only show for coaches */}
-                                {userRole === 'coach' && (
-                                  <>
-                                    {/* Edit Button */}
-                                    <button
-                                      onClick={(e) => openEditModal(task, e)}
-                                      className="p-1 hover:bg-white hover:bg-opacity-50 rounded opacity-0 group-hover:opacity-100 transition-opacity"
-                                      title="Düzenle"
-                                    >
-                                      <Edit className="h-3 w-3 text-gray-600 hover:text-blue-600" />
-                                    </button>
-                                    {/* Delete Button */}
-                                    <button
-                                      onClick={(e) => deleteTask(task, e)}
-                                      className="p-1 hover:bg-white hover:bg-opacity-50 rounded opacity-0 group-hover:opacity-100 transition-opacity"
-                                      title="Sil"
-                                    >
-                                      <Trash2 className="h-3 w-3 text-gray-600 hover:text-red-600" />
-                                    </button>
-                                  </>
-                                )}
-                                {/* Completion Status */}
-                                {task.status === 'completed' ? (
-                                  <CheckCircle className="h-4 w-4 text-green-600" />
-                                ) : (
-                                  <div className="h-4 w-4 border-2 border-gray-400 rounded-full hover:border-gray-600 transition-colors"></div>
-                                )}
-                              </div>
-                            </div>
-                            
-                            {/* Show resource, subject-topic, or custom title */}
-                            {resource ? (
-                              <div className="text-xs text-indigo-700 mb-1 font-medium">
-                                <span 
-                                  onClick={(e) => {
-                                    e.stopPropagation()
-                                    window.open(resource.url, '_blank')
-                                  }}
-                                  className="cursor-pointer hover:underline"
-                                >
-                                  {resource.name}
-                                </span>
-                                <span className="text-gray-600 ml-1">({resource.category.toUpperCase()})</span>
-                              </div>
-                            ) : (subject || topic) ? (
-                              <div className="text-xs text-gray-700 mb-1 font-medium">
-                                {subject && topic ? `${subject.name} - ${topic.name}` :
-                                 subject ? subject.name :
-                                 topic ? topic.name : ''}
-                              </div>
-                            ) : task.title !== 'Görev' && (
-                              <div className={`text-xs font-medium mb-1 line-clamp-2 ${
-                                task.status === 'completed' ? 'text-gray-600 line-through' : 'text-gray-800'
-                              }`}>
-                                {task.title}
-                              </div>
-                            )}
-
-                            {/* Show task description if it exists and is not empty */}
-                            {task.description && task.description.trim() && (
-                              <div className={`text-xs mb-1 line-clamp-2 ${
-                                task.status === 'completed' ? 'text-gray-500' : 'text-gray-600'
-                              }`}>
-                                {task.description}
-                              </div>
-                            )}
-                            
-                            {/* Problem count on separate line if exists */}
-                            {task.task_type === 'practice' && task.problem_count && (
-                              <div className="flex items-center space-x-1 text-xs text-orange-700 mb-1 font-medium">
-                                <Calculator className="h-3 w-3" />
-                                <span>{task.problem_count} soru</span>
-                              </div>
-                            )}
-                            
-                            {/* Time and duration at the bottom */}
-                            <div className="flex items-center justify-between text-xs text-gray-600">
-                              <div className="flex items-center space-x-1">
-                                <Clock className="h-3 w-3" />
-                                <span className="font-medium">
-                                  {task.scheduled_start_time || '--:--'}
-                                </span>
-                              </div>
-                              <div className="flex items-center space-x-1">
-                                <Timer className="h-3 w-3" />
-                                <span className="font-medium">{task.estimated_duration}dk</span>
-                              </div>
-                            </div>
-                          </div>
-                        )
-                      })}
-                    </div>
-                  </div>
-                )
-              })}
-                </div>
+                  )
+                })}
               </div>
-            ) : (
-              <div className="flex-1 flex items-center justify-center">
-                <div className="text-center py-12 bg-white rounded-lg shadow-sm border border-gray-200">
-                  <Calendar className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">
-                    Öğrenci Seçin
-                  </h3>
-                  <p className="text-sm text-gray-500">
-                    Haftalık programı görüntülemek için yukarıdan bir öğrenci seçin.
-                  </p>
-                </div>
-              </div>
-            )}
-           </div>
-           </ResizablePanel>
+            </div>
+          </div>
+        </ResizablePanel>
 
-           <ResizableHandle withHandle />
+        <ResizableHandle withHandle />
 
-           {/* Right Panel - Tabbed Interface */}
-           <ResizablePanel defaultSize={25} minSize={20} maxSize={40} className="bg-white">
+        {/* Right Panel - Tabbed Interface */}
+        <ResizablePanel defaultSize={25} minSize={20} maxSize={40} className="bg-white">
           <div className="h-full flex flex-col pb-6">
             {/* Tab Headers */}
             <div className="border-b">
@@ -3410,189 +3872,418 @@ export default function CoachPage() {
             <div className="flex-1 p-4 overflow-y-auto">
               {activeTab === 'statistics' && (
                 <div className="space-y-6 mb-6">
-                  <h3 className="font-semibold text-gray-900 flex items-center">
-                    📊 Gelişim İstatistikleri
-                  </h3>
+                  <div className="flex items-center justify-between">
+                    <h3 className="font-semibold text-gray-900 flex items-center">
+                      📊 Gelişim İstatistikleri
+                    </h3>
+                    <div className="flex items-center space-x-2">
+                      <span className={`text-sm ${!showMonthlyStats ? 'text-blue-600 font-medium' : 'text-gray-500'}`}>Haftalık</span>
+                      <button
+                        onClick={() => setShowMonthlyStats(!showMonthlyStats)}
+                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                          showMonthlyStats ? 'bg-blue-600' : 'bg-gray-200'
+                        }`}
+                      >
+                        <span
+                          className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                            showMonthlyStats ? 'translate-x-6' : 'translate-x-1'
+                          }`}
+                        />
+                      </button>
+                      <span className={`text-sm ${showMonthlyStats ? 'text-blue-600 font-medium' : 'text-gray-500'}`}>Aylık</span>
+                    </div>
+                  </div>
                   {selectedStudent ? (
                     <div className="space-y-6">
                       {/* Progress Overview Cards */}
                       <div className="grid grid-cols-1 gap-4">
+                        {/* Completion Rate Card */}
                         <div className="p-4 bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-lg">
                           <div className="flex items-center justify-between mb-3">
                             <div className="text-sm font-medium text-green-800">
-                              Bu Hafta Tamamlanan
+                              {showMonthlyStats ? 'Bu Ay' : 'Bu Hafta'} Tamamlanan
                             </div>
                             <div className="text-green-600">✓</div>
                           </div>
                           <div className="text-3xl font-bold text-green-700 mb-2">
-                            {Math.round((weeklyTasks.filter(t => t.status === 'completed').length / Math.max(weeklyTasks.length, 1)) * 100)}%
+                            {Math.round((weeklyTasks.filter(t => {
+                              const taskDate = new Date(t.scheduled_date);
+                              if (showMonthlyStats) {
+                                const monthStart = new Date(currentWeek);
+                                monthStart.setDate(1);
+                                const monthEnd = new Date(monthStart);
+                                monthEnd.setMonth(monthStart.getMonth() + 1);
+                                monthEnd.setDate(0);
+                                return taskDate >= monthStart && taskDate <= monthEnd && t.status === 'completed';
+                              } else {
+                                const weekStart = getWeekStart(currentWeek);
+                                const weekEnd = new Date(weekStart);
+                                weekEnd.setDate(weekStart.getDate() + 6);
+                                return taskDate >= weekStart && taskDate <= weekEnd && t.status === 'completed';
+                              }
+                            }).length / Math.max(weeklyTasks.length, 1)) * 100)}%
                           </div>
                           <div className="text-xs text-green-600 mb-3">
-                            {weeklyTasks.filter(t => t.status === 'completed').length}/{weeklyTasks.length} görev
+                            {weeklyTasks.filter(t => {
+                              const taskDate = new Date(t.scheduled_date);
+                              if (showMonthlyStats) {
+                                const monthStart = new Date(currentWeek);
+                                monthStart.setDate(1);
+                                const monthEnd = new Date(monthStart);
+                                monthEnd.setMonth(monthStart.getMonth() + 1);
+                                monthEnd.setDate(0);
+                                return taskDate >= monthStart && taskDate <= monthEnd && t.status === 'completed';
+                              } else {
+                                const weekStart = getWeekStart(currentWeek);
+                                const weekEnd = new Date(weekStart);
+                                weekEnd.setDate(weekStart.getDate() + 6);
+                                return taskDate >= weekStart && taskDate <= weekEnd && t.status === 'completed';
+                              }
+                            }).length}/{weeklyTasks.length} görev
                           </div>
                           {/* Progress Bar */}
                           <div className="w-full bg-green-200 rounded-full h-2">
                             <div 
                               className="bg-green-500 h-2 rounded-full transition-all duration-300"
                               style={{
-                                width: `${Math.round((weeklyTasks.filter(t => t.status === 'completed').length / Math.max(weeklyTasks.length, 1)) * 100)}%`
+                                width: `${Math.round((weeklyTasks.filter(t => {
+                                  const taskDate = new Date(t.scheduled_date);
+                                  if (showMonthlyStats) {
+                                    const monthStart = new Date(currentWeek);
+                                    monthStart.setDate(1);
+                                    const monthEnd = new Date(monthStart);
+                                    monthEnd.setMonth(monthStart.getMonth() + 1);
+                                    monthEnd.setDate(0);
+                                    return taskDate >= monthStart && taskDate <= monthEnd && t.status === 'completed';
+                                  } else {
+                                    const weekStart = getWeekStart(currentWeek);
+                                    const weekEnd = new Date(weekStart);
+                                    weekEnd.setDate(weekStart.getDate() + 6);
+                                    return taskDate >= weekStart && taskDate <= weekEnd && t.status === 'completed';
+                                  }
+                                }).length / Math.max(weeklyTasks.length, 1)) * 100)}%`
                               }}
                             ></div>
                           </div>
                         </div>
-                        
+
+                        {/* Study Hours Card */}
+            <div className="p-4 bg-gradient-to-r from-blue-50 to-cyan-50 border border-blue-200 rounded-lg">
+              <div className="flex items-center justify-between mb-3">
+                <div className="text-sm font-medium text-blue-800">
+                  Toplam Çalışma Saati
+                </div>
+                <div className="text-blue-600">⏰</div>
+              </div>
+              <div className="text-3xl font-bold text-blue-700 mb-2">
+                {(() => {
+                  if (showMonthlyStats) {
+                    const monthStart = new Date(currentWeek)
+                    monthStart.setDate(1)
+                    const monthEnd = new Date(monthStart)
+                    monthEnd.setMonth(monthStart.getMonth() + 1)
+                    monthEnd.setDate(0)
+                    return Math.round(weeklyTasks.filter(t => {
+                      const taskDate = new Date(t.scheduled_date)
+                      return taskDate >= monthStart && taskDate <= monthEnd && t.status === 'completed'
+                    }).reduce((acc, t) => acc + t.estimated_duration, 0) / 60 * 10) / 10
+                  } else {
+                    return Math.round(weeklyTasks.filter(t => t.status === 'completed').reduce((acc, t) => acc + t.estimated_duration, 0) / 60 * 10) / 10
+                  }
+                })()}h
+              </div>
+              <div className="text-xs text-blue-600 mb-3">
+                {showMonthlyStats ? 'Bu ay toplam' : 'Bu hafta tahmini'}
+              </div>
+              {/* Study Hours Visualization */}
+              <div className="flex items-end space-x-1 h-8">
+                {(() => {
+                  if (showMonthlyStats) {
+                    const monthStart = new Date(currentWeek)
+                    monthStart.setDate(1)
+                    const daysInMonth = new Date(monthStart.getFullYear(), monthStart.getMonth() + 1, 0).getDate()
+                    return Array.from({length: daysInMonth}, (_, i) => {
+                      const dayDate = new Date(monthStart)
+                      dayDate.setDate(i + 1)
+                      const dayTasks = weeklyTasks.filter(t => {
+                        const taskDate = new Date(t.scheduled_date)
+                        return taskDate.toDateString() === dayDate.toDateString() && t.status === 'completed'
+                      })
+                      const dayHours = dayTasks.reduce((acc, t) => acc + t.estimated_duration, 0) / 60
+                      const maxHeight = Math.max(dayHours / 8, 0.1) // Max 8 hours scale
+                      return (
+                        <div 
+                          key={i}
+                          className="bg-blue-400 rounded-sm flex-1 transition-all duration-300"
+                          style={{ height: `${Math.min(maxHeight * 100, 100)}%` }}
+                          title={`${dayDate.getDate()} - ${dayHours.toFixed(1)} saat`}
+                        ></div>
+                      )
+                    })
+                  } else {
+                    return [1,2,3,4,5,6,7].map((day, index) => {
+                      const dayTasks = weeklyTasks.filter(t => {
+                        const taskDate = new Date(t.scheduled_date)
+                        const weekStart = getWeekStart(currentWeek)
+                        const dayDate = new Date(weekStart)
+                        dayDate.setDate(weekStart.getDate() + index)
+                        return taskDate.toDateString() === dayDate.toDateString() && t.status === 'completed'
+                      })
+                      const dayHours = dayTasks.reduce((acc, t) => acc + t.estimated_duration, 0) / 60
+                      const maxHeight = Math.max(dayHours / 8, 0.1) // Max 8 hours scale
+                      return (
+                        <div 
+                          key={index}
+                          className="bg-blue-400 rounded-sm flex-1 transition-all duration-300"
+                          style={{ height: `${Math.min(maxHeight * 100, 100)}%` }}
+                          title={`${dayHours.toFixed(1)} saat`}
+                        ></div>
+                      )
+                    })
+                  }
+                })()}
+              </div>
+            </div>
+
+                        {/* Monthly/Weekly Question Stats */}
                         <div className="p-4 bg-gradient-to-r from-blue-50 to-cyan-50 border border-blue-200 rounded-lg">
                           <div className="flex items-center justify-between mb-3">
                             <div className="text-sm font-medium text-blue-800">
-                              Toplam Çalışma Saati
+                              {showMonthlyStats ? 'Aylık' : 'Haftalık'} Çözülen Soru Miktarı
                             </div>
-                            <div className="text-blue-600">⏰</div>
+                            <div className="text-blue-600">📚</div>
                           </div>
-                          <div className="text-3xl font-bold text-blue-700 mb-2">
-                            {Math.round(weeklyTasks.filter(t => t.status === 'completed').reduce((acc, t) => acc + t.estimated_duration, 0) / 60 * 10) / 10}h
-                          </div>
-                          <div className="text-xs text-blue-600 mb-3">
-                            Bu hafta tahmini
-                          </div>
-                          {/* Study Hours Visualization */}
-                          <div className="flex items-end space-x-1 h-8">
-                            {[1,2,3,4,5,6,7].map((day, index) => {
-                              const dayTasks = weeklyTasks.filter(t => {
-                                const taskDate = new Date(t.scheduled_date)
-                                const weekStart = getWeekStart(currentWeek)
-                                const dayDate = new Date(weekStart)
-                                dayDate.setDate(weekStart.getDate() + index)
-                                return taskDate.toDateString() === dayDate.toDateString() && t.status === 'completed'
-                              })
-                              const dayHours = dayTasks.reduce((acc, t) => acc + t.estimated_duration, 0) / 60
-                              const maxHeight = Math.max(dayHours / 8, 0.1) // Max 8 hours scale
-                              return (
-                                <div 
-                                  key={index}
-                                  className="bg-blue-400 rounded-sm flex-1 transition-all duration-300"
-                                  style={{ height: `${Math.min(maxHeight * 100, 100)}%` }}
-                                  title={`${dayHours.toFixed(1)} saat`}
-                                ></div>
-                              )
-                            })}
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Task Type Distribution */}
-                      <div className="p-4 bg-gradient-to-r from-purple-50 to-indigo-50 border border-purple-200 rounded-lg">
-                        <div className="text-sm font-medium text-purple-800 mb-4 flex items-center">
-                          📈 Görev Türü Dağılımı
-                        </div>
-                        <div className="space-y-3">
-                          {(() => {
-                            const taskTypes = ['study', 'practice', 'exam', 'review', 'resource']
-                            const taskTypeNames: Record<string, string> = {
-                              'study': 'Çalışma',
-                              'practice': 'Soru Çöz',
-                              'exam': 'Sınav',
-                              'review': 'Tekrar',
-                              'resource': 'Kaynak'
-                            }
-                            const taskTypeColors: Record<string, string> = {
-                              'study': 'bg-blue-500',
-                              'practice': 'bg-green-500',
-                              'exam': 'bg-red-500',
-                              'review': 'bg-yellow-500',
-                              'resource': 'bg-indigo-500'
-                            }
-                            
-                            return taskTypes.map(type => {
-                              const count = weeklyTasks.filter(t => t.task_type === type).length
-                              const percentage = weeklyTasks.length > 0 ? (count / weeklyTasks.length) * 100 : 0
-                              
-                              if (count === 0) return null
-                              
-                              return (
-                                <div key={type} className="flex items-center">
-                                  <div className="w-16 text-xs text-purple-700 font-medium">
-                                    {taskTypeNames[type]}
-                                  </div>
-                                  <div className="flex-1 mx-3">
-                                    <div className="w-full bg-purple-200 rounded-full h-2">
-                                      <div 
-                                        className={`${taskTypeColors[type]} h-2 rounded-full transition-all duration-500`}
-                                        style={{ width: `${percentage}%` }}
-                                      ></div>
-                                    </div>
-                                  </div>
-                                  <div className="text-xs text-purple-600 w-12 text-right">
-                                    {count} ({Math.round(percentage)}%)
+                          <div className="space-y-4">
+                            {(showMonthlyStats ? calculateMonthlyStats() : calculateWeeklyStats()).map((stat, index) => (
+                              <div key={index} className="flex items-center">
+                                <div className="w-24 text-xs text-blue-700 font-medium">
+                                  {stat.subject}
+                                </div>
+                                <div className="flex-1 mx-3">
+                                  <div className="w-full bg-blue-200 rounded-full h-2">
+                                    <div 
+                                      className="bg-blue-500 h-2 rounded-full transition-all duration-500"
+                                      style={{ 
+                                        width: `${Math.min((stat.totalProblems / Math.max(...(showMonthlyStats ? calculateMonthlyStats() : calculateWeeklyStats()).map(s => s.totalProblems))) * 100, 100)}%` 
+                                      }}
+                                    ></div>
                                   </div>
                                 </div>
-                              )
-                            }).filter(Boolean)
-                          })()}
-                        </div>
-                      </div>
-
-                      {/* Weekly Performance Chart */}
-                      <div className="p-4 bg-gradient-to-r from-orange-50 to-amber-50 border border-orange-200 rounded-lg">
-                        <div className="text-sm font-medium text-orange-800 mb-4 flex items-center">
-                          📅 Haftalık Performans
-                        </div>
-                        <div className="grid grid-cols-7 gap-1 mb-2">
-                          {['Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt', 'Paz'].map((day, index) => (
-                            <div key={index} className="text-xs text-center text-orange-600 font-medium">
-                              {day}
-                            </div>
-                          ))}
-                        </div>
-                        <div className="grid grid-cols-7 gap-1">
-                          {[0,1,2,3,4,5,6].map((dayIndex) => {
-                            const weekStart = getWeekStart(currentWeek)
-                            const dayDate = new Date(weekStart)
-                            dayDate.setDate(weekStart.getDate() + dayIndex)
-                            
-                            const dayTasks = weeklyTasks.filter(t => {
-                              const taskDate = new Date(t.scheduled_date)
-                              return taskDate.toDateString() === dayDate.toDateString()
-                            })
-                            
-                            const completedTasks = dayTasks.filter(t => t.status === 'completed').length
-                            const totalTasks = dayTasks.length
-                            const completionRate = totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0
-                            
-                            let bgColor = 'bg-gray-200'
-                            if (completionRate >= 80) bgColor = 'bg-green-500'
-                            else if (completionRate >= 60) bgColor = 'bg-yellow-500'
-                            else if (completionRate >= 40) bgColor = 'bg-orange-500'
-                            else if (completionRate > 0) bgColor = 'bg-red-400'
-                            
-                            return (
-                              <div key={dayIndex} className="aspect-square">
-                                <div 
-                                  className={`w-full h-full rounded ${bgColor} flex items-center justify-center transition-all duration-300`}
-                                  title={`${completedTasks}/${totalTasks} görev (${Math.round(completionRate)}%)`}
-                                >
-                                  <span className="text-xs text-white font-bold">
-                                    {totalTasks > 0 ? Math.round(completionRate) : ''}
-                                  </span>
+                                <div className="text-xs text-blue-600 w-16 text-right">
+                                  {stat.totalProblems} soru
                                 </div>
                               </div>
-                            )
-                          })}
-                        </div>
-                        <div className="mt-3 flex items-center justify-center space-x-4 text-xs">
-                          <div className="flex items-center">
-                            <div className="w-3 h-3 bg-green-500 rounded mr-1"></div>
-                            <span className="text-orange-600">Mükemmel (80%+)</span>
-                          </div>
-                          <div className="flex items-center">
-                            <div className="w-3 h-3 bg-yellow-500 rounded mr-1"></div>
-                            <span className="text-orange-600">İyi (60%+)</span>
-                          </div>
-                          <div className="flex items-center">
-                            <div className="w-3 h-3 bg-orange-500 rounded mr-1"></div>
-                            <span className="text-orange-600">Orta (40%+)</span>
+                            ))}
+                            {(showMonthlyStats ? calculateMonthlyStats() : calculateWeeklyStats()).length === 0 && (
+                              <div className="text-center py-4 text-gray-500">
+                                <p>Henüz soru çözülmemiş.</p>
+                              </div>
+                            )}
                           </div>
                         </div>
                       </div>
+
+                      {/* Task Type Distribution - Only show in weekly view */}
+                      <div className="p-4 bg-gradient-to-r from-purple-50 to-indigo-50 border border-purple-200 rounded-lg">
+                          <div className="text-sm font-medium text-purple-800 mb-4 flex items-center">
+                            📈 Görev Türü Dağılımı
+                          </div>
+                          <div className="space-y-3">
+                            {(() => {
+                              const taskTypes = ['study', 'practice', 'exam', 'review', 'resource']
+                              const taskTypeNames: Record<string, string> = {
+                                'study': 'Çalışma',
+                                'practice': 'Soru Çöz',
+                                'exam': 'Sınav',
+                                'review': 'Tekrar',
+                                'resource': 'Kaynak'
+                              }
+                              const taskTypeColors: Record<string, string> = {
+                                'study': 'bg-blue-500',
+                                'practice': 'bg-green-500',
+                                'exam': 'bg-red-500',
+                                'review': 'bg-yellow-500',
+                                'resource': 'bg-indigo-500'
+                              }
+                              
+                              const filteredTasks = weeklyTasks.filter(t => {
+                                if (showMonthlyStats) {
+                                  const taskDate = new Date(t.scheduled_date)
+                                  const monthStart = new Date(currentWeek)
+                                  monthStart.setDate(1)
+                                  const monthEnd = new Date(monthStart)
+                                  monthEnd.setMonth(monthStart.getMonth() + 1)
+                                  monthEnd.setDate(0)
+                                  return taskDate >= monthStart && taskDate <= monthEnd
+                                } else {
+                                  const taskDate = new Date(t.scheduled_date)
+                                  const weekStart = getWeekStart(currentWeek)
+                                  const weekEnd = new Date(weekStart)
+                                  weekEnd.setDate(weekStart.getDate() + 6)
+                                  return taskDate >= weekStart && taskDate <= weekEnd
+                                }
+                              })
+                              
+                              return taskTypes.map(type => {
+                                const count = filteredTasks.filter(t => t.task_type === type).length
+                                const percentage = filteredTasks.length > 0 ? (count / filteredTasks.length) * 100 : 0
+                                
+                                if (count === 0) return null
+                                
+                                return (
+                                  <div key={type} className="flex items-center">
+                                    <div className="w-16 text-xs text-purple-700 font-medium">
+                                      {taskTypeNames[type]}
+                                    </div>
+                                    <div className="flex-1 mx-3">
+                                      <div className="w-full bg-purple-200 rounded-full h-2">
+                                        <div 
+                                          className={`${taskTypeColors[type]} h-2 rounded-full transition-all duration-500`}
+                                          style={{ width: `${percentage}%` }}
+                                        ></div>
+                                      </div>
+                                    </div>
+                                    <div className="text-xs text-purple-600 w-12 text-right">
+                                      {count} ({Math.round(percentage)}%)
+                                    </div>
+                                  </div>
+                                )
+                              }).filter(Boolean)
+                            })()}
+                          </div>
+                        </div>
+
+                      {/* Performance Chart */}
+                        <div className="p-4 bg-gradient-to-r from-orange-50 to-amber-50 border border-orange-200 rounded-lg">
+                          <div className="text-sm font-medium text-orange-800 mb-4 flex items-center">
+                            📅 {showMonthlyStats ? 'Aylık' : 'Haftalık'} Performans
+                          </div>
+                          {showMonthlyStats ? (
+                            <>
+                              <div className="grid grid-cols-7 gap-1 mb-2">
+                                {['Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt', 'Paz'].map((day, index) => (
+                                  <div key={index} className="text-xs text-center text-orange-600 font-medium">
+                                    {day}
+                                  </div>
+                                ))}
+                              </div>
+                              <div className="grid grid-cols-7 gap-1">
+                                {(() => {
+                                  const monthStart = new Date(currentWeek)
+                                  monthStart.setDate(1)
+                                  const firstDay = monthStart.getDay() || 7 // Convert Sunday (0) to 7
+                                  const daysInMonth = new Date(monthStart.getFullYear(), monthStart.getMonth() + 1, 0).getDate()
+                                  
+                                  // Add empty cells for days before the first of the month
+                                  const emptyCells = Array(firstDay - 1).fill(null)
+                                  
+                                  // Create array for all days in the month
+                                  const days = Array.from({length: daysInMonth}, (_, i) => {
+                                    const dayDate = new Date(monthStart)
+                                    dayDate.setDate(i + 1)
+                                    return dayDate
+                                  })
+                                  
+                                  // Combine empty cells and days
+                                  const allCells = [...emptyCells, ...days]
+                                  
+                                  return allCells.map((date, index) => {
+                                    if (!date) {
+                                      return <div key={`empty-${index}`} className="aspect-square" />
+                                    }
+                                    
+                                    const dayTasks = weeklyTasks.filter(t => {
+                                      const taskDate = new Date(t.scheduled_date)
+                                      return taskDate.toDateString() === date.toDateString()
+                                    })
+                                    
+                                    const completedTasks = dayTasks.filter(t => t.status === 'completed').length
+                                    const totalTasks = dayTasks.length
+                                    const completionRate = totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0
+                                    
+                                    let bgColor = 'bg-gray-200'
+                                    if (completionRate >= 80) bgColor = 'bg-green-500'
+                                    else if (completionRate >= 60) bgColor = 'bg-yellow-500'
+                                    else if (completionRate >= 40) bgColor = 'bg-orange-500'
+                                    else if (completionRate > 0) bgColor = 'bg-red-400'
+                                    
+                                    return (
+                                      <div key={date.getTime()} className="aspect-square">
+                                        <div 
+                                          className={`w-full h-full rounded ${bgColor} flex items-center justify-center transition-all duration-300`}
+                                          title={`${date.getDate()} - ${completedTasks}/${totalTasks} görev (${Math.round(completionRate)}%)`}
+                                        >
+                                          <span className="text-[10px] text-white font-bold">
+                                            {date.getDate()}
+                                          </span>
+                                        </div>
+                                      </div>
+                                    )
+                                  })
+                                })()}
+                              </div>
+                            </>
+                          ) : (
+                            <>
+                              <div className="grid grid-cols-7 gap-1 mb-2">
+                                {['Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt', 'Paz'].map((day, index) => (
+                                  <div key={index} className="text-xs text-center text-orange-600 font-medium">
+                                    {day}
+                                  </div>
+                                ))}
+                              </div>
+                              <div className="grid grid-cols-7 gap-1">
+                                {[0,1,2,3,4,5,6].map((dayIndex) => {
+                                  const weekStart = getWeekStart(currentWeek)
+                                  const dayDate = new Date(weekStart)
+                                  dayDate.setDate(weekStart.getDate() + dayIndex)
+                                  
+                                  const dayTasks = weeklyTasks.filter(t => {
+                                    const taskDate = new Date(t.scheduled_date)
+                                    return taskDate.toDateString() === dayDate.toDateString()
+                                  })
+                                  
+                                  const completedTasks = dayTasks.filter(t => t.status === 'completed').length
+                                  const totalTasks = dayTasks.length
+                                  const completionRate = totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0
+                                  
+                                  let bgColor = 'bg-gray-200'
+                                  if (completionRate >= 80) bgColor = 'bg-green-500'
+                                  else if (completionRate >= 60) bgColor = 'bg-yellow-500'
+                                  else if (completionRate >= 40) bgColor = 'bg-orange-500'
+                                  else if (completionRate > 0) bgColor = 'bg-red-400'
+                                  
+                                  return (
+                                    <div key={dayIndex} className="aspect-square">
+                                      <div 
+                                        className={`w-full h-full rounded ${bgColor} flex items-center justify-center transition-all duration-300`}
+                                        title={`${completedTasks}/${totalTasks} görev (${Math.round(completionRate)}%)`}
+                                      >
+                                        <span className="text-xs text-white font-bold">
+                                          {totalTasks > 0 ? Math.round(completionRate) : ''}
+                                        </span>
+                                      </div>
+                                    </div>
+                                  )
+                                })}
+                              </div>
+                            </>
+                          )}
+                          <div className="mt-3 flex items-center justify-center space-x-4 text-xs">
+                            <div className="flex items-center">
+                              <div className="w-3 h-3 bg-green-500 rounded mr-1"></div>
+                              <span className="text-orange-600">Mükemmel (80%+)</span>
+                            </div>
+                            <div className="flex items-center">
+                              <div className="w-3 h-3 bg-yellow-500 rounded mr-1"></div>
+                              <span className="text-orange-600">İyi (60%+)</span>
+                            </div>
+                            <div className="flex items-center">
+                              <div className="w-3 h-3 bg-orange-500 rounded mr-1"></div>
+                              <span className="text-orange-600">Orta (40%+)</span>
+                            </div>
+                          </div>
+                        </div>
                     </div>
                   ) : (
                     <div className="text-center py-12">
@@ -4068,7 +4759,9 @@ export default function CoachPage() {
                                       <span className={`px-2 py-1 text-xs rounded-full font-medium ${
                                         result.exam_type === 'TYT' 
                                           ? 'bg-blue-100 text-blue-800' 
-                                          : 'bg-purple-100 text-purple-800'
+                                          : result.exam_type === 'AYT'
+                                          ? 'bg-purple-100 text-purple-800'
+                                          : 'bg-green-100 text-green-800'
                                       }`}>
                                         {result.exam_type}
                                       </span>
@@ -4084,41 +4777,73 @@ export default function CoachPage() {
                                     <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mt-2 text-xs">
                                       {result.exam_type === 'TYT' ? (
                                         <>
+                                          {/* Türkçe */}
                                           <div className="bg-blue-50 rounded p-2">
                                             <div className="font-medium text-blue-800">Türkçe</div>
                                             <div className="text-blue-600">{result.tyt_turkce_net?.toFixed(1) || '0.0'} net</div>
                                           </div>
+                                          
+                                          {/* Matematik Group */}
                                           <div className="bg-green-50 rounded p-2">
                                             <div className="font-medium text-green-800">Matematik</div>
-                                            <div className="text-green-600">{result.tyt_matematik_net?.toFixed(1) || '0.0'} net</div>
+                                            <div className="text-green-600">{(
+                                              (result.tyt_matematik_net || 0) + 
+                                              (result.tyt_geometri_net || 0)
+                                            ).toFixed(1)} net</div>
                                           </div>
-                                          <div className="bg-orange-50 rounded p-2">
-                                            <div className="font-medium text-orange-800">Fen</div>
-                                            <div className="text-orange-600">{result.tyt_fen_net?.toFixed(1) || '0.0'} net</div>
-                                          </div>
+                                          
+                                          {/* Sosyal Group */}
                                           <div className="bg-purple-50 rounded p-2">
-                                            <div className="font-medium text-purple-800">Sosyal</div>
-                                            <div className="text-purple-600">{result.tyt_sosyal_net?.toFixed(1) || '0.0'} net</div>
+                                            <div className="font-medium text-purple-800">Sosyal Bilimler</div>
+                                            <div className="text-purple-600">{(
+                                              (result.tyt_tarih_net || 0) + 
+                                              (result.tyt_cografya_net || 0) + 
+                                              (result.tyt_felsefe_net || 0) + 
+                                              (result.tyt_din_net || 0)
+                                            ).toFixed(1)} net</div>
+                                          </div>
+                                          
+                                          {/* Fen Group */}
+                                          <div className="bg-orange-50 rounded p-2">
+                                            <div className="font-medium text-orange-800">Fen Bilimleri</div>
+                                            <div className="text-orange-600">{(
+                                              (result.tyt_fizik_net || 0) + 
+                                              (result.tyt_kimya_net || 0) + 
+                                              (result.tyt_biyoloji_net || 0)
+                                            ).toFixed(1)} net</div>
+                                          </div>
+                                        </>
+                                      ) : result.exam_type === 'AYT' ? (
+                                        <>
+                                          <div className="bg-blue-50 rounded p-2">
+                                            <div className="font-medium text-blue-800">Matematik (30)</div>
+                                            <div className="text-blue-600">{result.ayt_matematik_net?.toFixed(1) || '0.0'} net</div>
+                                          </div>
+                                          <div className="bg-green-50 rounded p-2">
+                                            <div className="font-medium text-green-800">Geometri (10)</div>
+                                            <div className="text-green-600">{result.ayt_geometri_net?.toFixed(1) || '0.0'} net</div>
+                                          </div>
+                                          <div className="bg-purple-50 rounded p-2 col-span-2">
+                                            <div className="font-medium text-purple-800">Toplam</div>
+                                            <div className="text-purple-600">{result.ayt_total_net?.toFixed(1) || '0.0'} net</div>
                                           </div>
                                         </>
                                       ) : (
                                         <>
-                                          <div className="bg-blue-50 rounded p-2">
-                                            <div className="font-medium text-blue-800">Matematik</div>
-                                            <div className="text-blue-600">{result.ayt_matematik_net?.toFixed(1) || '0.0'} net</div>
-                                          </div>
-                                          <div className="bg-green-50 rounded p-2">
-                                            <div className="font-medium text-green-800">Fen</div>
-                                            <div className="text-green-600">{result.ayt_fen_net?.toFixed(1) || '0.0'} net</div>
-                                          </div>
-                                          <div className="bg-orange-50 rounded p-2">
-                                            <div className="font-medium text-orange-800">Sosyal</div>
-                                            <div className="text-orange-600">{result.ayt_sosyal_net?.toFixed(1) || '0.0'} net</div>
-                                          </div>
-                                          <div className="bg-purple-50 rounded p-2">
-                                            <div className="font-medium text-purple-800">Toplam</div>
-                                            <div className="text-purple-600">{result.ayt_total_net?.toFixed(1) || '0.0'} net</div>
-                                          </div>
+                                          {/* Tarama - Subject and Question Count */}
+                                          {result.tarama_lessons && result.tarama_lessons.length > 0 ? (
+                                            result.tarama_lessons.map((lesson, index) => (
+                                              <div key={index} className="bg-green-50 rounded p-2 col-span-2 md:col-span-1">
+                                                <div className="font-medium text-green-800">{lesson.subject}</div>
+                                                <div className="text-xs text-gray-600">{lesson.question_count} soru</div>
+                                                <div className="text-green-600">{lesson.net.toFixed(1)} net</div>
+                                              </div>
+                                            ))
+                                          ) : (
+                                            <div className="col-span-2 md:col-span-4 bg-gray-50 rounded p-2 text-center">
+                                              <div className="text-gray-500 text-xs">Tarama ders bilgisi bulunamadı</div>
+                                            </div>
+                                          )}
                                         </>
                                       )}
                                     </div>
@@ -4126,7 +4851,12 @@ export default function CoachPage() {
                                     {/* Total Net Score */}
                                     <div className="mt-3 p-2 bg-gradient-to-r from-indigo-50 to-blue-50 rounded">
                                       <div className="text-sm font-medium text-indigo-800">
-                                        Toplam Net: {result.exam_type === 'TYT' ? result.tyt_total_net?.toFixed(1) : result.ayt_total_net?.toFixed(1) || '0.0'}
+                                        Toplam Net: {
+                                          result.exam_type === 'TYT' ? result.tyt_total_net?.toFixed(1) 
+                                          : result.exam_type === 'AYT' ? result.ayt_total_net?.toFixed(1)
+                                          : result.tarama_total_net?.toFixed(1) || 
+                                            (result.tarama_lessons?.reduce((sum, lesson) => sum + lesson.net, 0).toFixed(1)) || '0.0'
+                                        }
                                       </div>
                                     </div>
                                     
@@ -4162,7 +4892,7 @@ export default function CoachPage() {
                             <Trophy className="h-12 w-12 text-yellow-500 mx-auto mb-3" />
                             <h5 className="font-medium text-gray-900 mb-2">Henüz Sınav Sonucu Yok</h5>
                             <p className="text-sm text-gray-600 mb-4">
-                              {selectedStudent.full_name} için TYT veya AYT deneme sınav sonuçlarını buraya ekleyebilirsiniz.
+                              {selectedStudent.full_name} için TYT, AYT veya Tarama deneme sınav sonuçlarını buraya ekleyebilirsiniz.
                             </p>
                             <button
                               onClick={openExamModal}
@@ -4179,7 +4909,7 @@ export default function CoachPage() {
                         <h4 className="font-medium text-gray-800 mb-3 flex items-center">
                           📊 Sınav İstatistikleri
                         </h4>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                           {/* TYT Average */}
                           <div className="border rounded-lg p-4 bg-gradient-to-r from-blue-50 to-cyan-50">
                             <div className="text-center">
@@ -4219,6 +4949,26 @@ export default function CoachPage() {
                               </div>
                             </div>
                           </div>
+
+                          {/* Tarama Average */}
+                          <div className="border rounded-lg p-4 bg-gradient-to-r from-green-50 to-emerald-50">
+                            <div className="text-center">
+                              <div className="text-2xl font-bold text-green-700 mb-1">
+                                {mockExamResults.filter(r => r.exam_type === 'Tarama').length > 0 
+                                  ? (mockExamResults
+                                      .filter(r => r.exam_type === 'Tarama')
+                                      .reduce((acc, r) => acc + (r.tarama_total_net || (r.tarama_lessons?.reduce((sum, lesson) => sum + lesson.net, 0)) || 0), 0) / 
+                                      mockExamResults.filter(r => r.exam_type === 'Tarama').length
+                                    ).toFixed(1)
+                                  : '0.0'
+                                }
+                              </div>
+                              <div className="text-sm font-medium text-green-800">Tarama Ortalama Net</div>
+                              <div className="text-xs text-green-600 mt-1">
+                                {mockExamResults.filter(r => r.exam_type === 'Tarama').length} sınav
+                              </div>
+                            </div>
+                          </div>
                         </div>
                       </div>
                     </>
@@ -4241,40 +4991,15 @@ export default function CoachPage() {
                   
                   {selectedStudent ? (
                     <>
-                      {/* Study Tools Section - Now First */}
+                      {/* Study Tools Section */}
                       <div>
                         <h4 className="font-medium text-gray-800 mb-3 flex items-center">
                           📚 Çalışma Araçları
                         </h4>
-                        <div className="grid grid-cols-2 gap-3">
-                          <div className="border rounded-lg p-3 bg-gradient-to-br from-blue-50 to-cyan-50 cursor-pointer hover:shadow-md transition-shadow">
-                            <div className="text-center">
-                              <Calculator className="h-8 w-8 text-blue-600 mx-auto mb-2" />
-                              <div className="text-sm font-medium text-gray-900">Hesap Makinesi</div>
-                              <div className="text-xs text-gray-500 mt-1">Yakında...</div>
-                            </div>
-                          </div>
-                          <div className="border rounded-lg p-3 bg-gradient-to-br from-green-50 to-emerald-50 cursor-pointer hover:shadow-md transition-shadow">
-                            <div className="text-center">
-                              <Timer className="h-8 w-8 text-green-600 mx-auto mb-2" />
-                              <div className="text-sm font-medium text-gray-900">Pomodoro Timer</div>
-                              <div className="text-xs text-gray-500 mt-1">Yakında...</div>
-                            </div>
-                          </div>
-                          <div className="border rounded-lg p-3 bg-gradient-to-br from-purple-50 to-pink-50 cursor-pointer hover:shadow-md transition-shadow">
-                            <div className="text-center">
-                              <FileText className="h-8 w-8 text-purple-600 mx-auto mb-2" />
-                              <div className="text-sm font-medium text-gray-900">Not Defteri</div>
-                              <div className="text-xs text-gray-500 mt-1">Yakında...</div>
-                            </div>
-                          </div>
-                          <div className="border rounded-lg p-3 bg-gradient-to-br from-orange-50 to-red-50 cursor-pointer hover:shadow-md transition-shadow">
-                            <div className="text-center">
-                              <Award className="h-8 w-8 text-orange-600 mx-auto mb-2" />
-                              <div className="text-sm font-medium text-gray-900">Başarı Rozetleri</div>
-                              <div className="text-xs text-gray-500 mt-1">Yakında...</div>
-                            </div>
-                          </div>
+                        <div className="grid grid-cols-1 gap-3">
+                          <PomodoroTimer onTimerComplete={() => {
+                            // Notification is now handled within the component
+                          }} />
                         </div>
                       </div>
 

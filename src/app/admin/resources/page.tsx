@@ -36,6 +36,7 @@ interface Resource {
   created_by: string
   is_active: boolean
   created_at: string
+  difficulty_level: 'baslangic' | 'orta' | 'ileri' | 'uzman' | null
   subjects?: {
     name: string
   }
@@ -55,6 +56,7 @@ interface ResourceFormData {
   category: 'video' | 'document' | 'pdf' | 'application'
   subject_id: string
   is_active: boolean
+  difficulty_level: 'baslangic' | 'orta' | 'ileri' | 'uzman' | null
 }
 
 const resourceCategories = [
@@ -62,6 +64,13 @@ const resourceCategories = [
   { value: 'document', label: 'Doküman', icon: Description },
   { value: 'pdf', label: 'PDF', icon: PictureAsPdf },
   { value: 'application', label: 'Uygulama', icon: Apps },
+] as const
+
+const difficultyLevels = [
+  { value: 'baslangic', label: 'Başlangıç' },
+  { value: 'orta', label: 'Orta' },
+  { value: 'ileri', label: 'İleri' },
+  { value: 'uzman', label: 'Uzman' },
 ] as const
 
 export default function ResourceManagement() {
@@ -77,6 +86,7 @@ export default function ResourceManagement() {
     category: 'document',
     subject_id: '',
     is_active: true,
+    difficulty_level: null,
   })
   const [formError, setFormError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
@@ -156,6 +166,7 @@ export default function ResourceManagement() {
       category: 'document',
       subject_id: '',
       is_active: true,
+      difficulty_level: null,
     })
     setFormError(null)
     setDialogOpen(true)
@@ -171,6 +182,7 @@ export default function ResourceManagement() {
       category: resource.category,
       subject_id: resource.subject_id || '',
       is_active: resource.is_active,
+      difficulty_level: resource.difficulty_level,
     })
     setFormError(null)
     setDialogOpen(true)
@@ -213,6 +225,7 @@ export default function ResourceManagement() {
         category: formData.category,
         subject_id: formData.subject_id || null,
         is_active: formData.is_active,
+        difficulty_level: formData.difficulty_level,
       }
 
       if (editingResource) {
@@ -304,6 +317,38 @@ export default function ResourceManagement() {
           Aç
         </Button>
       ),
+    },
+    {
+      field: 'difficulty_level',
+      headerName: 'Zorluk',
+      width: 120,
+      renderCell: (params) => {
+        const level = params.value
+        if (!level) return <Typography variant="body2" color="text.secondary">-</Typography>
+        
+        const colors: Record<string, string> = {
+          baslangic: 'success',
+          orta: 'info',
+          ileri: 'warning',
+          uzman: 'error',
+        }
+        
+        const labels: Record<string, string> = {
+          baslangic: 'Başlangıç',
+          orta: 'Orta',
+          ileri: 'İleri',
+          uzman: 'Uzman',
+        }
+        
+        return (
+          <Chip 
+            label={labels[level]} 
+            color={colors[level] as any}
+            size="small"
+            variant="outlined"
+          />
+        )
+      },
     },
     {
       field: 'is_active',
@@ -461,6 +506,22 @@ export default function ResourceManagement() {
                   {subjects.map((subject) => (
                     <MenuItem key={subject.id} value={subject.id}>
                       {subject.name}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+              
+              <FormControl fullWidth margin="normal">
+                <InputLabel>Zorluk Derecesi</InputLabel>
+                <Select
+                  value={formData.difficulty_level || ''}
+                  label="Zorluk Derecesi"
+                  onChange={(e) => setFormData({ ...formData, difficulty_level: e.target.value as any })}
+                >
+                  <MenuItem value="">Belirtilmemiş</MenuItem>
+                  {difficultyLevels.map((level) => (
+                    <MenuItem key={level.value} value={level.value}>
+                      {level.label}
                     </MenuItem>
                   ))}
                 </Select>

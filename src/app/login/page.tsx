@@ -1,7 +1,6 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
 import {
   Box,
   Paper,
@@ -19,7 +18,6 @@ export default function LoginPage() {
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const router = useRouter()
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -50,23 +48,32 @@ export default function LoginPage() {
         }
 
         // Redirect based on role
+        let redirectPath = '/coach' // Default path
         switch (profile.role) {
           case 'admin':
-            router.push('/admin')
+            redirectPath = '/admin'
             break
           case 'coach':
-            router.push('/coach')
-            break
           case 'student':
-            router.push('/coach')
+            redirectPath = '/coach'
             break
           default:
             throw new Error('Geçersiz kullanıcı rolü')
         }
+
+        // Wait for session to be fully established
+        await new Promise(resolve => setTimeout(resolve, 500))
+        
+        // Use window.location for a full page load, but with a session check
+        const sessionCheck = await supabase.auth.getSession()
+        if (sessionCheck.data.session) {
+          window.location.href = redirectPath
+        } else {
+          throw new Error('Oturum başlatılamadı, lütfen tekrar deneyin')
+        }
       }
     } catch (err: any) {
       setError(err.message || 'Giriş yapılırken bir hata oluştu')
-    } finally {
       setLoading(false)
     }
   }

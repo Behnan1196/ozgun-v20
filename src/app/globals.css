@@ -181,43 +181,28 @@ body {
 .weekly-calendar-grid {
   display: grid;
   gap: 1rem;
-  /* Mobile: 1 column */
-  grid-template-columns: 1fr;
+  /* Use auto-fit with a minimum width for cards */
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
+  container-type: inline-size;
+  container-name: calendar-grid;
 }
 
-/* Progressive enhancement for larger screens */
-@media (min-width: 640px) {
+/* Progressive enhancement based on container width */
+@container calendar-grid (min-width: 640px) {
   .weekly-calendar-grid {
-    /* Tablet: 2 columns */
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
   }
 }
 
-@media (min-width: 1024px) {
+@container calendar-grid (min-width: 1024px) {
   .weekly-calendar-grid {
-    /* Desktop: 3-4 columns */
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
   }
 }
 
-@media (min-width: 1280px) {
+@container calendar-grid (min-width: 1280px) {
   .weekly-calendar-grid {
-    /* Large desktop: 4-5 columns */
-    grid-template-columns: repeat(4, 1fr);
-  }
-}
-
-@media (min-width: 1536px) {
-  .weekly-calendar-grid {
-    /* Extra large: 5-7 columns */
-    grid-template-columns: repeat(5, 1fr);
-  }
-}
-
-@media (min-width: 1920px) {
-  .weekly-calendar-grid {
-    /* Ultra wide: all 7 days */
-    grid-template-columns: repeat(7, 1fr);
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
   }
 }
 

@@ -42,8 +42,10 @@ import {
   DarkMode,
   LightMode,
   Computer,
-  Notifications
+  Notifications,
+  Delete as DeleteIcon
 } from '@mui/icons-material'
+import { ProfileAvatar } from '@/components/ui/avatar'
 import { createClient } from '@/lib/supabase/client'
 
 const drawerWidth = 240
@@ -223,9 +225,23 @@ export default function AdminLayout({ children, currentPage }: AdminLayoutProps)
     }
   }
 
+  const handleRemoveAvatar = () => {
+    setAvatarPreview(null)
+    setSettingsForm((prev: any) => ({ ...prev, avatar_url: null }))
+  }
+
   const updateProfile = async () => {
     try {
       const supabase = createClient()
+      
+      // If avatar_url is null, we need to remove the avatar from storage
+      if (profile?.avatar_url && !settingsForm.avatar_url) {
+        const avatarPath = profile.avatar_url.split('/').pop()
+        if (avatarPath) {
+          await supabase.storage.from('avatars').remove([avatarPath])
+        }
+      }
+      
       const updates = {
         full_name: settingsForm.full_name,
         phone: settingsForm.phone,
@@ -641,56 +657,12 @@ export default function AdminLayout({ children, currentPage }: AdminLayoutProps)
                           Profil Fotoğrafı
                         </label>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                          <div style={{ position: 'relative' }}>
-                            <div style={{
-                              width: '80px',
-                              height: '80px',
-                              backgroundColor: '#dbeafe',
-                              borderRadius: '50%',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              overflow: 'hidden'
-                            }}>
-                              {avatarPreview || profile?.avatar_url ? (
-                                <img
-                                  src={avatarPreview || profile?.avatar_url}
-                                  alt="Avatar"
-                                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                                />
-                              ) : (
-                                <span style={{
-                                  fontSize: '32px',
-                                  fontWeight: '500',
-                                  color: '#2563eb'
-                                }}>
-                                  {profile?.full_name?.charAt(0)?.toUpperCase() || 'A'}
-                                </span>
-                              )}
-                            </div>
-                            <label style={{
-                              position: 'absolute',
-                              bottom: '0',
-                              right: '0',
-                              backgroundColor: '#2563eb',
-                              color: 'white',
-                              borderRadius: '50%',
-                              padding: '6px',
-                              cursor: 'pointer',
-                              transition: 'background-color 0.2s'
-                            }}
-                            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#1d4ed8'}
-                            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#2563eb'}
-                            >
-                              <Camera style={{ height: '12px', width: '12px' }} />
-                              <input
-                                type="file"
-                                accept="image/*"
-                                onChange={handleAvatarUpload}
-                                style={{ display: 'none' }}
-                              />
-                            </label>
-                          </div>
+                          <ProfileAvatar
+                            src={avatarPreview || profile?.avatar_url}
+                            fallback={profile?.full_name}
+                            onUpload={(file: File) => handleAvatarUpload({ target: { files: [file] } } as any)}
+                            onRemove={handleRemoveAvatar}
+                          />
                           <div style={{ fontSize: '14px', color: '#6b7280' }}>
                             <p>JPG, PNG veya GIF formatında</p>
                             <p>Maksimum 5MB</p>

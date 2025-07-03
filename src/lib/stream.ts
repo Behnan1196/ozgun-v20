@@ -6,16 +6,30 @@
 import { StreamChat } from 'stream-chat'
 import { StreamVideoClient } from '@stream-io/video-react-sdk'
 
+// Declare global property for config check
+declare global {
+  interface Window {
+    __streamConfigChecked?: boolean;
+  }
+}
+
+// Demo configuration
+const DEMO_CONFIG = {
+  API_KEY: 'mmhfdzb5evj2',
+  API_SECRET: 'demo_secret',
+  APP_ID: 'demo_app',
+}
+
 // Stream.io configuration
 export const STREAM_CONFIG = {
-  // Demo API key (replace with your actual API key)
-  API_KEY: process.env.NEXT_PUBLIC_STREAM_API_KEY || 'mmhfdzb5evj2',
+  // Use real API key if available, otherwise use demo key
+  API_KEY: process.env.NEXT_PUBLIC_STREAM_API_KEY || DEMO_CONFIG.API_KEY,
   
   // Demo secret (only for development - never expose in production)
-  API_SECRET: process.env.STREAM_API_SECRET || 'your_secret_here',
+  API_SECRET: process.env.STREAM_API_SECRET || DEMO_CONFIG.API_SECRET,
   
   // App configuration
-  APP_ID: process.env.NEXT_PUBLIC_STREAM_APP_ID || 'your_app_id',
+  APP_ID: process.env.NEXT_PUBLIC_STREAM_APP_ID || DEMO_CONFIG.APP_ID,
 }
 
 // Create Stream Chat client
@@ -62,7 +76,7 @@ export const createStreamVideoClient = (user: { id: string; name: string }, toke
 // Generate user token
 export const generateUserToken = async (userId: string): Promise<string> => {
   // Check if we're in demo mode (no real API keys configured)
-  if (!StreamUtils.isConfigured()) {
+  if (StreamUtils.isDemoMode()) {
     // For demo purposes, we'll use a development token
     console.warn('⚠️ Using demo Stream.io setup. Configure API keys for production.')
     
@@ -147,22 +161,26 @@ export const StreamUtils = {
   
   // Check if Stream.io is properly configured (client-side)
   isConfigured: () => {
-    const hasApiKey = STREAM_CONFIG.API_KEY && STREAM_CONFIG.API_KEY !== 'mmhfdzb5evj2'
+    const hasApiKey = STREAM_CONFIG.API_KEY && STREAM_CONFIG.API_KEY !== DEMO_CONFIG.API_KEY
     
-    // Note: We can't check secret on client-side for security reasons
-    // The secret is only available on the server-side for token generation
-    console.log('🔧 Stream.io config check:', {
-      hasApiKey: !!hasApiKey,
-      apiKey: STREAM_CONFIG.API_KEY?.substring(0, 8) + '...',
-      isConfigured: !!hasApiKey
-    })
+    // Only log in development and only once, and only in browser
+    if (process.env.NODE_ENV === 'development' && 
+        typeof window !== 'undefined' && 
+        !window.__streamConfigChecked) {
+      console.log('🔧 Stream.io config check:', {
+        hasApiKey: !!hasApiKey,
+        apiKey: STREAM_CONFIG.API_KEY?.substring(0, 8) + '...',
+        isConfigured: !!hasApiKey
+      })
+      window.__streamConfigChecked = true
+    }
     
     return !!hasApiKey
   },
   
   // Get demo mode status
   isDemoMode: () => {
-    return !StreamUtils.isConfigured()
+    return STREAM_CONFIG.API_KEY === DEMO_CONFIG.API_KEY
   }
 }
 

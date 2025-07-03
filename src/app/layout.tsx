@@ -1,22 +1,22 @@
 import type { Metadata, Viewport } from 'next'
 import AppThemeProvider from '@/components/ThemeProvider'
 import { StreamProvider } from '@/contexts/StreamContext'
-import PWAInstallPrompt from '@/components/PWAInstallPrompt'
 import './globals.css'
+
+const iconDataUrl = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='192' height='192'%3E%3Crect width='24' height='24' fill='%232563eb'/%3E%3Ctext x='12' y='16' font-family='Arial' font-size='14' fill='white' text-anchor='middle'%3ET%3C/text%3E%3C/svg%3E";
 
 export const metadata: Metadata = {
   title: 'TYT-AYT Koçluk Platformu',
   description: 'TYT ve AYT sınavları için kapsamlı koçluk platformu',
   manifest: '/manifest.json',
-  themeColor: '#2563eb',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
     title: 'TYT-AYT Koçluk'
   },
   icons: {
-    icon: '/icons/icon-192x192.png',
-    apple: '/icons/icon-192x192.png'
+    icon: iconDataUrl,
+    apple: iconDataUrl
   }
 }
 
@@ -36,41 +36,17 @@ export default function RootLayout({
   return (
     <html lang="tr">
       <head>
-        {/* PWA meta tags */}
-        <link rel="manifest" href="/manifest.json" />
-        <meta name="theme-color" content="#2563eb" />
-        <link rel="apple-touch-icon" href="/icons/icon-192x192.png" />
-        <meta name="apple-mobile-web-app-capable" content="yes" />
-        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-        <meta name="apple-mobile-web-app-title" content="TYT-AYT Koçluk" />
-        <meta name="mobile-web-app-capable" content="yes" />
-        <meta name="application-name" content="TYT-AYT Koçluk" />
+        <meta charSet="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <meta name="description" content="TYT ve AYT sınavlarına hazırlık için kapsamlı koçluk platformu" />
+        <link rel="icon" href="/favicon.ico" />
       </head>
       <body>
         <AppThemeProvider>
           <StreamProvider>
             {children}
-            <PWAInstallPrompt />
           </StreamProvider>
         </AppThemeProvider>
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-              // Register service worker
-              if ('serviceWorker' in navigator) {
-                window.addEventListener('load', () => {
-                  navigator.serviceWorker.register('/sw.js')
-                    .then((registration) => {
-                      console.log('SW registered: ', registration);
-                    })
-                    .catch((registrationError) => {
-                      console.log('SW registration failed: ', registrationError);
-                    });
-                });
-              }
-            `,
-          }}
-        />
       </body>
     </html>
   )
