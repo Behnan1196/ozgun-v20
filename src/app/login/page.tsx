@@ -102,7 +102,7 @@ export default function LoginPage() {
               ÖZGÜN Koçluk
             </Typography>
             <Typography variant="body2" color="text.secondary">
-              Sistemi V1.2
+              Sistemi V1.3
             </Typography>
           </Box>
 

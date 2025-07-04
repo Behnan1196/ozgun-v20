@@ -105,6 +105,7 @@ interface Task {
   assigned_by: string
   created_at: string
   updated_at: string
+  completed_at?: string
 }
 
 interface Subject {
@@ -316,6 +317,8 @@ export default function CoachPage() {
   const [educationalLinks, setEducationalLinks] = useState<EducationalLink[]>([])
   const [loading, setLoading] = useState(true)
   const [userMenuOpen, setUserMenuOpen] = useState(false)
+  const [updatingTaskId, setUpdatingTaskId] = useState<string | null>(null)
+  const [realtimeConnected, setRealtimeConnected] = useState(false)
   const dropdownRef = React.useRef<HTMLDivElement>(null)
   const [showTaskModal, setShowTaskModal] = useState(false)
   const [taskModalDate, setTaskModalDate] = useState<Date | null>(null)
@@ -884,7 +887,7 @@ export default function CoachPage() {
     loadMockExamResults()
   }, [selectedStudent])
 
-  // Load weekly tasks
+  // Load weekly tasks with real-time updates
   useEffect(() => {
     const loadWeeklyTasks = async () => {
       if (!selectedStudent || !user) return
@@ -935,8 +938,153 @@ export default function CoachPage() {
       }
     }
 
+    // Setup real-time subscription for task updates
+    const setupRealtimeSubscription = () => {
+      if (!selectedStudent) return null
+
+      try {
+        const subscription = supabase
+          .channel(`task-updates-${selectedStudent.id}`, {
+            config: {
+              broadcast: { self: true },
+              presence: { key: user?.id }
+            }
+          })
+          .on(
+            'postgres_changes',
+            {
+              event: '*',
+              schema: 'public',
+              table: 'tasks',
+              filter: `assigned_to=eq.${selectedStudent.id}`
+            },
+            (payload) => {
+              console.log('Real-time task update:', payload)
+              
+              if (payload.eventType === 'UPDATE') {
+                setWeeklyTasks(prev => prev.map(task => 
+                  task.id === payload.new.id 
+                    ? { ...task, ...payload.new }
+                    : task
+                ))
+              } else if (payload.eventType === 'INSERT') {
+                // Check if the new task is in the current week
+                const taskDate = new Date(payload.new.scheduled_date)
+                const weekStart = getWeekStart(currentWeek)
+                const weekEnd = new Date(weekStart)
+                weekEnd.setDate(weekStart.getDate() + 6)
+                
+                if (taskDate >= weekStart && taskDate <= weekEnd) {
+                  setWeeklyTasks(prev => [...prev, payload.new as Task])
+                }
+              } else if (payload.eventType === 'DELETE') {
+                setWeeklyTasks(prev => prev.filter(task => task.id !== payload.old.id))
+              }
+            }
+          )
+          .subscribe((status) => {
+            console.log('Subscription status:', status)
+            if (status === 'SUBSCRIBED') {
+              console.log('✅ Real-time subscription active for tasks')
+              setRealtimeConnected(true)
+            } else if (status === 'CHANNEL_ERROR') {
+              console.error('❌ Real-time subscription error')
+              setRealtimeConnected(false)
+            } else if (status === 'TIMED_OUT') {
+              console.warn('⏰ Real-time subscription timed out')
+              setRealtimeConnected(false)
+            } else if (status === 'CLOSED') {
+              console.log('🔒 Real-time subscription closed')
+              setRealtimeConnected(false)
+            }
+          })
+
+        return subscription
+      } catch (error) {
+        console.error('Error setting up real-time subscription:', error)
+        return null
+      }
+    }
+
     loadWeeklyTasks()
+    const subscription = setupRealtimeSubscription()
+
+    // Cleanup subscription on unmount or dependency change
+    return () => {
+      if (subscription) {
+        supabase.removeChannel(subscription)
+      }
+    }
   }, [selectedStudent, currentWeek, user?.id, userRole])
+
+  // Fallback polling mechanism when real-time is not connected
+  useEffect(() => {
+    if (!selectedStudent || !user || realtimeConnected) return
+
+    console.log('⚠️ Real-time not connected, using polling fallback')
+    
+    const pollInterval = setInterval(async () => {
+      try {
+        const weekStart = getWeekStart(currentWeek)
+        const weekEnd = new Date(weekStart)
+        weekEnd.setDate(weekStart.getDate() + 6)
+
+        let query = supabase
+          .from('tasks')
+          .select(`
+            id,
+            title,
+            description,
+            subject_id,
+            topic_id,
+            resource_id,
+            status,
+            due_date,
+            scheduled_date,
+            scheduled_start_time,
+            scheduled_end_time,
+            estimated_duration,
+            problem_count,
+            priority,
+            task_type,
+            assigned_to,
+            assigned_by,
+            created_at,
+            updated_at,
+            completed_at
+          `)
+          .eq('assigned_to', selectedStudent.id)
+          .gte('scheduled_date', weekStart.toISOString().split('T')[0])
+          .lte('scheduled_date', weekEnd.toISOString().split('T')[0])
+          .order('scheduled_date')
+
+        if (userRole === 'coach') {
+          query = query.eq('assigned_by', user.id)
+        }
+
+        const { data: tasks } = await query
+
+        if (tasks) {
+          setWeeklyTasks(prev => {
+            // Only update if there are actual changes to prevent unnecessary re-renders
+            const hasChanges = tasks.some(newTask => {
+              const existingTask = prev.find(t => t.id === newTask.id)
+              return !existingTask || 
+                     existingTask.status !== newTask.status || 
+                     existingTask.completed_at !== newTask.completed_at ||
+                     existingTask.updated_at !== newTask.updated_at
+            })
+            
+            return hasChanges ? tasks : prev
+          })
+        }
+      } catch (error) {
+        console.error('Polling error:', error)
+      }
+    }, 3000) // Poll every 3 seconds when real-time is not working
+
+    return () => clearInterval(pollInterval)
+  }, [selectedStudent, currentWeek, user?.id, userRole, realtimeConnected])
 
   // Load educational links
   useEffect(() => {
@@ -1204,30 +1352,59 @@ export default function CoachPage() {
   const toggleTaskCompletion = async (task: Task) => {
     if (!selectedStudent) return
 
+    // Prevent multiple simultaneous updates
+    if (updatingTaskId === task.id) return
+
+    // Permission check: Only allow the assigned student or coaches to toggle completion
+    const canUpdate = userRole === 'coach' || (userRole === 'student' && user?.id === task.assigned_to)
+    
+    if (!canUpdate) {
+      alert('Bu görevi tamamlama durumunu değiştirme yetkiniz yok.')
+      return
+    }
+
     const newStatus = task.status === 'completed' ? 'pending' : 'completed'
+    const completedAt = newStatus === 'completed' ? new Date().toISOString() : undefined
+    setUpdatingTaskId(task.id)
 
     try {
-      const { error } = await supabase
-        .from('tasks')
-        .update({ 
+      // Use API route instead of direct Supabase call
+      const response = await fetch(`/api/tasks/${task.id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
           status: newStatus,
-          completed_at: newStatus === 'completed' ? new Date().toISOString() : null
-        })
-        .eq('id', task.id)
+          completed_at: completedAt
+        }),
+      })
 
-      if (error) {
-        console.error('Task update error:', error)
+      if (!response.ok) {
+        const errorData = await response.json()
+        console.error('Task update error:', errorData)
+        alert('Görev durumu güncellenirken hata oluştu: ' + (errorData.error || 'Bilinmeyen hata'))
         return
       }
 
-      // Update local state
+      const { task: updatedTask } = await response.json()
+
+      // Only update local state after successful API call
       setWeeklyTasks(prev => prev.map(t => 
         t.id === task.id 
-          ? { ...t, status: newStatus }
+          ? { ...t, status: newStatus, completed_at: completedAt }
           : t
       ))
+      
+      // Show success message for students
+      if (userRole === 'student') {
+        console.log(`Görev başarıyla ${newStatus === 'completed' ? 'tamamlandı' : 'beklemede'} olarak işaretlendi.`)
+      }
     } catch (error) {
       console.error('Error updating task:', error)
+      alert('Görev durumu güncellenirken hata oluştu.')
+    } finally {
+      setUpdatingTaskId(null)
     }
   }
 
@@ -3834,11 +4011,15 @@ export default function CoachPage() {
                             }
                           }
                           
+                          // Check if user can update this task
+                          const canUpdate = userRole === 'coach' || (userRole === 'student' && user?.id === task.assigned_to)
+                          
                           return (
                             <div 
                               key={task.id} 
                               onClick={() => handleTaskClick(task)}
-                              className={`task-card group ${getTaskTypeStyle(task.task_type, task.status === 'completed')}`}
+                              className={`task-card group ${getTaskTypeStyle(task.task_type, task.status === 'completed')} ${canUpdate ? 'cursor-pointer' : 'cursor-not-allowed opacity-70'}`}
+                              title={canUpdate ? 'Görevi tamamlandı olarak işaretle' : 'Bu görevi tamamlama yetkiniz yok'}
                             >
                               <div className="flex items-start justify-between mb-1">
                                 <div className="flex items-center space-x-1">
@@ -3877,7 +4058,9 @@ export default function CoachPage() {
                                     </>
                                   )}
                                   {/* Completion Status */}
-                                  {task.status === 'completed' ? (
+                                  {updatingTaskId === task.id ? (
+                                    <div className="h-4 w-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                                  ) : task.status === 'completed' ? (
                                     <CheckCircle className="h-4 w-4 text-green-600" />
                                   ) : (
                                     <div className="h-4 w-4 border-2 border-gray-400 rounded-full hover:border-gray-600 transition-colors"></div>
