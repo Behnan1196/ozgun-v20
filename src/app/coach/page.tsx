@@ -940,34 +940,43 @@ export default function CoachPage() {
 
     // Setup real-time subscription for task updates
     const setupRealtimeSubscription = () => {
-      if (!selectedStudent) return null
+      if (!selectedStudent || !user) return null
 
       try {
+        console.log(`🔄 Setting up real-time subscription for student: ${selectedStudent.id}`)
+        
         const subscription = supabase
           .channel(`task-updates-${selectedStudent.id}`, {
             config: {
-              broadcast: { self: true },
-              presence: { key: user?.id }
+              broadcast: { self: false }, // Don't broadcast to self to avoid duplicates
+              presence: { key: user.id }
             }
           })
           .on(
             'postgres_changes',
             {
               event: '*',
-              schema: 'public',
+              schema: 'public', 
               table: 'tasks',
               filter: `assigned_to=eq.${selectedStudent.id}`
             },
             (payload) => {
-              console.log('Real-time task update:', payload)
+              console.log('📡 Real-time task update received:', payload)
               
               if (payload.eventType === 'UPDATE') {
+                console.log('📝 Updating task:', payload.new.id)
                 setWeeklyTasks(prev => prev.map(task => 
                   task.id === payload.new.id 
-                    ? { ...task, ...payload.new }
+                    ? { 
+                        ...task, 
+                        ...payload.new,
+                        // Ensure completed_at is properly typed
+                        completed_at: payload.new.completed_at || undefined
+                      }
                     : task
                 ))
               } else if (payload.eventType === 'INSERT') {
+                console.log('➕ New task inserted:', payload.new.id)
                 // Check if the new task is in the current week
                 const taskDate = new Date(payload.new.scheduled_date)
                 const weekStart = getWeekStart(currentWeek)
@@ -975,15 +984,19 @@ export default function CoachPage() {
                 weekEnd.setDate(weekStart.getDate() + 6)
                 
                 if (taskDate >= weekStart && taskDate <= weekEnd) {
-                  setWeeklyTasks(prev => [...prev, payload.new as Task])
+                  setWeeklyTasks(prev => [...prev, { 
+                    ...payload.new, 
+                    completed_at: payload.new.completed_at || undefined 
+                  } as Task])
                 }
               } else if (payload.eventType === 'DELETE') {
+                console.log('🗑️ Task deleted:', payload.old.id)
                 setWeeklyTasks(prev => prev.filter(task => task.id !== payload.old.id))
               }
             }
           )
           .subscribe((status) => {
-            console.log('Subscription status:', status)
+            console.log(`📊 Subscription status for ${selectedStudent.id}:`, status)
             if (status === 'SUBSCRIBED') {
               console.log('✅ Real-time subscription active for tasks')
               setRealtimeConnected(true)
@@ -1002,6 +1015,7 @@ export default function CoachPage() {
         return subscription
       } catch (error) {
         console.error('Error setting up real-time subscription:', error)
+        setRealtimeConnected(false)
         return null
       }
     }
@@ -3910,8 +3924,18 @@ export default function CoachPage() {
                 </button>
               </div>
               
-              <div className="text-sm text-gray-600 bg-blue-50 px-3 py-2 rounded-md border border-blue-200">
-                <span className="font-medium">{formatDate(weekDates[0])} - {formatDate(weekDates[6])}</span>
+              <div className="flex items-center space-x-3">
+                <div className="text-sm text-gray-600 bg-blue-50 px-3 py-2 rounded-md border border-blue-200">
+                  <span className="font-medium">{formatDate(weekDates[0])} - {formatDate(weekDates[6])}</span>
+                </div>
+                
+                {/* Real-time connection status */}
+                <div className="flex items-center space-x-2 text-sm">
+                  <div className={`w-2 h-2 rounded-full ${realtimeConnected ? 'bg-green-500' : 'bg-red-500'}`}></div>
+                  <span className={`${realtimeConnected ? 'text-green-600' : 'text-red-600'}`}>
+                    {realtimeConnected ? 'Canlı' : 'Çevrimdışı'}
+                  </span>
+                </div>
               </div>
             </div>
 
