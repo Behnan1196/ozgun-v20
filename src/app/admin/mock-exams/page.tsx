@@ -29,33 +29,20 @@ import {
   Edit, 
   Delete, 
   ExpandMore,
-  OpenInNew,
-  VideoLibrary,
-  Description,
-  PictureAsPdf,
-  Apps,
+  Quiz,
 } from '@mui/icons-material'
 import AdminLayout from '@/components/admin/AdminLayout'
 import { createClient } from '@/lib/supabase/client'
-import { Resource, Subject, DifficultyLevel } from '@/types/database'
+import { MockExam, Subject, DifficultyLevel } from '@/types/database'
 
-interface ResourceFormData {
+interface MockExamFormData {
   id?: string
   name: string
   description: string
-  url: string
-  category: 'video' | 'document' | 'pdf' | 'application'
   subject_id: string
   difficulty_level: DifficultyLevel | null
   is_active: boolean
 }
-
-const resourceCategories = [
-  { value: 'video', label: 'Video', icon: VideoLibrary },
-  { value: 'document', label: 'Doküman', icon: Description },
-  { value: 'pdf', label: 'PDF', icon: PictureAsPdf },
-  { value: 'application', label: 'Uygulama', icon: Apps },
-] as const
 
 const difficultyLevels = [
   { value: 'baslangic', label: 'Başlangıç' },
@@ -64,19 +51,18 @@ const difficultyLevels = [
   { value: 'uzman', label: 'Uzman' },
 ] as const
 
-export default function ResourceManagement() {
+export default function MockExamManagement() {
   const [subjects, setSubjects] = useState<Subject[]>([])
-  const [resources, setResources] = useState<Record<string, Resource[]>>({})
+  const [mockExams, setMockExams] = useState<Record<string, MockExam[]>>({})
+  const [unassignedMockExams, setUnassignedMockExams] = useState<MockExam[]>([])
   const [loading, setLoading] = useState(true)
   
-  // Resource dialog states
-  const [resourceDialogOpen, setResourceDialogOpen] = useState(false)
-  const [editingResource, setEditingResource] = useState<Resource | null>(null)
-  const [resourceFormData, setResourceFormData] = useState<ResourceFormData>({
+  // Mock exam dialog states
+  const [mockExamDialogOpen, setMockExamDialogOpen] = useState(false)
+  const [editingMockExam, setEditingMockExam] = useState<MockExam | null>(null)
+  const [mockExamFormData, setMockExamFormData] = useState<MockExamFormData>({
     name: '',
     description: '',
-    url: '',
-    category: 'document',
     subject_id: '',
     difficulty_level: null,
     is_active: true,
@@ -111,10 +97,10 @@ export default function ResourceManagement() {
       return
     }
 
-    await loadSubjectsAndResources()
+    await loadSubjectsAndMockExams()
   }
 
-  const loadSubjectsAndResources = async () => {
+  const loadSubjectsAndMockExams = async () => {
     try {
       const supabase = createClient()
       
@@ -127,87 +113,87 @@ export default function ResourceManagement() {
       if (subjectsError) throw subjectsError
       setSubjects(subjectsData || [])
 
-      // Load resources
-      const { data: resourcesData, error: resourcesError } = await supabase
-        .from('resources')
+      // Load mock exams
+      const { data: mockExamsData, error: mockExamsError } = await supabase
+        .from('mock_exams')
         .select('*')
         .order('created_at', { ascending: false })
 
-      if (resourcesError) throw resourcesError
+      if (mockExamsError) throw mockExamsError
 
-      // Group resources by subject_id
-      const resourcesBySubject: Record<string, Resource[]> = {}
+      // Group mock exams by subject_id
+      const mockExamsBySubject: Record<string, MockExam[]> = {}
+      const unassigned: MockExam[] = []
 
-      resourcesData?.forEach((resource) => {
-        if (resource.subject_id) {
-          if (!resourcesBySubject[resource.subject_id]) {
-            resourcesBySubject[resource.subject_id] = []
+      mockExamsData?.forEach((mockExam) => {
+        if (mockExam.subject_id) {
+          if (!mockExamsBySubject[mockExam.subject_id]) {
+            mockExamsBySubject[mockExam.subject_id] = []
           }
-          resourcesBySubject[resource.subject_id].push(resource)
+          mockExamsBySubject[mockExam.subject_id].push(mockExam)
+        } else {
+          unassigned.push(mockExam)
         }
       })
 
-      setResources(resourcesBySubject)
+      setMockExams(mockExamsBySubject)
+      setUnassignedMockExams(unassigned)
 
     } catch (error) {
-      console.error('Error loading subjects and resources:', error)
+      console.error('Error loading subjects and mock exams:', error)
     } finally {
       setLoading(false)
     }
   }
 
-  // Resource handlers
-  const handleAddResource = (subjectId?: string) => {
-    setEditingResource(null)
-    setResourceFormData({
+  // Mock exam handlers
+  const handleAddMockExam = (subjectId?: string) => {
+    setEditingMockExam(null)
+    setMockExamFormData({
       name: '',
       description: '',
-      url: '',
-      category: 'document',
       subject_id: subjectId || '',
       difficulty_level: null,
       is_active: true,
     })
     setFormError(null)
-    setResourceDialogOpen(true)
+    setMockExamDialogOpen(true)
   }
 
-  const handleEditResource = (resource: Resource) => {
-    setEditingResource(resource)
-    setResourceFormData({
-      id: resource.id,
-      name: resource.name,
-      description: resource.description || '',
-      url: resource.url,
-      category: resource.category,
-      subject_id: resource.subject_id || '',
-      difficulty_level: resource.difficulty_level || null,
-      is_active: resource.is_active,
+  const handleEditMockExam = (mockExam: MockExam) => {
+    setEditingMockExam(mockExam)
+    setMockExamFormData({
+      id: mockExam.id,
+      name: mockExam.name,
+      description: mockExam.description || '',
+      subject_id: mockExam.subject_id || '',
+      difficulty_level: mockExam.difficulty_level,
+      is_active: mockExam.is_active,
     })
     setFormError(null)
-    setResourceDialogOpen(true)
+    setMockExamDialogOpen(true)
   }
 
-  const handleDeleteResource = async (resourceId: string) => {
-    if (!confirm('Bu kaynağı silmek istediğinizden emin misiniz?')) {
+  const handleDeleteMockExam = async (mockExamId: string) => {
+    if (!confirm('Bu deneme sınavını silmek istediğinizden emin misiniz?')) {
       return
     }
 
     try {
       const supabase = createClient()
       const { error } = await supabase
-        .from('resources')
+        .from('mock_exams')
         .delete()
-        .eq('id', resourceId)
+        .eq('id', mockExamId)
 
       if (error) throw error
-      await loadSubjectsAndResources()
+      await loadSubjectsAndMockExams()
     } catch (error: any) {
-      alert('Kaynak silinirken hata oluştu: ' + error.message)
+      alert('Deneme sınavı silinirken hata oluştu: ' + error.message)
     }
   }
 
-  const handleResourceSubmit = async (e: React.FormEvent) => {
+  const handleMockExamSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setSubmitting(true)
     setFormError(null)
@@ -221,36 +207,34 @@ export default function ResourceManagement() {
         return
       }
 
-      const resourceData = {
-        name: resourceFormData.name,
-        description: resourceFormData.description || null,
-        url: resourceFormData.url,
-        category: resourceFormData.category,
-        subject_id: resourceFormData.subject_id || null,
-        difficulty_level: resourceFormData.difficulty_level,
-        is_active: resourceFormData.is_active,
+      const mockExamData = {
+        name: mockExamFormData.name,
+        description: mockExamFormData.description || null,
+        subject_id: mockExamFormData.subject_id || null,
+        difficulty_level: mockExamFormData.difficulty_level,
+        is_active: mockExamFormData.is_active,
         created_by: user.id,
       }
 
-      if (editingResource) {
-        // Update existing resource
+      if (editingMockExam) {
+        // Update existing mock exam
         const { error } = await supabase
-          .from('resources')
-          .update(resourceData)
-          .eq('id', editingResource.id)
+          .from('mock_exams')
+          .update(mockExamData)
+          .eq('id', editingMockExam.id)
 
         if (error) throw error
       } else {
-        // Create new resource
+        // Create new mock exam
         const { error } = await supabase
-          .from('resources')
-          .insert(resourceData)
+          .from('mock_exams')
+          .insert(mockExamData)
 
         if (error) throw error
       }
 
-      setResourceDialogOpen(false)
-      await loadSubjectsAndResources()
+      setMockExamDialogOpen(false)
+      await loadSubjectsAndMockExams()
     } catch (error: any) {
       setFormError(error.message)
     } finally {
@@ -266,16 +250,6 @@ export default function ResourceManagement() {
       newExpanded.add(subjectId)
     }
     setExpandedSubjects(newExpanded)
-  }
-
-  const getCategoryIcon = (category: string) => {
-    const categoryConfig = resourceCategories.find(c => c.value === category)
-    const IconComponent = categoryConfig?.icon || Description
-    return <IconComponent />
-  }
-
-  const getCategoryLabel = (category: string) => {
-    return resourceCategories.find(c => c.value === category)?.label || category
   }
 
   const getDifficultyColor = (level: DifficultyLevel) => {
@@ -294,7 +268,7 @@ export default function ResourceManagement() {
 
   if (loading) {
     return (
-      <AdminLayout currentPage="/admin/resources">
+      <AdminLayout currentPage="/admin/mock-exams">
         <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
           <CircularProgress />
         </Box>
@@ -303,21 +277,21 @@ export default function ResourceManagement() {
   }
 
   return (
-    <AdminLayout currentPage="/admin/resources">
+    <AdminLayout currentPage="/admin/mock-exams">
       <Box>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-          <Typography variant="h4">Kaynak Yönetimi</Typography>
+          <Typography variant="h4">Deneme Sınav Yönetimi</Typography>
           <Button
             variant="contained"
             startIcon={<Add />}
-            onClick={() => handleAddResource()}
+            onClick={() => handleAddMockExam()}
           >
-            Yeni Kaynak
+            Yeni Deneme Sınavı
           </Button>
         </Box>
 
         <Grid container spacing={3}>
-          {/* Subjects with their resources */}
+          {/* Subjects with their mock exams */}
           {subjects.map((subject) => (
             <Grid item xs={12} key={subject.id}>
               <Paper sx={{ p: 2 }}>
@@ -341,7 +315,7 @@ export default function ResourceManagement() {
                       size="small"
                     />
                     <Typography variant="body2" color="text.secondary">
-                      {resources[subject.id]?.length || 0} kaynak
+                      {mockExams[subject.id]?.length || 0} deneme sınavı
                     </Typography>
                   </Box>
                   
@@ -349,10 +323,10 @@ export default function ResourceManagement() {
                     <Button
                       size="small"
                       startIcon={<Add />}
-                      onClick={() => handleAddResource(subject.id)}
+                      onClick={() => handleAddMockExam(subject.id)}
                       sx={{ mr: 1 }}
                     >
-                      Kaynak Ekle
+                      Deneme Sınavı Ekle
                     </Button>
                   </Box>
                 </Box>
@@ -365,60 +339,46 @@ export default function ResourceManagement() {
 
                 {expandedSubjects.has(subject.id) && (
                   <Box sx={{ mt: 2, pl: 4 }}>
-                    {resources[subject.id]?.length > 0 ? (
-                      resources[subject.id].map((resource) => (
-                        <Paper key={resource.id} variant="outlined" sx={{ p: 2, mb: 1 }}>
+                    {mockExams[subject.id]?.length > 0 ? (
+                      mockExams[subject.id].map((mockExam) => (
+                        <Paper key={mockExam.id} variant="outlined" sx={{ p: 2, mb: 1 }}>
                           <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                              {getCategoryIcon(resource.category)}
-                              <Typography variant="subtitle1">{resource.name}</Typography>
+                              <Quiz fontSize="small" />
+                              <Typography variant="subtitle1">{mockExam.name}</Typography>
                               <Chip 
-                                label={getCategoryLabel(resource.category)} 
-                                color="primary"
-                                size="small"
-                                variant="outlined"
-                              />
-                              <Chip 
-                                label={resource.is_active ? 'Aktif' : 'Pasif'} 
-                                color={resource.is_active ? 'success' : 'default'}
+                                label={mockExam.is_active ? 'Aktif' : 'Pasif'} 
+                                color={mockExam.is_active ? 'success' : 'default'}
                                 size="small"
                               />
-                              {resource.difficulty_level && (
+                              {mockExam.difficulty_level && (
                                 <Chip 
-                                  label={getDifficultyLabel(resource.difficulty_level)} 
-                                  color={getDifficultyColor(resource.difficulty_level)}
+                                  label={getDifficultyLabel(mockExam.difficulty_level)} 
+                                  color={getDifficultyColor(mockExam.difficulty_level)}
                                   size="small"
                                   variant="outlined"
                                 />
                               )}
                             </Box>
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                              <Button
-                                size="small"
-                                startIcon={<OpenInNew />}
-                                onClick={() => window.open(resource.url, '_blank')}
-                                sx={{ textTransform: 'none' }}
-                              >
-                                Aç
-                              </Button>
-                              <IconButton onClick={() => handleEditResource(resource)} size="small">
+                            <Box>
+                              <IconButton onClick={() => handleEditMockExam(mockExam)} size="small">
                                 <Edit />
                               </IconButton>
-                              <IconButton onClick={() => handleDeleteResource(resource.id)} size="small" color="error">
+                              <IconButton onClick={() => handleDeleteMockExam(mockExam.id)} size="small" color="error">
                                 <Delete />
                               </IconButton>
                             </Box>
                           </Box>
-                          {resource.description && (
+                          {mockExam.description && (
                             <Typography variant="body2" color="text.secondary" sx={{ mt: 1, ml: 3 }}>
-                              {resource.description}
+                              {mockExam.description}
                             </Typography>
                           )}
                         </Paper>
                       ))
                     ) : (
                       <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic' }}>
-                        Bu derste henüz kaynak bulunmuyor.
+                        Bu derste henüz deneme sınavı bulunmuyor.
                       </Typography>
                     )}
                   </Box>
@@ -427,14 +387,78 @@ export default function ResourceManagement() {
             </Grid>
           ))}
 
+          {/* Unassigned Mock Exams */}
+          {unassignedMockExams.length > 0 && (
+            <Grid item xs={12}>
+              <Paper sx={{ p: 2 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                    <Typography variant="h6">Derse Atanmamış Deneme Sınavları</Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      {unassignedMockExams.length} deneme sınavı
+                    </Typography>
+                  </Box>
+                  
+                  <Box>
+                    <Button
+                      size="small"
+                      startIcon={<Add />}
+                      onClick={() => handleAddMockExam()}
+                      sx={{ mr: 1 }}
+                    >
+                      Deneme Sınavı Ekle
+                    </Button>
+                  </Box>
+                </Box>
 
+                <Box sx={{ mt: 2 }}>
+                  {unassignedMockExams.map((mockExam) => (
+                    <Paper key={mockExam.id} variant="outlined" sx={{ p: 2, mb: 1 }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                          <Quiz fontSize="small" />
+                          <Typography variant="subtitle1">{mockExam.name}</Typography>
+                          <Chip 
+                            label={mockExam.is_active ? 'Aktif' : 'Pasif'} 
+                            color={mockExam.is_active ? 'success' : 'default'}
+                            size="small"
+                          />
+                          {mockExam.difficulty_level && (
+                            <Chip 
+                              label={getDifficultyLabel(mockExam.difficulty_level)} 
+                              color={getDifficultyColor(mockExam.difficulty_level)}
+                              size="small"
+                              variant="outlined"
+                            />
+                          )}
+                        </Box>
+                        <Box>
+                          <IconButton onClick={() => handleEditMockExam(mockExam)} size="small">
+                            <Edit />
+                          </IconButton>
+                          <IconButton onClick={() => handleDeleteMockExam(mockExam.id)} size="small" color="error">
+                            <Delete />
+                          </IconButton>
+                        </Box>
+                      </Box>
+                      {mockExam.description && (
+                        <Typography variant="body2" color="text.secondary" sx={{ mt: 1, ml: 3 }}>
+                          {mockExam.description}
+                        </Typography>
+                      )}
+                    </Paper>
+                  ))}
+                </Box>
+              </Paper>
+            </Grid>
+          )}
         </Grid>
 
-        {/* Resource Dialog */}
-        <Dialog open={resourceDialogOpen} onClose={() => setResourceDialogOpen(false)} maxWidth="sm" fullWidth>
-          <form onSubmit={handleResourceSubmit}>
+        {/* Mock Exam Dialog */}
+        <Dialog open={mockExamDialogOpen} onClose={() => setMockExamDialogOpen(false)} maxWidth="sm" fullWidth>
+          <form onSubmit={handleMockExamSubmit}>
             <DialogTitle>
-              {editingResource ? 'Kaynak Düzenle' : 'Yeni Kaynak Ekle'}
+              {editingMockExam ? 'Deneme Sınavı Düzenle' : 'Yeni Deneme Sınavı Ekle'}
             </DialogTitle>
             <DialogContent>
               {formError && (
@@ -445,9 +469,9 @@ export default function ResourceManagement() {
               
               <TextField
                 fullWidth
-                label="Kaynak Adı"
-                value={resourceFormData.name}
-                onChange={(e) => setResourceFormData({ ...resourceFormData, name: e.target.value })}
+                label="Deneme Sınavı Adı"
+                value={mockExamFormData.name}
+                onChange={(e) => setMockExamFormData({ ...mockExamFormData, name: e.target.value })}
                 margin="normal"
                 required
               />
@@ -455,47 +479,19 @@ export default function ResourceManagement() {
               <TextField
                 fullWidth
                 label="Açıklama"
-                value={resourceFormData.description}
-                onChange={(e) => setResourceFormData({ ...resourceFormData, description: e.target.value })}
+                value={mockExamFormData.description}
+                onChange={(e) => setMockExamFormData({ ...mockExamFormData, description: e.target.value })}
                 multiline
                 rows={3}
                 margin="normal"
               />
 
-              <TextField
-                fullWidth
-                label="URL"
-                value={resourceFormData.url}
-                onChange={(e) => setResourceFormData({ ...resourceFormData, url: e.target.value })}
-                margin="normal"
-                required
-                type="url"
-              />
-
-              <FormControl fullWidth margin="normal">
-                <InputLabel>Kategori</InputLabel>
-                <Select
-                  value={resourceFormData.category}
-                  label="Kategori"
-                  onChange={(e) => setResourceFormData({ ...resourceFormData, category: e.target.value as any })}
-                >
-                  {resourceCategories.map((category) => (
-                    <MenuItem key={category.value} value={category.value}>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <category.icon fontSize="small" />
-                        {category.label}
-                      </Box>
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-
               <FormControl fullWidth margin="normal">
                 <InputLabel>Ders (Opsiyonel)</InputLabel>
                 <Select
-                  value={resourceFormData.subject_id}
+                  value={mockExamFormData.subject_id}
                   label="Ders (Opsiyonel)"
-                  onChange={(e) => setResourceFormData({ ...resourceFormData, subject_id: e.target.value })}
+                  onChange={(e) => setMockExamFormData({ ...mockExamFormData, subject_id: e.target.value })}
                 >
                   <MenuItem value="">Ders seçilmemiş</MenuItem>
                   {subjects.filter(s => s.is_active).map((subject) => (
@@ -509,10 +505,10 @@ export default function ResourceManagement() {
               <FormControl fullWidth margin="normal">
                 <InputLabel>Zorluk Seviyesi (Opsiyonel)</InputLabel>
                 <Select
-                  value={resourceFormData.difficulty_level || ''}
+                  value={mockExamFormData.difficulty_level || ''}
                   label="Zorluk Seviyesi (Opsiyonel)"
-                  onChange={(e) => setResourceFormData({ 
-                    ...resourceFormData, 
+                  onChange={(e) => setMockExamFormData({ 
+                    ...mockExamFormData, 
                     difficulty_level: e.target.value ? e.target.value as DifficultyLevel : null 
                   })}
                 >
@@ -528,8 +524,8 @@ export default function ResourceManagement() {
               <FormControlLabel
                 control={
                   <Switch
-                    checked={resourceFormData.is_active}
-                    onChange={(e) => setResourceFormData({ ...resourceFormData, is_active: e.target.checked })}
+                    checked={mockExamFormData.is_active}
+                    onChange={(e) => setMockExamFormData({ ...mockExamFormData, is_active: e.target.checked })}
                   />
                 }
                 label="Aktif"
@@ -537,9 +533,9 @@ export default function ResourceManagement() {
               />
             </DialogContent>
             <DialogActions>
-              <Button onClick={() => setResourceDialogOpen(false)}>İptal</Button>
+              <Button onClick={() => setMockExamDialogOpen(false)}>İptal</Button>
               <Button type="submit" variant="contained" disabled={submitting}>
-                {submitting ? 'Kaydediliyor...' : (editingResource ? 'Güncelle' : 'Ekle')}
+                {submitting ? 'Kaydediliyor...' : (editingMockExam ? 'Güncelle' : 'Ekle')}
               </Button>
             </DialogActions>
           </form>

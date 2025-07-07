@@ -52,6 +52,18 @@ export interface Resource {
   difficulty_level?: DifficultyLevel
 }
 
+export interface MockExam {
+  id: string
+  name: string
+  description?: string
+  subject_id?: string
+  difficulty_level?: DifficultyLevel
+  is_active: boolean
+  created_by: string
+  created_at: string
+  updated_at: string
+}
+
 export interface Task {
   id: string
   title: string
@@ -100,4 +112,9 @@ export interface TaskWithRelations extends Task {
   topic?: Topic
   assigned_by_user?: UserProfile
   assigned_to_user?: UserProfile
+}
+
+export interface MockExamWithRelations extends MockExam {
+  subject?: Subject
+  created_by_user?: UserProfile
 } 

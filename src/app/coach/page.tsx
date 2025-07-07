@@ -58,6 +58,7 @@ import {
 import StreamChat from '@/components/StreamChat'
 import StreamVideo from '@/components/StreamVideo'
 import PomodoroTimer from '@/components/PomodoroTimer'
+import { MockExam } from '@/types/database'
 
 // Interfaces
 interface Student {
@@ -92,6 +93,7 @@ interface Task {
   subject_id?: string
   topic_id?: string
   resource_id?: string
+  mock_exam_id?: string
   status: 'pending' | 'in_progress' | 'completed' | 'cancelled'
   due_date?: string
   scheduled_date: string
@@ -312,6 +314,7 @@ export default function CoachPage() {
   const [subjects, setSubjects] = useState<Subject[]>([])
   const [topics, setTopics] = useState<Topic[]>([])
   const [resources, setResources] = useState<Resource[]>([])
+  const [mockExams, setMockExams] = useState<MockExam[]>([])
   const [goals, setGoals] = useState<Goal[]>([])
   const [mockExamResults, setMockExamResults] = useState<MockExamResult[]>([])
   const [educationalLinks, setEducationalLinks] = useState<EducationalLink[]>([])
@@ -329,6 +332,7 @@ export default function CoachPage() {
     subject_id: '',
     topic_id: '',
     resource_id: '',
+    mock_exam_id: '',
     task_type: 'study' as 'study' | 'practice' | 'exam' | 'review' | 'resource',
     scheduled_start_time: '',
     scheduled_end_time: '',
@@ -821,9 +825,27 @@ export default function CoachPage() {
       }
     }
 
+    const loadMockExams = async () => {
+      const { data: mockExams, error } = await supabase
+        .from('mock_exams')
+        .select('*')
+        .eq('is_active', true)
+        .order('subject_id, name')
+
+      if (error) {
+        console.error('Error loading mock exams:', error)
+        return
+      }
+
+      if (mockExams) {
+        setMockExams(mockExams)
+      }
+    }
+
     loadSubjects()
     loadTopics()
     loadResources()
+    loadMockExams()
   }, [])
 
   // Load student goals
@@ -905,6 +927,7 @@ export default function CoachPage() {
           subject_id,
           topic_id,
           resource_id,
+          mock_exam_id,
           status,
           due_date,
           scheduled_date,
@@ -1263,6 +1286,7 @@ export default function CoachPage() {
       subject_id: '',
       topic_id: '',
       resource_id: '',
+      mock_exam_id: '',
       task_type: 'study',
       scheduled_start_time: '',
       scheduled_end_time: '',
@@ -1282,6 +1306,7 @@ export default function CoachPage() {
       subject_id: '',
       topic_id: '',
       resource_id: '',
+      mock_exam_id: '',
       task_type: 'study',
       scheduled_start_time: '',
       scheduled_end_time: '',
@@ -1302,6 +1327,12 @@ export default function CoachPage() {
       return
     }
 
+    // Validate mock exam selection for exam tasks
+    if ((taskForm.task_type === 'exam' || taskForm.task_type === 'practice') && !taskForm.mock_exam_id) {
+      alert('Sınav türü görevler için bir deneme sınavı seçmelisiniz')
+      return
+    }
+
     // Generate default title if not provided
     const taskTitle = taskForm.title.trim() || 'Görev'
 
@@ -1314,6 +1345,7 @@ export default function CoachPage() {
           subject_id: taskForm.subject_id || null,
           topic_id: taskForm.topic_id || null,
           resource_id: taskForm.resource_id || null,
+          mock_exam_id: taskForm.mock_exam_id || null,
           task_type: taskForm.task_type,
           scheduled_date: taskModalDate.toISOString().split('T')[0],
           scheduled_start_time: taskForm.scheduled_start_time || null,
@@ -1437,6 +1469,7 @@ export default function CoachPage() {
       subject_id: task.subject_id || '',
       topic_id: task.topic_id || '',
       resource_id: task.resource_id || '',
+      mock_exam_id: task.mock_exam_id || '',
       task_type: task.task_type,
       scheduled_start_time: task.scheduled_start_time || '',
       scheduled_end_time: task.scheduled_end_time || '',
@@ -1458,6 +1491,12 @@ export default function CoachPage() {
       return
     }
 
+    // Validate mock exam selection for exam tasks
+    if ((taskForm.task_type === 'exam' || taskForm.task_type === 'practice') && !taskForm.mock_exam_id) {
+      alert('Sınav türü görevler için bir deneme sınavı seçmelisiniz')
+      return
+    }
+
     // Generate default title if not provided
     const taskTitle = taskForm.title.trim() || 'Görev'
 
@@ -1470,6 +1509,7 @@ export default function CoachPage() {
           subject_id: taskForm.subject_id || null,
           topic_id: taskForm.topic_id || null,
           resource_id: taskForm.resource_id || null,
+          mock_exam_id: taskForm.mock_exam_id || null,
           task_type: taskForm.task_type,
           scheduled_date: taskModalDate.toISOString().split('T')[0],
           scheduled_start_time: taskForm.scheduled_start_time || null,
@@ -2348,7 +2388,13 @@ export default function CoachPage() {
                 </label>
                 <select
                   value={taskForm.task_type}
-                  onChange={(e) => setTaskForm(prev => ({ ...prev, task_type: e.target.value as any }))}
+                  onChange={(e) => setTaskForm(prev => ({ 
+                    ...prev, 
+                    task_type: e.target.value as any,
+                    topic_id: '', // Reset topic when task type changes
+                    resource_id: '', // Reset resource when task type changes
+                    mock_exam_id: '' // Reset mock exam when task type changes
+                  }))}
                   className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="study">Çalışma</option>
@@ -2369,7 +2415,9 @@ export default function CoachPage() {
                   onChange={(e) => setTaskForm(prev => ({ 
                     ...prev, 
                     subject_id: e.target.value,
-                    topic_id: '' // Reset topic when subject changes
+                    topic_id: '', // Reset topic when subject changes
+                    resource_id: '', // Reset resource when subject changes
+                    mock_exam_id: '' // Reset mock exam when subject changes
                   }))}
                   className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
@@ -2382,8 +2430,8 @@ export default function CoachPage() {
                 </select>
               </div>
 
-              {/* Topic - Optional, only show if subject is selected */}
-              {taskForm.subject_id && (
+              {/* Dynamic Second Selection based on Task Type */}
+              {(taskForm.task_type === 'study' || taskForm.task_type === 'review') && taskForm.subject_id && (
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Konu (Opsiyonel)
@@ -2405,7 +2453,30 @@ export default function CoachPage() {
                 </div>
               )}
 
-              {/* Resource - Only show for resource task type */}
+              {/* Mock Exam Selection - For exam and practice task types */}
+              {(taskForm.task_type === 'exam' || taskForm.task_type === 'practice') && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Deneme Sınavı *
+                  </label>
+                  <select
+                    value={taskForm.mock_exam_id}
+                    onChange={(e) => setTaskForm(prev => ({ ...prev, mock_exam_id: e.target.value }))}
+                    className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="">Deneme sınavı seçiniz...</option>
+                    {mockExams
+                      .filter(mockExam => !taskForm.subject_id || mockExam.subject_id === taskForm.subject_id)
+                      .map(mockExam => (
+                        <option key={mockExam.id} value={mockExam.id}>
+                          {mockExam.name}
+                        </option>
+                      ))}
+                  </select>
+                </div>
+              )}
+
+              {/* Resource Selection - For resource task type */}
               {taskForm.task_type === 'resource' && (
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">

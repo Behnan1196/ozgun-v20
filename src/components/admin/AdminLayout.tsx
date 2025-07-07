@@ -43,7 +43,8 @@ import {
   LightMode,
   Computer,
   Notifications,
-  Delete as DeleteIcon
+  Delete as DeleteIcon,
+  Quiz
 } from '@mui/icons-material'
 import { ProfileAvatar } from '@/components/ui/avatar'
 import { createClient } from '@/lib/supabase/client'
@@ -60,6 +61,7 @@ const menuItems = [
   { text: 'Kullanıcı Yönetimi', icon: <People />, path: '/admin/users' },
   { text: 'Konu Yönetimi', icon: <Subject />, path: '/admin/subjects' },
   { text: 'Kaynak Yönetimi', icon: <LibraryBooks />, path: '/admin/resources' },
+  { text: 'Deneme Sınav Yönetimi', icon: <Quiz />, path: '/admin/mock-exams' },
   { text: 'Yararlı Linkler', icon: <Link />, path: '/admin/links' },
   { text: 'Duyuru Yönetimi', icon: <Announcement />, path: '/admin/announcements' },
   { text: 'Sistem Ayarları', icon: <SettingsIcon />, path: '/admin/settings' },

@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { redirect } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 import {
   Box,
   Grid,
@@ -30,6 +30,7 @@ interface DashboardStats {
 }
 
 export default function AdminDashboard() {
+  const router = useRouter()
   const [currentUser, setCurrentUser] = useState<UserProfile | null>(null)
   const [stats, setStats] = useState<DashboardStats>({
     totalUsers: 0,
@@ -42,33 +43,38 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     const checkAuth = async () => {
-      const supabase = createClient()
-      const { data: { user } } = await supabase.auth.getUser()
-      
-      if (!user) {
-        redirect('/login')
-        return
+      try {
+        const supabase = createClient()
+        const { data: { user } } = await supabase.auth.getUser()
+        
+        if (!user) {
+          router.push('/login')
+          return
+        }
+
+        // Get user profile
+        const { data: profile } = await supabase
+          .from('user_profiles')
+          .select('*')
+          .eq('id', user.id)
+          .single()
+
+        if (!profile || profile.role !== 'admin') {
+          router.push('/login')
+          return
+        }
+
+        setCurrentUser(profile)
+        await loadStats()
+        setLoading(false)
+      } catch (error) {
+        console.error('Auth check error:', error)
+        router.push('/login')
       }
-
-      // Get user profile
-      const { data: profile } = await supabase
-        .from('user_profiles')
-        .select('*')
-        .eq('id', user.id)
-        .single()
-
-      if (!profile || profile.role !== 'admin') {
-        redirect('/login')
-        return
-      }
-
-      setCurrentUser(profile)
-      await loadStats()
-      setLoading(false)
     }
 
     checkAuth()
-  }, [])
+  }, [router])
 
   const loadStats = async () => {
     const supabase = createClient()
