@@ -167,7 +167,7 @@ export default function MockExamManagement() {
       name: mockExam.name,
       description: mockExam.description || '',
       subject_id: mockExam.subject_id || '',
-      difficulty_level: mockExam.difficulty_level,
+      difficulty_level: mockExam.difficulty_level || null,
       is_active: mockExam.is_active,
     })
     setFormError(null)
