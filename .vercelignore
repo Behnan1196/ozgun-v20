@@ -1,0 +1,12 @@
+# Exclude mobile app from Vercel builds
+coaching-mobile/
+
+# Other files to exclude
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.DS_Store
+*.log
+node_modules/
+.git/ 
