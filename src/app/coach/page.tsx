@@ -946,6 +946,7 @@ export default function CoachPage() {
         .gte('scheduled_date', weekStart.toISOString().split('T')[0])
         .lte('scheduled_date', weekEnd.toISOString().split('T')[0])
         .order('scheduled_date')
+        .order('created_at')
 
       // For coaches: load tasks they assigned to the selected student
       // For students: load tasks assigned to them (by any coach)
@@ -1094,6 +1095,7 @@ export default function CoachPage() {
           .gte('scheduled_date', weekStart.toISOString().split('T')[0])
           .lte('scheduled_date', weekEnd.toISOString().split('T')[0])
           .order('scheduled_date')
+          .order('created_at')
 
         if (userRole === 'coach') {
           query = query.eq('assigned_by', user.id)
@@ -1377,6 +1379,7 @@ export default function CoachPage() {
         .gte('scheduled_date', weekStart.toISOString().split('T')[0])
         .lte('scheduled_date', weekEnd.toISOString().split('T')[0])
         .order('scheduled_date')
+        .order('created_at')
 
       if (tasks) {
         setWeeklyTasks(tasks)
@@ -1539,6 +1542,7 @@ export default function CoachPage() {
         .gte('scheduled_date', weekStart.toISOString().split('T')[0])
         .lte('scheduled_date', weekEnd.toISOString().split('T')[0])
         .order('scheduled_date')
+        .order('created_at')
 
       if (tasks) {
         setWeeklyTasks(tasks)
@@ -2432,6 +2436,29 @@ export default function CoachPage() {
 
               {/* Dynamic Second Selection based on Task Type */}
               {(taskForm.task_type === 'study' || taskForm.task_type === 'review') && taskForm.subject_id && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Konu (Opsiyonel)
+                  </label>
+                  <select
+                    value={taskForm.topic_id}
+                    onChange={(e) => setTaskForm(prev => ({ ...prev, topic_id: e.target.value }))}
+                    className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="">Konu seçiniz...</option>
+                    {topics
+                      .filter(topic => topic.subject_id === taskForm.subject_id)
+                      .map(topic => (
+                        <option key={topic.id} value={topic.id}>
+                          {topic.name}
+                        </option>
+                      ))}
+                  </select>
+                </div>
+              )}
+
+              {/* Topic Selection - For practice task type after subject selection */}
+              {taskForm.task_type === 'practice' && taskForm.subject_id && (
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Konu (Opsiyonel)
@@ -4080,6 +4107,7 @@ export default function CoachPage() {
                           const subject = subjects.find(s => s.id === task.subject_id)
                           const topic = topics.find(t => t.id === task.topic_id)
                           const resource = resources.find(r => r.id === task.resource_id)
+                          const mockExam = mockExams.find(m => m.id === task.mock_exam_id)
                           
                           // Define task type colors and styles - Improved Completion Design
                           const getTaskTypeStyle = (taskType: string, isCompleted: boolean) => {
@@ -4163,7 +4191,7 @@ export default function CoachPage() {
                                 </div>
                               </div>
                               
-                              {/* Show resource, subject-topic, or custom title */}
+                              {/* Show resource, subject-topic-mockexam, or custom title */}
                               {resource ? (
                                 <div className="text-xs text-indigo-700 mb-1 font-medium">
                                   <span 
@@ -4177,11 +4205,18 @@ export default function CoachPage() {
                                   </span>
                                   <span className="text-gray-600 ml-1">({resource.category.toUpperCase()})</span>
                                 </div>
-                              ) : (subject || topic) ? (
+                              ) : (subject || topic || mockExam) ? (
                                 <div className="text-xs text-gray-700 mb-1 font-medium">
+                                  {/* Show subject and topic */}
                                   {subject && topic ? `${subject.name} - ${topic.name}` :
                                    subject ? subject.name :
                                    topic ? topic.name : ''}
+                                  {/* Show mock exam for practice/exam tasks */}
+                                  {mockExam && (task.task_type === 'practice' || task.task_type === 'exam') && (
+                                    <div className="text-xs text-gray-600 mt-1">
+                                      📝 {mockExam.name}
+                                    </div>
+                                  )}
                                 </div>
                               ) : task.title !== 'Görev' && (
                                 <div className={`text-xs font-medium mb-1 line-clamp-2 ${
@@ -4213,7 +4248,7 @@ export default function CoachPage() {
                                 <div className="flex items-center space-x-1">
                                   <Clock className="h-3 w-3" />
                                   <span className="font-medium">
-                                    {task.scheduled_start_time || '--:--'}
+                                    {task.scheduled_start_time ? task.scheduled_start_time.substring(0, 5) : '--:--'}
                                   </span>
                                 </div>
                                 <div className="flex items-center space-x-1">
