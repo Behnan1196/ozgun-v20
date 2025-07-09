@@ -1,5 +1,5 @@
 // Database types for TYT AYT Coaching System V3.0
-export type UserRole = 'admin' | 'coach' | 'student'
+export type UserRole = 'admin' | 'coach' | 'student' | 'coordinator'
 export type TaskStatus = 'pending' | 'in_progress' | 'completed' | 'cancelled'
 export type ResourceCategory = 'video' | 'document' | 'pdf' | 'application'
 export type DifficultyLevel = 'baslangic' | 'orta' | 'ileri' | 'uzman'

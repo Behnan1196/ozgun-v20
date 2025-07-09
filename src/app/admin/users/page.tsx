@@ -262,12 +262,14 @@ export default function UserManagement() {
           admin: 'error',
           coach: 'primary',
           student: 'success',
+          coordinator: 'warning',
         } as const
 
         const roleLabels = {
           admin: 'Admin',
           coach: 'Koç',
           student: 'Öğrenci',
+          coordinator: 'Koordinatör',
         }
 
         return (
@@ -421,6 +423,7 @@ export default function UserManagement() {
                 >
                   <MenuItem value="student">Öğrenci</MenuItem>
                   <MenuItem value="coach">Koç</MenuItem>
+                  <MenuItem value="coordinator">Koordinatör</MenuItem>
                   <MenuItem value="admin">Admin</MenuItem>
                 </Select>
               </FormControl>

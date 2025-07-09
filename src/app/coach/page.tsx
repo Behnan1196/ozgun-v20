@@ -307,7 +307,7 @@ export default function CoachPage() {
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null)
   const [myStudents, setMyStudents] = useState<CoachAssignment[]>([])
   const [assignedCoach, setAssignedCoach] = useState<any>(null) // For student role
-  const [userRole, setUserRole] = useState<'coach' | 'student' | null>(null)
+  const [userRole, setUserRole] = useState<'coach' | 'student' | 'coordinator' | null>(null)
   const [currentWeek, setCurrentWeek] = useState(new Date())
   const [activeTab, setActiveTab] = useState('statistics')
   const [weeklyTasks, setWeeklyTasks] = useState<Task[]>([])
@@ -650,8 +650,8 @@ export default function CoachPage() {
         .eq('id', user.id)
         .single()
 
-      // Accept both coach and student roles
-      if (!profile || (profile.role !== 'coach' && profile.role !== 'student')) {
+      // Accept coach, student, and coordinator roles
+      if (!profile || (profile.role !== 'coach' && profile.role !== 'student' && profile.role !== 'coordinator')) {
         window.location.href = '/dashboard'
         return
       }
@@ -688,7 +688,7 @@ export default function CoachPage() {
     loadUser()
   }, [])
 
-  // Load coach's students (only for coach role)
+  // Load coach's students (only for coach role) or all students (for coordinator role)
   useEffect(() => {
     const loadStudents = async () => {
       if (!user) return
@@ -699,30 +699,11 @@ export default function CoachPage() {
         return
       }
       
-      if (userRole !== 'coach') return
+      if (userRole !== 'coach' && userRole !== 'coordinator') return
 
       try {
-        // First get the assignments
-        const { data: assignments, error: assignmentError } = await supabase
-          .from('coach_student_assignments')
-          .select('id, assigned_at, student_id')
-          .eq('coach_id', user.id)
-          .eq('is_active', true)
-          .order('assigned_at', { ascending: false })
-
-        console.log('Raw assignments from DB:', assignments, assignmentError)
-
-        if (assignmentError) {
-          console.error('Assignment error:', assignmentError)
-          setLoading(false)
-          return
-        }
-
-        if (assignments && assignments.length > 0) {
-          // Get student IDs
-          const studentIds = assignments.map(a => a.student_id)
-          
-          // Fetch student details separately - including all profile fields
+        if (userRole === 'coordinator') {
+          // For coordinators, load ALL students
           const { data: students, error: studentError } = await supabase
             .from('user_profiles')
             .select(`
@@ -743,9 +724,10 @@ export default function CoachPage() {
               notes,
               created_at
             `)
-            .in('id', studentIds)
+            .eq('role', 'student')
+            .order('full_name')
 
-          console.log('Students from DB:', students, studentError)
+          console.log('All students from DB (coordinator):', students, studentError)
 
           if (studentError) {
             console.error('Student error:', studentError)
@@ -753,29 +735,91 @@ export default function CoachPage() {
             return
           }
 
-          // Combine assignments with student data
-          const formattedAssignments = assignments.map(assignment => {
-            const student = students?.find(s => s.id === assignment.student_id) || {
-              id: assignment.student_id,
-              full_name: 'İsimsiz Öğrenci',
-              email: '',
-              created_at: ''
-            }
-            return {
-              id: assignment.id,
-              assigned_at: assignment.assigned_at,
-              student
-            }
-          })
+          // Format as assignments for coordinator (with fake assignment data)
+          const formattedAssignments = (students || []).map(student => ({
+            id: `coord-${student.id}`, // Fake assignment ID for coordinator
+            assigned_at: student.created_at,
+            student
+          }))
 
-          console.log('Formatted assignments:', formattedAssignments)
+          console.log('Formatted assignments (coordinator):', formattedAssignments)
           setMyStudents(formattedAssignments)
-          
-          // Don't auto-select any student - let coach choose
-          console.log('Students loaded, coach can now select a student')
         } else {
-          console.log('No assignments found for coach:', user.id)
-          setMyStudents([])
+          // For coaches, load only assigned students
+          const { data: assignments, error: assignmentError } = await supabase
+            .from('coach_student_assignments')
+            .select('id, assigned_at, student_id')
+            .eq('coach_id', user.id)
+            .eq('is_active', true)
+            .order('assigned_at', { ascending: false })
+
+          console.log('Raw assignments from DB:', assignments, assignmentError)
+
+          if (assignmentError) {
+            console.error('Assignment error:', assignmentError)
+            setLoading(false)
+            return
+          }
+
+          if (assignments && assignments.length > 0) {
+            // Get student IDs
+            const studentIds = assignments.map(a => a.student_id)
+            
+            // Fetch student details separately - including all profile fields
+            const { data: students, error: studentError } = await supabase
+              .from('user_profiles')
+              .select(`
+                id, 
+                full_name, 
+                email, 
+                phone,
+                department,
+                school,
+                tutoring_center,
+                target_university,
+                target_department,
+                yks_score,
+                start_date,
+                parent_name,
+                parent_phone,
+                address,
+                notes,
+                created_at
+              `)
+              .in('id', studentIds)
+
+            console.log('Students from DB:', students, studentError)
+
+            if (studentError) {
+              console.error('Student error:', studentError)
+              setLoading(false)
+              return
+            }
+
+            // Combine assignments with student data
+            const formattedAssignments = assignments.map(assignment => {
+              const student = students?.find(s => s.id === assignment.student_id) || {
+                id: assignment.student_id,
+                full_name: 'İsimsiz Öğrenci',
+                email: '',
+                created_at: ''
+              }
+              return {
+                id: assignment.id,
+                assigned_at: assignment.assigned_at,
+                student
+              }
+            })
+
+            console.log('Formatted assignments:', formattedAssignments)
+            setMyStudents(formattedAssignments)
+            
+            // Don't auto-select any student - let coach choose
+            console.log('Students loaded, coach can now select a student')
+          } else {
+            console.log('No assignments found for coach:', user.id)
+            setMyStudents([])
+          }
         }
       } catch (error) {
         console.error('Error loading students:', error)
@@ -1404,8 +1448,8 @@ export default function CoachPage() {
     // Prevent multiple simultaneous updates
     if (updatingTaskId === task.id) return
 
-    // Permission check: Only allow the assigned student or coaches to toggle completion
-    const canUpdate = userRole === 'coach' || (userRole === 'student' && user?.id === task.assigned_to)
+    // Permission check: Only allow the assigned student, coaches, or coordinators to toggle completion
+    const canUpdate = userRole === 'coach' || userRole === 'coordinator' || (userRole === 'student' && user?.id === task.assigned_to)
     
     if (!canUpdate) {
       alert('Bu görevi tamamlama durumunu değiştirme yetkiniz yok.')
@@ -2249,7 +2293,7 @@ export default function CoachPage() {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-                      <p className="text-gray-600">{userRole === 'coach' ? 'Koç paneli yükleniyor...' : 'Öğrenci paneli yükleniyor...'}</p>
+                      <p className="text-gray-600">{userRole === 'coach' ? 'Koç paneli yükleniyor...' : userRole === 'coordinator' ? 'Koordinatör paneli yükleniyor...' : 'Öğrenci paneli yükleniyor...'}</p>
         </div>
       </div>
     )
@@ -2265,14 +2309,14 @@ export default function CoachPage() {
             <div className="flex items-center">
               <GraduationCap className="h-7 w-7 text-blue-400 mr-2.5" />
               <h1 className="text-lg font-medium text-white">
-                ÖZGÜN Koçluk Sistemi - {userRole === 'coach' ? 'Koç' : 'Öğrenci'} Paneli
+                ÖZGÜN Koçluk Sistemi - {userRole === 'coach' ? 'Koç' : userRole === 'coordinator' ? 'Koordinatör' : 'Öğrenci'} Paneli
               </h1>
             </div>
             
             {/* Student Selection & User Menu - Dark Theme */}
             <div className="flex items-center space-x-4">
-              {/* Conditional Header - Student Selector for Coach, Coach Info for Student */}
-              {userRole === 'coach' ? (
+              {/* Conditional Header - Student Selector for Coach/Coordinator, Coach Info for Student */}
+              {(userRole === 'coach' || userRole === 'coordinator') ? (
                 <div className="flex items-center space-x-3">
                   <span className="text-sm font-medium text-gray-300">Aktif Öğrenci:</span>
                   {myStudents.length > 0 ? (
@@ -2343,8 +2387,8 @@ export default function CoachPage() {
                 {userMenuOpen && (
                   <div className="absolute right-0 mt-2 w-48 bg-slate-700 rounded-md shadow-xl py-1 z-50 border border-slate-600">
                     <div className="px-4 py-2 text-sm text-gray-200 border-b border-slate-600">
-                      <div className="font-medium">{profile?.full_name || (userRole === 'coach' ? 'Koç' : 'Öğrenci')}</div>
-                      <div className="text-xs text-gray-400">{userRole === 'coach' ? 'Koç' : 'Öğrenci'}</div>
+                      <div className="font-medium">{profile?.full_name || (userRole === 'coach' ? 'Koç' : userRole === 'coordinator' ? 'Koordinatör' : 'Öğrenci')}</div>
+                      <div className="text-xs text-gray-400">{userRole === 'coach' ? 'Koç' : userRole === 'coordinator' ? 'Koordinatör' : 'Öğrenci'}</div>
                     </div>
                     <button
                       onClick={openSettingsModal}
@@ -4072,8 +4116,8 @@ export default function CoachPage() {
                             {dayNames[index]}
                           </div>
                           
-                          {/* Right: Add Task Button - Only show for coaches */}
-                          {userRole === 'coach' && (
+                          {/* Right: Add Task Button - Only show for coaches and coordinators */}
+                          {(userRole === 'coach' || userRole === 'coordinator') && (
                             <button
                               disabled={!selectedStudent}
                               onClick={() => openTaskModal(date)}
@@ -4135,7 +4179,7 @@ export default function CoachPage() {
                           }
                           
                           // Check if user can update this task
-                          const canUpdate = userRole === 'coach' || (userRole === 'student' && user?.id === task.assigned_to)
+                          const canUpdate = userRole === 'coach' || userRole === 'coordinator' || (userRole === 'student' && user?.id === task.assigned_to)
                           
                           return (
                             <div 
@@ -4159,8 +4203,8 @@ export default function CoachPage() {
                                   </span>
                                 </div>
                                 <div className="flex items-center space-x-1">
-                                  {/* Edit and Delete Buttons - Only show for coaches */}
-                                  {userRole === 'coach' && (
+                                  {/* Edit and Delete Buttons - Only show for coaches and coordinators */}
+                                  {(userRole === 'coach' || userRole === 'coordinator') && (
                                     <>
                                       {/* Edit Button */}
                                       <button
@@ -4731,7 +4775,13 @@ export default function CoachPage() {
               {activeTab === 'chat' && (
                 <div className="space-y-4 mb-6">
                   <h3 className="font-semibold text-gray-900">Mesajlaşma</h3>
-                  {userRole === 'coach' ? (
+                  {userRole === 'coordinator' ? (
+                    <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                      <p className="text-sm text-yellow-800">
+                        💬 Koordinatör olarak doğrudan mesajlaşma özelliği kullanılamaz.
+                      </p>
+                    </div>
+                  ) : userRole === 'coach' ? (
                     selectedStudent ? (
                       <div className="h-[calc(100vh-12rem)]">
                         <StreamChat 
@@ -4764,7 +4814,13 @@ export default function CoachPage() {
               {activeTab === 'video' && (
                 <div className="space-y-4 mb-6">
                   <h3 className="font-semibold text-gray-900">Video Görüşme</h3>
-                  {userRole === 'coach' ? (
+                  {userRole === 'coordinator' ? (
+                    <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                      <p className="text-sm text-yellow-800">
+                        📹 Koordinatör olarak doğrudan video görüşme özelliği kullanılamaz.
+                      </p>
+                    </div>
+                  ) : userRole === 'coach' ? (
                     selectedStudent ? (
                       <div className="h-[calc(100vh-12rem)]">
                         <StreamVideo 

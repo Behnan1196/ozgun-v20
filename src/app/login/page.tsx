@@ -55,6 +55,7 @@ export default function LoginPage() {
             break
           case 'coach':
           case 'student':
+          case 'coordinator':
             redirectPath = '/coach'
             break
           default:
