@@ -58,12 +58,10 @@ import {
 import StreamChat from '@/components/StreamChat'
 import StreamVideo from '@/components/StreamVideo'
 import PomodoroTimer from '@/components/PomodoroTimer'
-import VideoCallNotification from '@/components/VideoCallNotification'
 import { MockExam } from '@/types/database'
 import { 
   showInAppNotification 
 } from '@/lib/webPushNotifications'
-import { useStream } from '@/contexts/StreamContext'
 
 // Interfaces
 interface Student {
@@ -545,182 +543,11 @@ export default function CoachPage() {
     }
   }
 
-  // Video call join handler
-  const handleJoinCall = async (callId: string) => {
-    if (!activeTab || activeTab !== 'video') {
-      setActiveTab('video')
-    }
-    
-    // Use the stream context to join the call
-    const { joinCall } = await import('@/contexts/StreamContext')
-    await joinCall(callId)
-    
-    // Clear the pending invite
-    setPendingCallInvite(null)
-  }
 
-  const handleAvatarUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-      console.log('🧪 [TEST-NOTIFICATION] Creating test notification...')
-      console.log('🧪 [TEST-NOTIFICATION] Document visibility:', document.visibilityState)
-      console.log('🧪 [TEST-NOTIFICATION] Document hasFocus:', document.hasFocus())
-      console.log('🧪 [TEST-NOTIFICATION] Window focus state:', document.hasFocus() ? 'FOCUSED' : 'NOT_FOCUSED')
-      
-      try {
-        const testNotification = new Notification('🧪 Test Bildirimi', {
-          body: 'Bu bir test bildirimidir. Eğer bu mesajı görüyorsanız, bildirimler çalışıyor!',
-          icon: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTEyIDJDMTMuMSAyIDE0IDIuOSAxNCA0VjVDMTcuMyA2IDE5LjggOC43IDE5LjggMTJWMTZMMjEgMTdIMTNIMTFIM1YxNkM0LjIgMTYgNS4yIDE1IDUuMiAxM1Y5QzUuMiA2LjggNy4yIDUgOS40IDVWNEMxMCAyLjkgMTAuOSAyIDEyIDJaTTEyIDIxQzEzLjEgMjEgMTQgMjAuMSAxNCAxOUgxMEMxMCAyMC4xIDEwLjkgMjEgMTIgMjFaIiBmaWxsPSIjNDI4NUY0Ii8+Cjwvc3ZnPgo=',
-          tag: 'test_notification',
-          requireInteraction: true
-        })
-        
-        testNotification.onclick = function(event) {
-          console.log('🧪 [TEST-NOTIFICATION] CLICKED by user!')
-          showInAppNotification('Test Başarılı!', 'Bildirim tıklaması algılandı - bildirimler çalışıyor!')
-          this.close()
-        }
-        
-        testNotification.onshow = function() {
-          console.log('🧪 [TEST-NOTIFICATION] SHOWN event fired!')
-          console.log('🧪 [TEST-NOTIFICATION] If you don\'t see a popup, check:')
-          console.log('🧪 [TEST-NOTIFICATION] 1. Chrome Settings > Privacy > Notifications')
-          console.log('🧪 [TEST-NOTIFICATION] 2. Windows Notification Settings')
-          console.log('🧪 [TEST-NOTIFICATION] 3. Try switching to another tab/app')
-        }
-        
-        testNotification.onerror = function(error) {
-          console.error('🧪 [TEST-NOTIFICATION] ERROR:', error)
-        }
-        
-        testNotification.onclose = function() {
-          console.log('🧪 [TEST-NOTIFICATION] CLOSED')
-        }
-        
-        console.log('🧪 [TEST-NOTIFICATION] Test notification created successfully')
-        
-        // Auto-close after 10 seconds to avoid spam
-        setTimeout(() => {
-          testNotification.close()
-          console.log('🧪 [TEST-NOTIFICATION] Auto-closed after 10 seconds')
-        }, 10000)
-        
-      } catch (error) {
-        console.error('🧪 [TEST-NOTIFICATION] Failed to create test notification:', error)
-      }
-    }
-  }
 
-  const handleAvatarUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0]
-    if (file) {
-      if (file.size > 5 * 1024 * 1024) { // 5MB limit
-        alert('Dosya boyutu 5MB\'dan küçük olmalıdır.')
-        return
-      }
-      
-      const reader = new FileReader()
-      reader.onloadend = () => {
-        setAvatarPreview(reader.result as string)
-        setSettingsForm(prev => ({ ...prev, avatar_url: reader.result as string }))
-      }
-      reader.readAsDataURL(file)
-    }
-  }
 
-  const handleRemoveAvatar = () => {
-    setAvatarPreview(null)
-    setSettingsForm(prev => ({ ...prev, avatar_url: null }))
-  }
 
-  const updateProfile = async () => {
-    try {
-      // If we're removing an existing avatar, delete it from storage
-      if (profile?.avatar_url && !settingsForm.avatar_url) {
-        try {
-          // Extract the file path from the URL
-          const url = new URL(profile.avatar_url)
-          const pathParts = url.pathname.split('/')
-          const avatarPath = pathParts[pathParts.length - 1]
 
-          if (avatarPath) {
-            const { error: storageError } = await supabase.storage
-              .from('avatars')
-              .remove([avatarPath])
-            if (storageError) {
-              console.error('Error removing old avatar:', storageError)
-            }
-          }
-        } catch (error) {
-          console.error('Error parsing avatar URL:', error)
-        }
-      }
-
-      const updates = {
-        full_name: settingsForm.full_name,
-        phone: settingsForm.phone,
-        avatar_url: settingsForm.avatar_url,
-        theme: settingsForm.theme,
-        language: settingsForm.language,
-        notifications_enabled: settingsForm.notifications_enabled,
-        email_notifications: settingsForm.email_notifications,
-        updated_at: new Date().toISOString()
-      }
-
-      const { error } = await supabase
-        .from('user_profiles')
-        .update(updates)
-        .eq('id', user.id)
-
-      if (error) {
-        console.error('Error updating profile:', error)
-        alert('Profil güncellenirken hata oluştu: ' + error.message)
-        return
-      }
-
-      // Update local state
-      setProfile((prev: any) => ({ ...prev, ...updates }))
-      alert('Profil başarıyla güncellendi!')
-      
-    } catch (error) {
-      console.error('Error updating profile:', error)
-      alert('Profil güncellenirken hata oluştu.')
-    }
-  }
-
-  const updatePassword = async () => {
-    if (settingsForm.new_password !== settingsForm.confirm_password) {
-      alert('Yeni şifreler eşleşmiyor!')
-      return
-    }
-
-    if (settingsForm.new_password.length < 6) {
-      alert('Yeni şifre en az 6 karakter olmalıdır!')
-      return
-    }
-
-    try {
-      const { error } = await supabase.auth.updateUser({
-        password: settingsForm.new_password
-      })
-
-      if (error) {
-        console.error('Error updating password:', error)
-        alert('Şifre güncellenirken hata oluştu: ' + error.message)
-        return
-      }
-
-      alert('Şifre başarıyla güncellendi!')
-      setSettingsForm((prev: any) => ({
-        ...prev,
-        current_password: '',
-        new_password: '',
-        confirm_password: ''
-      }))
-      
-    } catch (error) {
-      console.error('Error updating password:', error)
-      alert('Şifre güncellenirken hata oluştu.')
-    }
-  }
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -5945,16 +5772,7 @@ export default function CoachPage() {
          </ResizablePanelGroup>
        </div>
 
-       {/* Video Call Notification */}
-       {pendingCallInvite && (
-         <VideoCallNotification
-           callId={pendingCallInvite.callId}
-           callerName={pendingCallInvite.callerName}
-           expiresAt={pendingCallInvite.expiresAt}
-           onJoin={handleJoinCall}
-           onDecline={() => setPendingCallInvite(null)}
-         />
-       )}
+
      </div>
    )
  } 
