@@ -45,6 +45,14 @@ interface StreamContextType {
   // Status
   isStreamReady: boolean
   isDemoMode: boolean
+  
+  // Call notifications
+  pendingCallInvite: {
+    callId: string
+    callerName: string
+    partnerId: string
+  } | null
+  joinCall: (callId: string) => Promise<void>
 }
 
 const StreamContext = createContext<StreamContextType | undefined>(undefined)
@@ -94,6 +102,13 @@ export function StreamProvider({ children }: StreamProviderProps) {
   const [videoError, setVideoError] = useState<string | null>(null)
   const [initializedVideoPartners, setInitializedVideoPartners] = useState<Set<string>>(new Set())
   const [ringingCall, setRingingCall] = useState<Call | null>(null);
+  
+  // Call notification state
+  const [pendingCallInvite, setPendingCallInvite] = useState<{
+    callId: string
+    callerName: string
+    partnerId: string
+  } | null>(null)
   
   // General state
   const [isStreamReady, setIsStreamReady] = useState(false)
@@ -490,6 +505,14 @@ export function StreamProvider({ children }: StreamProviderProps) {
     };
   }, [videoClient]);
 
+  // Monitor call events for join notifications
+  useEffect(() => {
+    if (!videoCall || !user) return;
+
+    // We removed automatic call join notifications.
+    // Now users manually invite others using the invite button in the video call UI.
+  }, [videoCall, user]);
+
   // Initialize chat channel
   const initializeChat = async (partnerId: string) => {
     if (!chatClient || !user) {
@@ -671,6 +694,34 @@ export function StreamProvider({ children }: StreamProviderProps) {
     return initializedVideoPartners.has(partnerId)
   }
 
+  // Join an existing call by ID
+  const joinCall = async (callId: string) => {
+    if (!videoClient) {
+      setVideoError('Video client not ready')
+      return
+    }
+
+    try {
+      console.log('📞 Joining existing call:', callId)
+      
+      const call = videoClient.call('default', callId)
+      await call.get()
+      setVideoCall(call)
+      
+      // Join the call directly
+      await call.join()
+      
+      // Clear the pending invite
+      setPendingCallInvite(null)
+      
+      console.log('✅ Successfully joined call')
+      
+    } catch (error) {
+      console.error('❌ Failed to join call:', error)
+      setVideoError(`Failed to join call: ${error instanceof Error ? error.message : 'Unknown error'}`)
+    }
+  }
+
   const value: StreamContextType = {
     // Chat
     chatClient,
@@ -694,6 +745,10 @@ export function StreamProvider({ children }: StreamProviderProps) {
     // Status
     isStreamReady,
     isDemoMode,
+    
+    // Call notifications
+    pendingCallInvite,
+    joinCall,
   }
 
   return (

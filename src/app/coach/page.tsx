@@ -322,9 +322,20 @@ export default function CoachPage() {
   const [goals, setGoals] = useState<Goal[]>([])
   const [mockExamResults, setMockExamResults] = useState<MockExamResult[]>([])
   const [educationalLinks, setEducationalLinks] = useState<EducationalLink[]>([])
+  const [linkCategoryFilter, setLinkCategoryFilter] = useState<string>('all')
   const [loading, setLoading] = useState(true)
   const [userMenuOpen, setUserMenuOpen] = useState(false)
   const [updatingTaskId, setUpdatingTaskId] = useState<string | null>(null)
+  
+  // Video call notification state
+  const [pendingCallInvite, setPendingCallInvite] = useState<{
+    callId: string
+    callerName: string
+    callerId: string
+    expiresAt: number
+  } | null>(null)
+
+  // Real-time subscription
   const [realtimeConnected, setRealtimeConnected] = useState(false)
   const dropdownRef = React.useRef<HTMLDivElement>(null)
   const [showTaskModal, setShowTaskModal] = useState(false)
@@ -646,6 +657,10 @@ export default function CoachPage() {
     }
   }
 
+
+
+
+
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -684,9 +699,11 @@ export default function CoachPage() {
                 navigator.serviceWorker.ready.then((registration) => {
                                      registration.showNotification(title, {
                      body: body,
-                     icon: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTEyIDJDMTMuMSAyIDE0IDIuOSAxNCA0VjVDMTcuMyA2IDE5LjggOC43IDE5LjggMTJWMTZMMjEgMTdIMTNIMTFIM1YxNkM0LjIgMTYgNS4yIDE1IDUuMiAxM1Y5QzUuMiA2LjggNy4yIDUgOS40IDVWNEMxMCAyLjkgMTAuOSAyIDEyIDJaTTEyIDIxQzEzLjEgMjEgMTQgMjAuMSAxNCAxOUgxMEMxMCAyMC4xIDEwLjkgMjEgMTIgMjFaIiBmaWxsPSIjNDI4NUY0Ii8+Cjwvc3ZnPgo=',
-                     tag: 'test_notification',
-                     requireInteraction: true
+                     icon: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTEyIDJDMTMuMSAyIDE0IDIuOSAxNCA0VjVDMTcuMyA2IDE5LjggOC43IDE5LjggMTJWMTZMMjEgMTdIMTNIMTFIM1YxNkM0LjIgMTYgNS4yIDE1IDUuMiAxM1Y5QzUuMiA2LjggNy4yIDUgOS40IDVWNEMxMCAyLjkgMTAuOSAyIDEyIDJaTTEyIDIxQzEzLjEgMjEgMTQgMjAuMSAxNCAxOUgxMEMxMCAyMC4xIDEwLjkgMjEgMTIgMjFaIiBmaWxsPSIjNDI4NUY0Ci8+Cjwvc3ZnPgo=',
+                     tag: `${data?.type || 'notification'}_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
+                     requireInteraction: true,
+                     data: data,
+                     silent: false
                    }).catch((error) => {
                     console.error('Service worker notification failed:', error);
                     
@@ -718,6 +735,23 @@ export default function CoachPage() {
             } catch (error) {
               console.error('Failed to create notification:', error);
             }
+          }
+          
+          // Handle video call join notifications
+          if (data?.type === 'video_call_join') {
+            setPendingCallInvite({
+              callId: data.callId,
+              callerName: data.callerName,
+              callerId: data.callerId,
+              expiresAt: Date.now() + 30000 // 30 seconds to join
+            })
+            
+            // Auto-expire the invite after 30 seconds
+            setTimeout(() => {
+              setPendingCallInvite(prev => 
+                prev?.callId === data.callId ? null : prev
+              )
+            }, 30000)
           }
           
           // Always show in-app notification as fallback
@@ -2460,6 +2494,8 @@ export default function CoachPage() {
       alert(`Profil güncellenirken hata oluştu: ${(error as any)?.message || 'Bilinmeyen hata'}`)
     }
   }
+
+
 
   const dayNames = ['Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi', 'Pazar']
   const weekDates = getWeekDates(currentWeek)
@@ -5885,6 +5921,8 @@ export default function CoachPage() {
            </ResizablePanel>
          </ResizablePanelGroup>
        </div>
+
+
      </div>
    )
  } 
