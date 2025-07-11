@@ -1,8 +1,8 @@
-# TYT-AYT Coaching Platform
+# TYT-AYT Coaching Platform (Web App)
 
-A comprehensive coaching platform for TYT-AYT exam preparation with admin, coach, and student interfaces.
+A comprehensive Next.js coaching platform for TYT-AYT exam preparation with admin, coach, and student interfaces.
 
-## Features
+## 🌟 Features
 
 ### PWA (Progressive Web App)
 - ✅ Offline support with service worker
@@ -18,30 +18,34 @@ A comprehensive coaching platform for TYT-AYT exam preparation with admin, coach
 
 ### Core Functionality
 - Real-time chat and video calls (Stream.io)
-- Weekly task planning and tracking
-- Student-coach assignment system
+- Weekly task planning and tracking [[memory:1029523]]
+- Student-coach assignment system [[memory:1029522]]
 - Progress analytics and statistics
 - Mock exam result tracking
 - Educational resource management
 
-## Tech Stack
+## 🚀 Live Deployment
 
-- **Frontend**: Next.js 14, React, TypeScript, Tailwind CSS
+**Production URL**: https://ozgun-v14.vercel.app/coach
+
+- Auto-deploys from `main` branch of this repository
+- PWA features fully functional
+- Mobile-responsive across all interfaces
+
+## 🛠 Tech Stack
+
+- **Frontend**: Next.js 14, React 18, TypeScript, Tailwind CSS
 - **Backend**: Supabase (PostgreSQL, Auth, Real-time)
 - **Communication**: Stream.io (Chat & Video)
 - **Deployment**: Vercel with auto-deployment from GitHub
 - **PWA**: Service Worker, Web App Manifest
 
-## Live Demo
+## 📱 Related Projects
 
-🚀 **Production URL**: https://tyt-ayt-coaching-platform.vercel.app/login
-
-## Deployment Info
-
-- Auto-deploys from `main` branch
-- PWA features fully functional
-- Mobile-responsive across all interfaces
-- Last deployment: 2024-12-19
+This web application works seamlessly with our mobile app:
+- **Mobile App**: React Native with Expo (separate repository)
+- **Shared**: Unified database types and API endpoints
+- **Cross-platform**: Video calls work between web coaches and mobile students
 
 ## Usage
 

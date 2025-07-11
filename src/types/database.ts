@@ -9,6 +9,18 @@ export interface UserProfile {
   id: string
   email: string
   full_name: string
+  phone?: string
+  department?: string
+  school?: string
+  tutoring_center?: string
+  target_university?: string
+  target_department?: string
+  yks_score?: number
+  start_date?: string
+  parent_name?: string
+  parent_phone?: string
+  address?: string
+  notes?: string
   role: UserRole
   created_at: string
   updated_at: string
@@ -137,4 +149,74 @@ export interface TaskWithRelations extends Task {
 export interface MockExamWithRelations extends MockExam {
   subject?: Subject
   created_by_user?: UserProfile
+}
+
+// Database type for Supabase client
+export type Database = {
+  public: {
+    Tables: {
+      user_profiles: {
+        Row: UserProfile
+        Insert: Omit<UserProfile, 'id' | 'created_at' | 'updated_at'>
+        Update: Partial<Omit<UserProfile, 'id' | 'created_at' | 'updated_at'>>
+      }
+      coach_student_assignments: {
+        Row: CoachStudentAssignment
+        Insert: Omit<CoachStudentAssignment, 'id' | 'assigned_at'>
+        Update: Partial<Omit<CoachStudentAssignment, 'id' | 'assigned_at'>>
+      }
+      subjects: {
+        Row: Subject
+        Insert: Omit<Subject, 'id' | 'created_at'>
+        Update: Partial<Omit<Subject, 'id' | 'created_at'>>
+      }
+      topics: {
+        Row: Topic
+        Insert: Omit<Topic, 'id' | 'created_at'>
+        Update: Partial<Omit<Topic, 'id' | 'created_at'>>
+      }
+      resources: {
+        Row: Resource
+        Insert: Omit<Resource, 'id' | 'created_at'>
+        Update: Partial<Omit<Resource, 'id' | 'created_at'>>
+      }
+      mock_exams: {
+        Row: MockExam
+        Insert: Omit<MockExam, 'id' | 'created_at' | 'updated_at'>
+        Update: Partial<Omit<MockExam, 'id' | 'created_at' | 'updated_at'>>
+      }
+      tasks: {
+        Row: Task
+        Insert: Omit<Task, 'id' | 'created_at'>
+        Update: Partial<Omit<Task, 'id' | 'created_at'>>
+      }
+      announcements: {
+        Row: Announcement
+        Insert: Omit<Announcement, 'id' | 'created_at'>
+        Update: Partial<Omit<Announcement, 'id' | 'created_at'>>
+      }
+      stream_tokens: {
+        Row: StreamToken
+        Insert: Omit<StreamToken, 'id' | 'created_at'>
+        Update: Partial<Omit<StreamToken, 'id' | 'created_at'>>
+      }
+      device_tokens: {
+        Row: DeviceToken
+        Insert: Omit<DeviceToken, 'id' | 'created_at' | 'updated_at'>
+        Update: Partial<Omit<DeviceToken, 'id' | 'created_at' | 'updated_at'>>
+      }
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      [_ in never]: never
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
+  }
 } 
