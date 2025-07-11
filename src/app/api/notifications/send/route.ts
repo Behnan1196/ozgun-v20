@@ -124,15 +124,17 @@ export async function POST(request: NextRequest) {
         // Create and subscribe to the channel first
         const channel = supabase.channel(`user-${userId}`);
         
-        // Subscribe to the channel
+        // Subscribe to the channel with timeout
         const subscription = await new Promise((resolve) => {
+          const timeout = setTimeout(() => {
+            console.log('⏰ [API] Channel subscription timed out after 3 seconds');
+            resolve('TIMED_OUT');
+          }, 3000); // 3 second timeout
+
           channel.subscribe((status) => {
             console.log('📡 [API] Channel subscription status:', status);
-            if (status === 'SUBSCRIBED') {
-              resolve(status);
-            } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
-              resolve(status);
-            }
+            clearTimeout(timeout);
+            resolve(status);
           });
         });
 
