@@ -1473,6 +1473,12 @@ export default function CoachPage() {
   }
 
   const createTask = async () => {
+    console.log('🔍 DEBUG: createTask called with:', { 
+      selectedStudent: selectedStudent?.id, 
+      taskModalDate: taskModalDate?.toISOString(),
+      taskType: taskForm.task_type 
+    })
+    
     if (!selectedStudent || !taskModalDate) {
       alert('Lütfen öğrenci seçin ve tarih belirleyin')
       return
@@ -1527,6 +1533,8 @@ export default function CoachPage() {
         return
       }
 
+      console.log('🔍 DEBUG: Task created successfully, now refreshing tasks...')
+
       // Refresh tasks
       const weekStart = getWeekStart(currentWeek)
       const weekEnd = new Date(weekStart)
@@ -1546,7 +1554,10 @@ export default function CoachPage() {
         setWeeklyTasks(tasks)
       }
 
+      console.log('🔍 DEBUG: Tasks refreshed, now preparing notifications...')
+
       // Send notification for all new tasks
+      console.log('🔍 DEBUG: About to send notification for task:', taskForm.task_type, 'to student:', selectedStudent.id)
       try {
         console.log('📤 Sending new task notification...')
         
