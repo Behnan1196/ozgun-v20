@@ -754,7 +754,7 @@ export default function CoachPage() {
                                      registration.showNotification(title, {
                      body: body,
                      icon: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTEyIDJDMTMuMSAyIDE0IDIuOSAxNCA0VjVDMTcuMyA2IDE5LjggOC3IDE5LjggMTJWMTZMMjEgMTdIMTNIMTFIM1YxNkM0LjIgMTYgNS4yIDE1IDUuMiAxM1Y5QzUuMiA2LjggNy4yIDUgOS40IDVWNEMxMCAyLjkgMTAuOSAyIDEyIDJaTTEyIDIxQzEzLjEgMjEgMTQgMjAuMSAxNCAxOUgxMEMxMCAyMC4xIDEwLjkgMjEgMTIgMjFaIiBmaWxsPSIjNDI4NUY0Ci8+Cjwvc3ZnPgo=',
-                     tag: data?.type || 'notification',
+                     tag: `${data?.type || 'notification'}_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
                      requireInteraction: true,
                      data: data,
                      silent: false
@@ -768,7 +768,7 @@ export default function CoachPage() {
                     const fallbackNotification = new Notification(title, {
                       body: body,
                       icon: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTEyIDJDMTMuMSAyIDE0IDIuOSAxNCA0VjVDMTcuMyA2IDE5LjggOC43IDE5LjggMTJWMTZMMjEgMTdIMTNIMTFIM1YxNkM0LjIgMTYgNS4yIDE1IDUuMiAxM1Y5QzUuMiA2LjggNy4yIDUgOS40IDVWNEMxMCAyLjkgMTAuOSAyIDEyIDJaTTEyIDIxQzEzLjEgMjEgMTQgMjAuMSAxNCAxOUgxMEMxMCAyMC4xIDEwLjkgMjEgMTIgMjFaIiBmaWxsPSIjNDI4NUY0Ci8+Cjwvc3ZnPgo=',
-                      tag: data?.type || 'notification',
+                      tag: `${data?.type || 'notification'}_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
                       requireInteraction: true
                     });
                   });
@@ -780,7 +780,7 @@ export default function CoachPage() {
                 const notification = new Notification(title, {
                   body: body,
                   icon: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTEyIDJDMTMuMSAyIDE0IDIuOSAxNCA0VjVDMTcuMyA2IDE5LjggOC43IDE5LjggMTJWMTZMMjEgMTdIMTNIMTFIM1YxNkM0LjIgMTYgNS4yIDE1IDUuMiAxM1Y5QzUuMiA2LjggNy4yIDUgOS40IDVWNEMxMCAyLjkgMTAuOSAyIDEyIDJaTTEyIDIxQzEzLjEgMjEgMTQgMjAuMSAxNCAxOUgxMEMxMCAyMC4xIDEwLjkgMjEgMTIgMjFaIiBmaWxsPSIjNDI4NUY0Ci8+Cjwvc3ZnPgo=',
-                  tag: data?.type || 'notification',
+                  tag: `${data?.type || 'notification'}_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
                   requireInteraction: true,
                   data: data
                 });
