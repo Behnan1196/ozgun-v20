@@ -120,7 +120,7 @@ export const subscribeToWebPush = async (userId: string): Promise<WebPushRegistr
     if (registration.active) {
       new Notification('Bildirimler Etkinleştirildi! 🎉', {
         body: 'Web bildirimleri başarıyla kuruldu. Koçluk seansı bildirimleri alacaksınız.',
-        icon: '/icons/icon-192x192.png'
+        icon: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTEyIDJDMTMuMSAyIDE0IDIuOSAxNCA0VjVDMTcuMyA2IDE5LjggOC43IDE5LjggMTJWMTZMMjEgMTdIMTNIMTFIM1YxNkM0LjIgMTYgNS4yIDE1IDUuMiAxM1Y5QzUuMiA2LjggNy4yIDUgOS40IDVWNEMxMCAyLjkgMTAuOSAyIDEyIDJaTTEyIDIxQzEzLjEgMjEgMTQgMjAuMSAxNCAxOUgxMEMxMCAyMC4xIDEwLjkgMjEgMTIgMjFaIiBmaWxsPSIjNDI4NUY0Ii8+Cjwvc3ZnPgo='
       });
     }
 
@@ -147,16 +147,8 @@ export const unsubscribeFromWebPush = async (userId: string): Promise<boolean> =
       return false;
     }
 
-    const registration = await navigator.serviceWorker.getRegistration('/sw.js');
-    if (registration) {
-      const subscription = await registration.pushManager.getSubscription();
-      if (subscription) {
-        await subscription.unsubscribe();
-        console.log('✅ [WEB-PUSH] Browser subscription removed');
-      }
-    }
-
-    // Remove from database
+    // Remove from database only - don't touch browser push manager
+    // This preserves browser notification permissions for real-time notifications
     const supabase = createClient();
     const { error } = await supabase
       .from('web_push_subscriptions')
@@ -168,7 +160,7 @@ export const unsubscribeFromWebPush = async (userId: string): Promise<boolean> =
       return false;
     }
 
-    console.log('✅ [WEB-PUSH] Subscription removed from database');
+    console.log('✅ [WEB-PUSH] Subscription removed from database (browser permissions preserved)');
     return true;
 
   } catch (error) {
