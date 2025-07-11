@@ -120,20 +120,45 @@ export async function POST(request: NextRequest) {
         };
 
         console.log('📡 Sending real-time web notification...');
-        const broadcastResponse = await supabase
-          .channel(`user-${userId}`)
-          .send({
+        
+        // Create and subscribe to the channel first
+        const channel = supabase.channel(`user-${userId}`);
+        
+        // Subscribe to the channel
+        const subscription = await new Promise((resolve) => {
+          channel.subscribe((status) => {
+            console.log('📡 [API] Channel subscription status:', status);
+            if (status === 'SUBSCRIBED') {
+              resolve(status);
+            } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+              resolve(status);
+            }
+          });
+        });
+
+        if (subscription === 'SUBSCRIBED') {
+          // Now send the broadcast
+          const broadcastResponse = await channel.send({
             type: 'broadcast',
             event: 'new_notification',
             payload: notificationPayload
           });
 
-        if (broadcastResponse === 'ok') {
-          console.log('✅ Real-time web notification sent successfully');
-          results.web.sent = true;
+          console.log('📡 [API] Broadcast response:', broadcastResponse);
+
+          if (broadcastResponse === 'ok') {
+            console.log('✅ Real-time web notification sent successfully');
+            results.web.sent = true;
+          } else {
+            console.error('❌ Failed to send real-time notification:', broadcastResponse);
+            results.web.error = 'Failed to send real-time notification';
+          }
+          
+          // Clean up the channel
+          supabase.removeChannel(channel);
         } else {
-          console.error('❌ Failed to send real-time notification:', broadcastResponse);
-          results.web.error = 'Failed to send real-time notification';
+          console.error('❌ Failed to subscribe to notification channel:', subscription);
+          results.web.error = 'Failed to subscribe to notification channel';
         }
         
         // TODO: Add actual web push service when VAPID keys are configured
