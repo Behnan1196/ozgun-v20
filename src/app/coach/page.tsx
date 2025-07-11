@@ -1473,6 +1473,7 @@ export default function CoachPage() {
   }
 
   const createTask = async () => {
+    console.log('🔥 URGENT DEBUG: createTask function CALLED!')
     console.log('🔍 DEBUG: createTask called with:', { 
       selectedStudent: selectedStudent?.id, 
       taskModalDate: taskModalDate?.toISOString(),
@@ -1480,6 +1481,7 @@ export default function CoachPage() {
     })
     
     if (!selectedStudent || !taskModalDate) {
+      console.log('❌ DEBUG: Missing selectedStudent or taskModalDate')
       alert('Lütfen öğrenci seçin ve tarih belirleyin')
       return
     }
