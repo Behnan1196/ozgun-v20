@@ -58,10 +58,12 @@ import {
 import StreamChat from '@/components/StreamChat'
 import StreamVideo from '@/components/StreamVideo'
 import PomodoroTimer from '@/components/PomodoroTimer'
+import VideoCallNotification from '@/components/VideoCallNotification'
 import { MockExam } from '@/types/database'
 import { 
   showInAppNotification 
 } from '@/lib/webPushNotifications'
+import { useStream } from '@/contexts/StreamContext'
 
 // Interfaces
 interface Student {
@@ -5942,6 +5944,17 @@ export default function CoachPage() {
            </ResizablePanel>
          </ResizablePanelGroup>
        </div>
+
+       {/* Video Call Notification */}
+       {pendingCallInvite && (
+         <VideoCallNotification
+           callId={pendingCallInvite.callId}
+           callerName={pendingCallInvite.callerName}
+           expiresAt={pendingCallInvite.expiresAt}
+           onJoin={handleJoinCall}
+           onDecline={() => setPendingCallInvite(null)}
+         />
+       )}
      </div>
    )
  } 

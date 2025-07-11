@@ -509,63 +509,8 @@ export function StreamProvider({ children }: StreamProviderProps) {
   useEffect(() => {
     if (!videoCall || !user) return;
 
-    const handleCallMemberJoined = async (event: any) => {
-      console.log('👤 Call member joined:', event);
-      
-      // Check if someone else joined (not the current user)
-      if (event.user?.id && event.user.id !== user.id) {
-        console.log('📞 Sending call join notification to other participants');
-        
-        try {
-          // Get user's profile to get their name
-          const { data: userProfile } = await supabase
-            .from('user_profiles')
-            .select('full_name')
-            .eq('id', user.id)
-            .single();
-            
-          const callerName = userProfile?.full_name || 'Someone';
-          
-          // Get call ID from the call
-          const callId = videoCall.id;
-          
-          // Send notification to all other call members
-          const callMembers = videoCall.state.members;
-          for (const member of callMembers) {
-            if (member.user.id !== user.id) {
-              // Send notification to this member
-              await fetch('/api/notifications/send', {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                  userId: member.user.id,
-                  title: '📞 Video Call Started',
-                  body: `${callerName} joined the video call. Tap to join!`,
-                  data: {
-                    type: 'video_call_join',
-                    callId: callId,
-                    callerName: callerName,
-                    callerId: user.id,
-                    action: 'join_call'
-                  }
-                })
-              });
-            }
-          }
-          
-        } catch (error) {
-          console.error('❌ Failed to send call join notification:', error);
-        }
-      }
-    };
-
-    videoCall.on('call.session_participant_joined', handleCallMemberJoined);
-
-    return () => {
-      videoCall.off('call.session_participant_joined', handleCallMemberJoined);
-    };
+    // We removed automatic call join notifications.
+    // Now users manually invite others using the invite button in the video call UI.
   }, [videoCall, user]);
 
   // Initialize chat channel
