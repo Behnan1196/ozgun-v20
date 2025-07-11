@@ -738,45 +738,62 @@ export default function CoachPage() {
         try {
           const { title, body, data } = payload.payload
           
-          // Show browser notification if permission granted
+          // Show browser notification using service worker for system notifications
           if (Notification.permission === 'granted') {
             try {
-              console.log('🔍 [DEBUG] Creating browser notification...');
+              console.log('🔍 [DEBUG] Creating system notification via service worker...');
               console.log('🔍 [DEBUG] Document visibility:', document.visibilityState);
               console.log('🔍 [DEBUG] Document hasFocus:', document.hasFocus());
               
-              const notification = new Notification(title, {
-                body: body,
-                icon: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTEyIDJDMTMuMSAyIDE0IDIuOSAxNCA0VjVDMTcuMyA2IDE5LjggOC43IDE5LjggMTJWMTZMMjEgMTdIMTNIMTFIM1YxNkM0LjIgMTYgNS4yIDE1IDUuMiAxM1Y5QzUuMiA2LjggNy4yIDUgOS40IDVWNEMxMCAyLjkgMTAuOSAyIDEyIDJaTTEyIDIxQzEzLjEgMjEgMTQgMjAuMSAxNCAxOUgxMEMxMCAyMC4xIDEwLjkgMjEgMTIgMjFaIiBmaWxsPSIjNDI4NUY0Ii8+Cjwvc3ZnPgo=',
-                tag: data?.type || 'notification',
-                requireInteraction: true,
-                data: data
-              });
-              
-              // Add notification event listeners
-              notification.onclick = function(event) {
-                console.log('🖱️ [DEBUG] Notification clicked!');
-                window.focus();
-                this.close();
-              };
-              
-              notification.onshow = function() {
-                console.log('👁️ [DEBUG] Notification SHOWN to user!');
-              };
-              
-              notification.onerror = function(error) {
-                console.error('❌ [DEBUG] Notification error:', error);
-              };
-              
-              notification.onclose = function() {
-                console.log('❌ [DEBUG] Notification closed');
-              };
-              
-              console.log('✅ Browser notification created successfully');
-              console.log('💡 [TIP] If notification doesn\'t appear, try minimizing browser or switching tabs');
+              // Use service worker for system-initiated notifications to bypass browser restrictions
+              if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+                console.log('🔧 [DEBUG] Using service worker for notification...');
+                
+                // Use service worker to show notification
+                navigator.serviceWorker.ready.then((registration) => {
+                                     registration.showNotification(title, {
+                     body: body,
+                     icon: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTEyIDJDMTMuMSAyIDE0IDIuOSAxNCA0VjVDMTcuMyA2IDE5LjggOC3IDE5LjggMTJWMTZMMjEgMTdIMTNIMTFIM1YxNkM0LjIgMTYgNS4yIDE1IDUuMiAxM1Y5QzUuMiA2LjggNy4yIDUgOS40IDVWNEMxMCAyLjkgMTAuOSAyIDEyIDJaTTEyIDIxQzEzLjEgMjEgMTQgMjAuMSAxNCAxOUgxMEMxMCAyMC4xIDEwLjkgMjEgMTIgMjFaIiBmaWxsPSIjNDI4NUY0Ci8+Cjwvc3ZnPgo=',
+                     tag: data?.type || 'notification',
+                     requireInteraction: true,
+                     data: data,
+                     silent: false
+                   }).then(() => {
+                    console.log('✅ [SW] Service worker notification shown successfully');
+                  }).catch((error) => {
+                    console.error('❌ [SW] Service worker notification failed:', error);
+                    
+                    // Fallback to regular notification
+                    console.log('🔄 [DEBUG] Falling back to regular notification...');
+                    const fallbackNotification = new Notification(title, {
+                      body: body,
+                      icon: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTEyIDJDMTMuMSAyIDE0IDIuOSAxNCA0VjVDMTcuMyA2IDE5LjggOC43IDE5LjggMTJWMTZMMjEgMTdIMTNIMTFIM1YxNkM0LjIgMTYgNS4yIDE1IDUuMiAxM1Y5QzUuMiA2LjggNy4yIDUgOS40IDVWNEMxMCAyLjkgMTAuOSAyIDEyIDJaTTEyIDIxQzEzLjEgMjEgMTQgMjAuMSAxNCAxOUgxMEMxMCAyMC4xIDEwLjkgMjEgMTIgMjFaIiBmaWxsPSIjNDI4NUY0Ci8+Cjwvc3ZnPgo=',
+                      tag: data?.type || 'notification',
+                      requireInteraction: true
+                    });
+                  });
+                });
+              } else {
+                console.log('🔄 [DEBUG] No service worker available, using direct notification...');
+                
+                // Direct notification as fallback
+                const notification = new Notification(title, {
+                  body: body,
+                  icon: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTEyIDJDMTMuMSAyIDE0IDIuOSAxNCA0VjVDMTcuMyA2IDE5LjggOC43IDE5LjggMTJWMTZMMjEgMTdIMTNIMTFIM1YxNkM0LjIgMTYgNS4yIDE1IDUuMiAxM1Y5QzUuMiA2LjggNy4yIDUgOS40IDVWNEMxMCAyLjkgMTAuOSAyIDEyIDJaTTEyIDIxQzEzLjEgMjEgMTQgMjAuMSAxNCAxOUgxMEMxMCAyMC4xIDEwLjkgMjEgMTIgMjFaIiBmaWxsPSIjNDI4NUY0Ci8+Cjwvc3ZnPgo=',
+                  tag: data?.type || 'notification',
+                  requireInteraction: true,
+                  data: data
+                });
+                
+                notification.onclick = function(event) {
+                  console.log('🖱️ [DEBUG] Fallback notification clicked!');
+                  window.focus();
+                  this.close();
+                };
+              }
               
             } catch (error) {
-              console.error('❌ Failed to create browser notification:', error);
+              console.error('❌ Failed to create system notification:', error);
             }
           } else {
             console.log('🚫 [DEBUG] Notification permission not granted:', Notification.permission);
