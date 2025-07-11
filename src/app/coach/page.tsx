@@ -1617,60 +1617,24 @@ export default function CoachPage() {
         setWeeklyTasks(tasks)
       }
 
-      // Send notification for all new tasks
-      try {
-        console.log('📤 Sending new task notification...')
-        
-        const taskDate = new Date(taskModalDate)
-        const formattedDate = taskDate.toLocaleDateString('tr-TR', {
-          day: 'numeric',
-          month: 'long',
-          weekday: 'long'
-        })
-        
-        // Create appropriate notification based on task type
-        let notificationTitle = ''
-        let notificationBody = ''
-        let notificationType = ''
-        
-        switch (taskForm.task_type) {
-          case 'coaching_session':
-            notificationTitle = '📅 Yeni Koçluk Seansı'
-            notificationBody = taskForm.scheduled_start_time 
-              ? `${taskTitle} - ${formattedDate} ${taskForm.scheduled_start_time}`
-              : `${taskTitle} - ${formattedDate}`
-            notificationType = 'new_coaching_session'
-            break
-          case 'study':
-            notificationTitle = '📚 Yeni Çalışma Görevi'
-            notificationBody = `${taskTitle} - ${formattedDate}`
-            notificationType = 'new_study_task'
-            break
-          case 'practice':
-            notificationTitle = '✏️ Yeni Soru Çözme Görevi'
-            notificationBody = `${taskTitle} - ${formattedDate} (${taskForm.problem_count} soru)`
-            notificationType = 'new_practice_task'
-            break
-          case 'exam':
-            notificationTitle = '📝 Yeni Sınav Görevi'
-            notificationBody = `${taskTitle} - ${formattedDate}`
-            notificationType = 'new_exam_task'
-            break
-          case 'review':
-            notificationTitle = '🔄 Yeni Tekrar Görevi'
-            notificationBody = `${taskTitle} - ${formattedDate}`
-            notificationType = 'new_review_task'
-            break
-          case 'resource':
-            notificationTitle = '📖 Yeni Kaynak Görevi'
-            notificationBody = `${taskTitle} - ${formattedDate}`
-            notificationType = 'new_resource_task'
-            break
-          default:
-            notificationTitle = '📋 Yeni Görev'
-            notificationBody = `${taskTitle} - ${formattedDate}`
-            notificationType = 'new_task'
-        }
+      // Send notification ONLY for coaching sessions
+      if (taskForm.task_type === 'coaching_session') {
+        try {
+          console.log('📤 Sending coaching session notification...')
+          
+          const taskDate = new Date(taskModalDate)
+          const formattedDate = taskDate.toLocaleDateString('tr-TR', {
+            day: 'numeric',
+            month: 'long',
+            weekday: 'long'
+          })
+          
+          // Create coaching session notification
+          const notificationTitle = '📅 Yeni Koçluk Seansı'
+          const notificationBody = taskForm.scheduled_start_time 
+            ? `${taskTitle} - ${formattedDate} ${taskForm.scheduled_start_time}`
+            : `${taskTitle} - ${formattedDate}`
+          const notificationType = 'new_coaching_session'
         
         const response = await fetch('/api/notifications/send', {
           method: 'POST',
@@ -1702,9 +1666,10 @@ export default function CoachPage() {
           const errorText = await response.text()
           console.error('❌ Failed to send task notification:', errorText)
         }
-      } catch (notificationError) {
-        console.error('❌ Error sending task notification:', notificationError)
-        // Don't show error to user - task creation was successful
+              } catch (notificationError) {
+          console.error('❌ Error sending task notification:', notificationError)
+          // Don't show error to user - task creation was successful
+        }
       }
 
       closeTaskModal()
@@ -1866,16 +1831,11 @@ export default function CoachPage() {
         return
       }
 
-      // Send notification for task updates
-      try {
-        console.log('📤 Sending task update notification...')
-        
-        // Check what changed to create appropriate message
-        let notificationTitle = '🔄 Görev Güncellendi'
-        let notificationBody = `${taskTitle} görevi güncellendi`
-        let notificationType = 'task_updated'
-        
-        if (isCoachingSession && sessionChanged && newTime) {
+      // Send notification ONLY for coaching session updates
+      if (isCoachingSession && sessionChanged) {
+        try {
+          console.log('📤 Sending coaching session update notification...')
+          
           // Special handling for coaching session time/date changes
           const sessionDate = new Date(newDate)
           const formattedDate = sessionDate.toLocaleDateString('tr-TR', {
@@ -1893,18 +1853,9 @@ export default function CoachPage() {
             changeMessage = 'saati değiştirildi'
           }
           
-          notificationTitle = '🔄 Koçluk Seansı Güncellendi'
-          notificationBody = `${taskTitle} ${changeMessage} - Yeni: ${formattedDate} ${newTime}`
-          notificationType = 'session_updated'
-        } else if (editingTask.title !== taskTitle) {
-          // Title changed
-          notificationBody = `Görev adı "${editingTask.title}" ⮕ "${taskTitle}" olarak değiştirildi`
-        } else if (editingTask.scheduled_date !== newDate) {
-          // Date changed (non-coaching session)
-          const oldDate = new Date(editingTask.scheduled_date).toLocaleDateString('tr-TR')
-          const newDateFormatted = new Date(newDate).toLocaleDateString('tr-TR')
-          notificationBody = `${taskTitle} tarihi ${oldDate} ⮕ ${newDateFormatted} olarak değiştirildi`
-        }
+          const notificationTitle = '🔄 Koçluk Seansı Güncellendi'
+          const notificationBody = `${taskTitle} ${changeMessage} - Yeni: ${formattedDate} ${newTime}`
+          const notificationType = 'session_updated'
         
         const response = await fetch('/api/notifications/send', {
           method: 'POST',
@@ -1935,9 +1886,10 @@ export default function CoachPage() {
           const errorText = await response.text()
           console.error('❌ Failed to send task update notification:', errorText)
         }
-      } catch (notificationError) {
-        console.error('❌ Error sending task update notification:', notificationError)
-        // Don't show error to user - task update was successful
+              } catch (notificationError) {
+          console.error('❌ Error sending task update notification:', notificationError)
+          // Don't show error to user - task update was successful
+        }
       }
 
       // Refresh tasks
