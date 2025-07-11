@@ -4225,6 +4225,8 @@ export default function CoachPage() {
                                 return `${baseStyle} border-l-purple-500 bg-purple-50 hover:bg-purple-100 hover:border-purple-300`
                               case 'resource':
                                 return `${baseStyle} border-l-indigo-500 bg-indigo-50 hover:bg-indigo-100 hover:border-indigo-300`
+                              case 'coaching_session':
+                                return `${baseStyle} border-l-emerald-500 bg-emerald-50 hover:bg-emerald-100 hover:border-emerald-300`
                               default:
                                 return `${baseStyle} border-l-gray-500 bg-gray-50 hover:bg-gray-100 hover:border-gray-300`
                             }
@@ -4247,11 +4249,13 @@ export default function CoachPage() {
                                   {task.task_type === 'exam' && <FileText className="h-3 w-3 text-red-600" />}
                                   {task.task_type === 'review' && <BarChart3 className="h-3 w-3 text-purple-600" />}
                                   {task.task_type === 'resource' && <Link className="h-3 w-3 text-indigo-600" />}
+                                  {task.task_type === 'coaching_session' && <Video className="h-3 w-3 text-emerald-600" />}
                                   <span className="text-xs font-semibold text-gray-700">
                                     {task.task_type === 'study' ? 'ÇALIŞMA' :
                                      task.task_type === 'practice' ? 'SORU ÇÖZ' :
                                      task.task_type === 'exam' ? 'SINAV' :
-                                     task.task_type === 'resource' ? 'KAYNAK' : 'TEKRAR'}
+                                     task.task_type === 'resource' ? 'KAYNAK' :
+                                     task.task_type === 'coaching_session' ? 'KOÇLUK SEANSI' : 'TEKRAR'}
                                   </span>
                                 </div>
                                 <div className="flex items-center space-x-1">
