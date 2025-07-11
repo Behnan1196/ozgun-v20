@@ -321,9 +321,20 @@ export default function CoachPage() {
   const [goals, setGoals] = useState<Goal[]>([])
   const [mockExamResults, setMockExamResults] = useState<MockExamResult[]>([])
   const [educationalLinks, setEducationalLinks] = useState<EducationalLink[]>([])
+  const [linkCategoryFilter, setLinkCategoryFilter] = useState<string>('all')
   const [loading, setLoading] = useState(true)
   const [userMenuOpen, setUserMenuOpen] = useState(false)
   const [updatingTaskId, setUpdatingTaskId] = useState<string | null>(null)
+  
+  // Video call notification state
+  const [pendingCallInvite, setPendingCallInvite] = useState<{
+    callId: string
+    callerName: string
+    callerId: string
+    expiresAt: number
+  } | null>(null)
+
+  // Real-time subscription
   const [realtimeConnected, setRealtimeConnected] = useState(false)
   const dropdownRef = React.useRef<HTMLDivElement>(null)
   const [showTaskModal, setShowTaskModal] = useState(false)
@@ -521,20 +532,9 @@ export default function CoachPage() {
   const handleNotificationPermissionRequest = async () => {
     if (typeof window !== 'undefined' && 'Notification' in window) {
       try {
-        console.log('🔔 [NOTIFICATION-DEBUG] Current permission:', Notification.permission)
-        
         const permission = await Notification.requestPermission()
-        console.log('🔔 [NOTIFICATION-DEBUG] Permission result:', permission)
-        
         if (permission === 'granted') {
-          showInAppNotification('Bildirimler Etkinleştirildi', 'Tarayıcı bildirimleri başarıyla etkinleştirildi!')
-          
-          // Test notification to verify functionality
-          setTimeout(() => {
-            createTestNotification()
-          }, 1000)
-        } else {
-          showInAppNotification('Bildirim İzni Gerekli', 'Bildirimleri görmek için tarayıcı ayarlarından izin verin')
+          showInAppNotification('Bildirim İzni', 'Bildirim izni başarıyla verildi!')
         }
       } catch (error) {
         console.error('❌ [NOTIFICATIONS] Permission request failed:', error)
@@ -543,9 +543,21 @@ export default function CoachPage() {
     }
   }
 
-  // Add test notification function for debugging
-  const createTestNotification = () => {
-    if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
+  // Video call join handler
+  const handleJoinCall = async (callId: string) => {
+    if (!activeTab || activeTab !== 'video') {
+      setActiveTab('video')
+    }
+    
+    // Use the stream context to join the call
+    const { joinCall } = await import('@/contexts/StreamContext')
+    await joinCall(callId)
+    
+    // Clear the pending invite
+    setPendingCallInvite(null)
+  }
+
+  const handleAvatarUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
       console.log('🧪 [TEST-NOTIFICATION] Creating test notification...')
       console.log('🧪 [TEST-NOTIFICATION] Document visibility:', document.visibilityState)
       console.log('🧪 [TEST-NOTIFICATION] Document hasFocus:', document.hasFocus())
@@ -728,43 +740,33 @@ export default function CoachPage() {
   useEffect(() => {
     if (!user?.id) return
 
-    console.log('🔔 [WEB-NOTIFICATIONS] Setting up real-time notification listener for user:', user.id)
+
     
     const notificationChannel = supabase
       .channel(`user-${user.id}`)
       .on('broadcast', { event: 'new_notification' }, (payload) => {
-        console.log('📨 [WEB-NOTIFICATIONS] Received real-time notification:', payload)
-        
         try {
           const { title, body, data } = payload.payload
           
           // Show browser notification using service worker for system notifications
           if (Notification.permission === 'granted') {
             try {
-              console.log('🔍 [DEBUG] Creating system notification via service worker...');
-              console.log('🔍 [DEBUG] Document visibility:', document.visibilityState);
-              console.log('🔍 [DEBUG] Document hasFocus:', document.hasFocus());
-              
               // Use service worker for system-initiated notifications to bypass browser restrictions
               if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
-                console.log('🔧 [DEBUG] Using service worker for notification...');
                 
                 // Use service worker to show notification
                 navigator.serviceWorker.ready.then((registration) => {
                                      registration.showNotification(title, {
                      body: body,
-                     icon: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTEyIDJDMTMuMSAyIDE0IDIuOSAxNCA0VjVDMTcuMyA2IDE5LjggOC3IDE5LjggMTJWMTZMMjEgMTdIMTNIMTFIM1YxNkM0LjIgMTYgNS4yIDE1IDUuMiAxM1Y5QzUuMiA2LjggNy4yIDUgOS40IDVWNEMxMCAyLjkgMTAuOSAyIDEyIDJaTTEyIDIxQzEzLjEgMjEgMTQgMjAuMSAxNCAxOUgxMEMxMCAyMC4xIDEwLjkgMjEgMTIgMjFaIiBmaWxsPSIjNDI4NUY0Ci8+Cjwvc3ZnPgo=',
+                     icon: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTEyIDJDMTMuMSAyIDE0IDIuOSAxNCA0VjVDMTcuMyA2IDE5LjggOC43IDE5LjggMTJWMTZMMjEgMTdIMTNIMTFIM1YxNkM0LjIgMTYgNS4yIDE1IDUuMiAxM1Y5QzUuMiA2LjggNy4yIDUgOS40IDVWNEMxMCAyLjkgMTAuOSAyIDEyIDJaTTEyIDIxQzEzLjEgMjEgMTQgMjAuMSAxNCAxOUgxMEMxMCAyMC4xIDEwLjkgMjEgMTIgMjFaIiBmaWxsPSIjNDI4NUY0Ci8+Cjwvc3ZnPgo=',
                      tag: `${data?.type || 'notification'}_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
                      requireInteraction: true,
                      data: data,
                      silent: false
-                   }).then(() => {
-                    console.log('✅ [SW] Service worker notification shown successfully');
-                  }).catch((error) => {
-                    console.error('❌ [SW] Service worker notification failed:', error);
+                   }).catch((error) => {
+                    console.error('Service worker notification failed:', error);
                     
                     // Fallback to regular notification
-                    console.log('🔄 [DEBUG] Falling back to regular notification...');
                     const fallbackNotification = new Notification(title, {
                       body: body,
                       icon: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTEyIDJDMTMuMSAyIDE0IDIuOSAxNCA0VjVDMTcuMyA2IDE5LjggOC43IDE5LjggMTJWMTZMMjEgMTdIMTNIMTFIM1YxNkM0LjIgMTYgNS4yIDE1IDUuMiAxM1Y5QzUuMiA2LjggNy4yIDUgOS40IDVWNEMxMCAyLjkgMTAuOSAyIDEyIDJaTTEyIDIxQzEzLjEgMjEgMTQgMjAuMSAxNCAxOUgxMEMxMCAyMC4xIDEwLjkgMjEgMTIgMjFaIiBmaWxsPSIjNDI4NUY0Ci8+Cjwvc3ZnPgo=',
@@ -774,8 +776,6 @@ export default function CoachPage() {
                   });
                 });
               } else {
-                console.log('🔄 [DEBUG] No service worker available, using direct notification...');
-                
                 // Direct notification as fallback
                 const notification = new Notification(title, {
                   body: body,
@@ -786,33 +786,44 @@ export default function CoachPage() {
                 });
                 
                 notification.onclick = function(event) {
-                  console.log('🖱️ [DEBUG] Fallback notification clicked!');
                   window.focus();
                   this.close();
                 };
               }
               
             } catch (error) {
-              console.error('❌ Failed to create system notification:', error);
+              console.error('Failed to create notification:', error);
             }
-          } else {
-            console.log('🚫 [DEBUG] Notification permission not granted:', Notification.permission);
+          }
+          
+          // Handle video call join notifications
+          if (data?.type === 'video_call_join') {
+            setPendingCallInvite({
+              callId: data.callId,
+              callerName: data.callerName,
+              callerId: data.callerId,
+              expiresAt: Date.now() + 30000 // 30 seconds to join
+            })
+            
+            // Auto-expire the invite after 30 seconds
+            setTimeout(() => {
+              setPendingCallInvite(prev => 
+                prev?.callId === data.callId ? null : prev
+              )
+            }, 30000)
           }
           
           // Always show in-app notification as fallback
           showInAppNotification(title, body)
           
         } catch (error) {
-          console.error('❌ [WEB-NOTIFICATIONS] Error processing notification:', error)
+          console.error('Error processing notification:', error)
         }
       })
-      .subscribe((status) => {
-        console.log('🔔 [WEB-NOTIFICATIONS] Subscription status:', status)
-      })
+      .subscribe()
 
     // Cleanup subscription on unmount
     return () => {
-      console.log('🔕 [WEB-NOTIFICATIONS] Cleaning up notification listener')
       supabase.removeChannel(notificationChannel)
     }
   }, [user?.id])
@@ -4364,14 +4375,7 @@ export default function CoachPage() {
                                 İzin Ver
                               </button>
                             )}
-                            {Notification.permission === 'granted' && (
-                              <button
-                                onClick={createTestNotification}
-                                className="px-4 py-2 bg-green-600 text-white text-sm rounded-md hover:bg-green-700 transition-colors"
-                              >
-                                🧪 Test Et
-                              </button>
-                            )}
+
                           </div>
                         </div>
                       </div>
@@ -4745,11 +4749,11 @@ export default function CoachPage() {
                             {Math.round((weeklyTasks.filter(t => {
                               const taskDate = new Date(t.scheduled_date);
                               if (showMonthlyStats) {
-                                const monthStart = new Date(currentWeek);
-                                monthStart.setDate(1);
-                                const monthEnd = new Date(monthStart);
-                                monthEnd.setMonth(monthStart.getMonth() + 1);
-                                monthEnd.setDate(0);
+                                const monthStart = new Date(currentWeek)
+                                monthStart.setDate(1)
+                                const monthEnd = new Date(monthStart)
+                                monthEnd.setMonth(monthStart.getMonth() + 1)
+                                monthEnd.setDate(0)
                                 return taskDate >= monthStart && taskDate <= monthEnd && t.status === 'completed';
                               } else {
                                 const weekStart = getWeekStart(currentWeek);
@@ -4763,11 +4767,11 @@ export default function CoachPage() {
                             {weeklyTasks.filter(t => {
                               const taskDate = new Date(t.scheduled_date);
                               if (showMonthlyStats) {
-                                const monthStart = new Date(currentWeek);
-                                monthStart.setDate(1);
-                                const monthEnd = new Date(monthStart);
-                                monthEnd.setMonth(monthStart.getMonth() + 1);
-                                monthEnd.setDate(0);
+                                const monthStart = new Date(currentWeek)
+                                monthStart.setDate(1)
+                                const monthEnd = new Date(monthStart)
+                                monthEnd.setMonth(monthStart.getMonth() + 1)
+                                monthEnd.setDate(0)
                                 return taskDate >= monthStart && taskDate <= monthEnd && t.status === 'completed';
                               } else {
                                 const weekStart = getWeekStart(currentWeek);
