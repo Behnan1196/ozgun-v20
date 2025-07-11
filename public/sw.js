@@ -5,28 +5,63 @@ const CACHE_NAME = 'coaching-app-v1';
 const urlsToCache = [
   '/',
   '/login',
-  '/coach',
-  '/manifest.json'
+  '/coach'
+  // Removed /manifest.json as it might not exist or be causing issues
 ];
 
-// Install event - cache resources
+// Install event - cache resources (with error handling)
 self.addEventListener('install', (event) => {
+  console.log('📦 [SW] Installing service worker...');
+  
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then((cache) => {
         console.log('📦 [SW] Opened cache');
-        return cache.addAll(urlsToCache);
+        
+        // Cache URLs individually to handle failures gracefully
+        const cachePromises = urlsToCache.map(url => {
+          return cache.add(url).catch(error => {
+            console.warn('⚠️ [SW] Failed to cache:', url, error);
+            // Don't throw error, just log it
+          });
+        });
+        
+        return Promise.all(cachePromises);
+      })
+      .then(() => {
+        console.log('✅ [SW] Service worker installed successfully');
+        // Skip waiting to activate immediately
+        return self.skipWaiting();
+      })
+      .catch(error => {
+        console.error('❌ [SW] Service worker installation failed:', error);
+        // Don't block installation completely
       })
   );
 });
 
-// Fetch event - serve from cache when offline
+// Activate event - take control immediately
+self.addEventListener('activate', (event) => {
+  console.log('🚀 [SW] Service worker activated');
+  event.waitUntil(self.clients.claim());
+});
+
+// Fetch event - serve from cache when offline (with fallback)
 self.addEventListener('fetch', (event) => {
   event.respondWith(
     caches.match(event.request)
       .then((response) => {
         // Return cached version or fetch from network
         return response || fetch(event.request);
+      })
+      .catch(() => {
+        // If both cache and network fail, return a basic response for navigation requests
+        if (event.request.mode === 'navigate') {
+          return new Response('App offline', { 
+            status: 200, 
+            headers: { 'Content-Type': 'text/html' } 
+          });
+        }
       })
   );
 });
