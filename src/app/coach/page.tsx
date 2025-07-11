@@ -720,8 +720,8 @@ export default function CoachPage() {
           if (Notification.permission === 'granted') {
             new Notification(title, {
               body: body,
-              icon: '/icons/icon-192x192.png',
-              badge: '/icons/icon-192x192.png',
+              icon: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTEyIDJDMTMuMSAyIDE0IDIuOSAxNCA0VjVDMTcuMyA2IDE5LjggOC43IDE5LjggMTJWMTZMMjEgMTdIMTNIMTFIM1YxNkM0LjIgMTYgNS4yIDE1IDUuMiAxM1Y5QzUuMiA2LjggNy4yIDUgOS40IDVWNEMxMCAyLjkgMTAuOSAyIDEyIDJaTTEyIDIxQzEzLjEgMjEgMTQgMjAuMSAxNCAxOUgxMEMxMCAyMC4xIDEwLjkgMjEgMTIgMjFaIiBmaWxsPSIjNDI4NUY0Ii8+Cjwvc3ZnPgo=',
+              badge: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTEyIDJDMTMuMSAyIDE0IDIuOSAxNCA0VjVDMTcuMyA2IDE5LjggOC43IDE5LjggMTJWMTZMMjEgMTdIMTNIMTFIM1YxNkM0LjIgMTYgNS4yIDE1IDUuMiAxM1Y5QzUuMiA2LjggNy4yIDUgOS40IDVWNEMxMCAyLjkgMTAuOSAyIDEyIDJaTTEyIDIxQzEzLjEgMjEgMTQgMjAuMSAxNCAxOUgxMEMxMCAyMC4xIDEwLjkgMjEgMTIgMjFaIiBmaWxsPSIjNDI4NUY0Ii8+Cjwvc3ZnPgo=',
               tag: data?.type || 'notification',
               requireInteraction: true,
               data: data
@@ -1473,15 +1473,7 @@ export default function CoachPage() {
   }
 
   const createTask = async () => {
-    console.log('🔥 URGENT DEBUG: createTask function CALLED!')
-    console.log('🔍 DEBUG: createTask called with:', { 
-      selectedStudent: selectedStudent?.id, 
-      taskModalDate: taskModalDate?.toISOString(),
-      taskType: taskForm.task_type 
-    })
-    
     if (!selectedStudent || !taskModalDate) {
-      console.log('❌ DEBUG: Missing selectedStudent or taskModalDate')
       alert('Lütfen öğrenci seçin ve tarih belirleyin')
       return
     }
@@ -1535,8 +1527,6 @@ export default function CoachPage() {
         return
       }
 
-      console.log('🔍 DEBUG: Task created successfully, now refreshing tasks...')
-
       // Refresh tasks
       const weekStart = getWeekStart(currentWeek)
       const weekEnd = new Date(weekStart)
@@ -1556,10 +1546,7 @@ export default function CoachPage() {
         setWeeklyTasks(tasks)
       }
 
-      console.log('🔍 DEBUG: Tasks refreshed, now preparing notifications...')
-
       // Send notification for all new tasks
-      console.log('🔍 DEBUG: About to send notification for task:', taskForm.task_type, 'to student:', selectedStudent.id)
       try {
         console.log('📤 Sending new task notification...')
         
