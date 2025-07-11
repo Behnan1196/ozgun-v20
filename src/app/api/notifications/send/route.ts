@@ -138,6 +138,8 @@ export async function POST(request: NextRequest) {
           });
         });
 
+        console.log('🔍 [API] Final subscription status:', subscription);
+        
         if (subscription === 'SUBSCRIBED') {
           // Now send the broadcast
           const broadcastResponse = await channel.send({
@@ -159,8 +161,33 @@ export async function POST(request: NextRequest) {
           // Clean up the channel
           supabase.removeChannel(channel);
         } else {
-          console.error('❌ Failed to subscribe to notification channel:', subscription);
-          results.web.error = 'Failed to subscribe to notification channel';
+          console.error('❌ Failed to subscribe to notification channel. Status received:', subscription);
+          console.log('🔄 [API] Trying to send broadcast anyway since student may already be subscribed...');
+          
+          // Try to send broadcast anyway, since the student's channel might already be active
+          try {
+            const broadcastResponse = await channel.send({
+              type: 'broadcast',
+              event: 'new_notification',
+              payload: notificationPayload
+            });
+
+            console.log('📡 [API] Fallback broadcast response:', broadcastResponse);
+
+            if (broadcastResponse === 'ok') {
+              console.log('✅ Fallback real-time notification sent successfully');
+              results.web.sent = true;
+              results.web.error = null;
+            } else {
+              results.web.error = `Subscription failed (${subscription}) and fallback broadcast failed`;
+            }
+          } catch (fallbackError) {
+            console.error('❌ Fallback broadcast also failed:', fallbackError);
+            results.web.error = `Failed to subscribe to notification channel. Status: ${subscription}`;
+          }
+          
+          // Clean up the channel
+          supabase.removeChannel(channel);
         }
         
         // TODO: Add actual web push service when VAPID keys are configured
