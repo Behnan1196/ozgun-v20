@@ -38,13 +38,9 @@ export async function POST(request: NextRequest) {
       .eq('user_id', userId)
       .order('updated_at', { ascending: false });
 
-    // Get web push subscriptions
-    console.log('🌐 Looking up web push subscriptions for user:', userId);
-    const { data: webSubscriptions, error: webError } = await supabase
-      .from('web_push_subscriptions')
-      .select('endpoint, p256dh_key, auth_key')
-      .eq('user_id', userId)
-      .order('updated_at', { ascending: false });
+    // Note: Web push subscriptions removed - using only real-time notifications
+    const webSubscriptions = null;
+    const webError = null;
 
     // Send to mobile devices (Expo Push Service)
     if (mobileTokens && mobileTokens.length > 0) {
@@ -104,81 +100,58 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Handle web push subscriptions (real-time + fallback notifications)
-    if (webSubscriptions && webSubscriptions.length > 0) {
-      console.log(`🌐 Found ${webSubscriptions.length} web subscription(s) for user ${userId}`);
+    // Send real-time notification to web users (simplified - no web push subscriptions needed)
+    try {
+      console.log('📡 Sending real-time notification to user:', userId);
       
-      try {
-        // Send real-time notification via Supabase broadcast
-        const notificationPayload = {
-          type: 'notification',
-          userId: userId,
-          title: title,
-          body: messageBody,
-          data: data,
-          timestamp: new Date().toISOString()
-        };
+      const notificationPayload = {
+        type: 'notification',
+        userId: userId,
+        title: title,
+        body: messageBody,
+        data: data,
+        timestamp: new Date().toISOString()
+      };
 
-        console.log('📡 Sending real-time web notification...');
-        
-        // Send broadcast directly without subscribing to avoid channel conflicts
-        const channel = supabase.channel(`user-${userId}`);
-        
-        try {
-          console.log('📡 [API] Sending broadcast directly to existing student channel...');
-          
-          const broadcastResponse = await channel.send({
-            type: 'broadcast',
-            event: 'new_notification',
-            payload: notificationPayload
-          });
+      // Send broadcast directly to user's channel
+      const channel = supabase.channel(`user-${userId}`);
+      
+      const broadcastResponse = await channel.send({
+        type: 'broadcast',
+        event: 'new_notification',
+        payload: notificationPayload
+      });
 
-          console.log('📡 [API] Direct broadcast response:', broadcastResponse);
+      console.log('📡 [API] Real-time broadcast response:', broadcastResponse);
 
-          if (broadcastResponse === 'ok') {
-            console.log('✅ Real-time web notification sent successfully');
-            results.web.sent = true;
-          } else {
-            console.error('❌ Failed to send real-time notification:', broadcastResponse);
-            results.web.error = 'Failed to send real-time notification';
-          }
-          
-        } catch (error) {
-          console.error('❌ Error sending direct broadcast:', error);
-          results.web.error = error instanceof Error ? error.message : 'Unknown broadcast error';
-        }
-        
-        // Clean up the channel
-        supabase.removeChannel(channel);
-        
-        // TODO: Add actual web push service when VAPID keys are configured
-        // For now, using real-time notifications for immediate delivery
-        
-      } catch (error) {
-        console.error('❌ Error handling web notification:', error);
-        results.web.error = error instanceof Error ? error.message : 'Unknown web notification error';
+      if (broadcastResponse === 'ok') {
+        console.log('✅ Real-time notification sent successfully');
+        results.web.sent = true;
+      } else {
+        console.error('❌ Failed to send real-time notification:', broadcastResponse);
+        results.web.error = 'Failed to send real-time notification';
       }
-    } else {
-      console.log('🌐 No web push subscriptions found for user:', userId);
-      if (webError) {
-        console.log('🌐 Web subscription error:', webError);
-      }
+      
+      // Clean up the channel
+      supabase.removeChannel(channel);
+      
+    } catch (error) {
+      console.error('❌ Error sending real-time notification:', error);
+      results.web.error = error instanceof Error ? error.message : 'Unknown real-time notification error';
     }
 
     // Determine overall success
     const overallSuccess = results.mobile.sent || results.web.sent;
-    const hasAnyTargets = (mobileTokens && mobileTokens.length > 0) || (webSubscriptions && webSubscriptions.length > 0);
+    const hasAnyTargets = (mobileTokens && mobileTokens.length > 0) || true; // Always try web real-time
 
     if (!hasAnyTargets) {
       return NextResponse.json({ 
         success: false, 
-        error: 'No notification targets found. User needs to open the mobile app or enable web notifications.',
+        error: 'No notification targets found. User needs to open the mobile app.',
         results,
         debug: {
           mobileTokenCount: mobileTokens?.length || 0,
-          webSubscriptionCount: webSubscriptions?.length || 0,
-          mobileError: mobileError?.message,
-          webError: webError?.message
+          mobileError: mobileError?.message
         }
       }, { status: 404 });
     }
@@ -191,7 +164,7 @@ export async function POST(request: NextRequest) {
         summary: {
           mobileSent: results.mobile.sent,
           webSent: results.web.sent,
-          totalTargets: (mobileTokens?.length || 0) + (webSubscriptions?.length || 0)
+          totalTargets: (mobileTokens?.length || 0) + 1 // Mobile + web real-time
         }
       });
     } else {
