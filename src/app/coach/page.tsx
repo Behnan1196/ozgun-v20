@@ -1471,7 +1471,8 @@ export default function CoachPage() {
             const result = await response.json()
             console.log('✅ Coaching session notification sent successfully:', result)
           } else {
-            console.error('❌ Failed to send coaching session notification:', await response.text())
+            const errorText = await response.text()
+            console.error('❌ Failed to send coaching session notification:', errorText)
           }
         } catch (notificationError) {
           console.error('❌ Error sending coaching session notification:', notificationError)
@@ -1638,11 +1639,17 @@ export default function CoachPage() {
         return
       }
 
-      // Send notification for coaching session changes
-      if (sessionChanged && newTime) {
-        try {
-          console.log('📤 Sending coaching session update notification...')
-          
+      // Send notification for task updates
+      try {
+        console.log('📤 Sending task update notification...')
+        
+        // Check what changed to create appropriate message
+        let notificationTitle = '🔄 Görev Güncellendi'
+        let notificationBody = `${taskTitle} görevi güncellendi`
+        let notificationType = 'task_updated'
+        
+        if (isCoachingSession && sessionChanged && newTime) {
+          // Special handling for coaching session time/date changes
           const sessionDate = new Date(newDate)
           const formattedDate = sessionDate.toLocaleDateString('tr-TR', {
             day: 'numeric',
@@ -1659,38 +1666,51 @@ export default function CoachPage() {
             changeMessage = 'saati değiştirildi'
           }
           
-          const response = await fetch('/api/notifications/send', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              userId: selectedStudent.id,
-              title: '🔄 Koçluk Seansı Güncellendi',
-              body: `${taskTitle} ${changeMessage} - Yeni: ${formattedDate} ${newTime}`,
-              data: {
-                type: 'session_updated',
-                taskId: editingTask.id,
-                taskTitle: taskTitle,
-                oldDate: editingTask.scheduled_date,
-                oldTime: editingTask.scheduled_start_time,
-                newDate: newDate,
-                newTime: newTime,
-                coachName: profile?.full_name || 'Koçunuz'
-              }
-            })
-          })
-
-          if (response.ok) {
-            const result = await response.json()
-            console.log('✅ Session update notification sent successfully:', result)
-          } else {
-            console.error('❌ Failed to send session update notification:', await response.text())
-          }
-        } catch (notificationError) {
-          console.error('❌ Error sending session update notification:', notificationError)
-          // Don't show error to user - task update was successful
+          notificationTitle = '🔄 Koçluk Seansı Güncellendi'
+          notificationBody = `${taskTitle} ${changeMessage} - Yeni: ${formattedDate} ${newTime}`
+          notificationType = 'session_updated'
+        } else if (editingTask.title !== taskTitle) {
+          // Title changed
+          notificationBody = `Görev adı "${editingTask.title}" ⮕ "${taskTitle}" olarak değiştirildi`
+        } else if (editingTask.scheduled_date !== newDate) {
+          // Date changed (non-coaching session)
+          const oldDate = new Date(editingTask.scheduled_date).toLocaleDateString('tr-TR')
+          const newDateFormatted = new Date(newDate).toLocaleDateString('tr-TR')
+          notificationBody = `${taskTitle} tarihi ${oldDate} ⮕ ${newDateFormatted} olarak değiştirildi`
         }
+        
+        const response = await fetch('/api/notifications/send', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            userId: selectedStudent.id,
+            title: notificationTitle,
+            body: notificationBody,
+            data: {
+              type: notificationType,
+              taskId: editingTask.id,
+              taskTitle: taskTitle,
+              oldDate: editingTask.scheduled_date,
+              oldTime: editingTask.scheduled_start_time,
+              newDate: newDate,
+              newTime: newTime,
+              coachName: profile?.full_name || 'Koçunuz'
+            }
+          })
+        })
+
+        if (response.ok) {
+          const result = await response.json()
+          console.log('✅ Task update notification sent successfully:', result)
+        } else {
+          const errorText = await response.text()
+          console.error('❌ Failed to send task update notification:', errorText)
+        }
+      } catch (notificationError) {
+        console.error('❌ Error sending task update notification:', notificationError)
+        // Don't show error to user - task update was successful
       }
 
       // Refresh tasks

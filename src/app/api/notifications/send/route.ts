@@ -31,10 +31,24 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (tokenError || !tokenData?.token) {
-      console.log('❌ No device token found for user:', userId, tokenError);
+      console.log('❌ No device token found for user:', userId, 'Error:', tokenError);
+      console.log('📊 Token data received:', tokenData);
+      
+      // Check if there are any tokens for this user (for debugging)
+      const { data: allTokens } = await supabase
+        .from('device_tokens')
+        .select('token, platform, updated_at')
+        .eq('user_id', userId);
+      
+      console.log('📊 All tokens for user:', allTokens);
+      
       return NextResponse.json({ 
         success: false, 
-        error: 'No device token found for user' 
+        error: 'No device token found for user. User needs to open the mobile app to register their device token.',
+        debug: {
+          tokenError: tokenError?.message,
+          allTokensCount: allTokens?.length || 0
+        }
       }, { status: 404 });
     }
 
@@ -70,20 +84,33 @@ export async function POST(request: NextRequest) {
     const result = await response.json();
     console.log('📡 Expo Push API response:', result);
 
+    // Check HTTP response status first
+    if (!response.ok) {
+      console.error('❌ HTTP error from Expo Push API:', response.status, result);
+      return NextResponse.json({ 
+        success: false, 
+        error: `HTTP ${response.status}: ${result.message || 'Push service error'}`,
+        expoPushResult: result
+      }, { status: 500 });
+    }
+
     // Check if notification was sent successfully
-    if (result.data?.[0]?.status === 'ok') {
+    // Handle both single message and array responses
+    const ticketData = Array.isArray(result.data) ? result.data[0] : result.data;
+    
+    if (ticketData?.status === 'ok') {
       console.log('✅ Push notification sent successfully');
       return NextResponse.json({ 
         success: true,
         message: 'Notification sent successfully',
-        expoPushResult: result.data[0]
+        expoPushResult: ticketData
       });
     } else {
-      console.error('❌ Push notification failed:', result.data?.[0]);
+      console.error('❌ Push notification failed:', ticketData);
       return NextResponse.json({ 
         success: false, 
-        error: result.data?.[0]?.message || 'Push notification failed',
-        expoPushResult: result.data?.[0]
+        error: ticketData?.message || ticketData?.details?.error || 'Push notification failed',
+        expoPushResult: ticketData
       }, { status: 500 });
     }
     
