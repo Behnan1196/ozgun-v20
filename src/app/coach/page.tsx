@@ -521,15 +521,76 @@ export default function CoachPage() {
   const handleNotificationPermissionRequest = async () => {
     if (typeof window !== 'undefined' && 'Notification' in window) {
       try {
+        console.log('🔔 [NOTIFICATION-DEBUG] Current permission:', Notification.permission)
+        
         const permission = await Notification.requestPermission()
+        console.log('🔔 [NOTIFICATION-DEBUG] Permission result:', permission)
+        
         if (permission === 'granted') {
           showInAppNotification('Bildirimler Etkinleştirildi', 'Tarayıcı bildirimleri başarıyla etkinleştirildi!')
+          
+          // Test notification to verify functionality
+          setTimeout(() => {
+            createTestNotification()
+          }, 1000)
         } else {
           showInAppNotification('Bildirim İzni Gerekli', 'Bildirimleri görmek için tarayıcı ayarlarından izin verin')
         }
       } catch (error) {
         console.error('❌ [NOTIFICATIONS] Permission request failed:', error)
         showInAppNotification('Bildirim Hatası', 'Bildirim izni alınamadı')
+      }
+    }
+  }
+
+  // Add test notification function for debugging
+  const createTestNotification = () => {
+    if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
+      console.log('🧪 [TEST-NOTIFICATION] Creating test notification...')
+      console.log('🧪 [TEST-NOTIFICATION] Document visibility:', document.visibilityState)
+      console.log('🧪 [TEST-NOTIFICATION] Document hasFocus:', document.hasFocus())
+      console.log('🧪 [TEST-NOTIFICATION] Window focus state:', document.hasFocus() ? 'FOCUSED' : 'NOT_FOCUSED')
+      
+      try {
+        const testNotification = new Notification('🧪 Test Bildirimi', {
+          body: 'Bu bir test bildirimidir. Eğer bu mesajı görüyorsanız, bildirimler çalışıyor!',
+          icon: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTEyIDJDMTMuMSAyIDE0IDIuOSAxNCA0VjVDMTcuMyA2IDE5LjggOC43IDE5LjggMTJWMTZMMjEgMTdIMTNIMTFIM1YxNkM0LjIgMTYgNS4yIDE1IDUuMiAxM1Y5QzUuMiA2LjggNy4yIDUgOS40IDVWNEMxMCAyLjkgMTAuOSAyIDEyIDJaTTEyIDIxQzEzLjEgMjEgMTQgMjAuMSAxNCAxOUgxMEMxMCAyMC4xIDEwLjkgMjEgMTIgMjFaIiBmaWxsPSIjNDI4NUY0Ii8+Cjwvc3ZnPgo=',
+          tag: 'test_notification',
+          requireInteraction: true
+        })
+        
+        testNotification.onclick = function(event) {
+          console.log('🧪 [TEST-NOTIFICATION] CLICKED by user!')
+          showInAppNotification('Test Başarılı!', 'Bildirim tıklaması algılandı - bildirimler çalışıyor!')
+          this.close()
+        }
+        
+        testNotification.onshow = function() {
+          console.log('🧪 [TEST-NOTIFICATION] SHOWN event fired!')
+          console.log('🧪 [TEST-NOTIFICATION] If you don\'t see a popup, check:')
+          console.log('🧪 [TEST-NOTIFICATION] 1. Chrome Settings > Privacy > Notifications')
+          console.log('🧪 [TEST-NOTIFICATION] 2. Windows Notification Settings')
+          console.log('🧪 [TEST-NOTIFICATION] 3. Try switching to another tab/app')
+        }
+        
+        testNotification.onerror = function(error) {
+          console.error('🧪 [TEST-NOTIFICATION] ERROR:', error)
+        }
+        
+        testNotification.onclose = function() {
+          console.log('🧪 [TEST-NOTIFICATION] CLOSED')
+        }
+        
+        console.log('🧪 [TEST-NOTIFICATION] Test notification created successfully')
+        
+        // Auto-close after 10 seconds to avoid spam
+        setTimeout(() => {
+          testNotification.close()
+          console.log('🧪 [TEST-NOTIFICATION] Auto-closed after 10 seconds')
+        }, 10000)
+        
+      } catch (error) {
+        console.error('🧪 [TEST-NOTIFICATION] Failed to create test notification:', error)
       }
     }
   }
@@ -4325,14 +4386,24 @@ export default function CoachPage() {
                                      '⚠️ İzin bekleniyor'}
                             </p>
                           </div>
-                          {Notification.permission !== 'granted' && (
-                            <button
-                              onClick={handleNotificationPermissionRequest}
-                              className="px-4 py-2 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700 transition-colors"
-                            >
-                              İzin Ver
-                            </button>
-                          )}
+                          <div className="flex flex-col space-y-2">
+                            {Notification.permission !== 'granted' && (
+                              <button
+                                onClick={handleNotificationPermissionRequest}
+                                className="px-4 py-2 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700 transition-colors"
+                              >
+                                İzin Ver
+                              </button>
+                            )}
+                            {Notification.permission === 'granted' && (
+                              <button
+                                onClick={createTestNotification}
+                                className="px-4 py-2 bg-green-600 text-white text-sm rounded-md hover:bg-green-700 transition-colors"
+                              >
+                                🧪 Test Et
+                              </button>
+                            )}
+                          </div>
                         </div>
                       </div>
 
