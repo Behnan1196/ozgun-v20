@@ -1546,49 +1546,94 @@ export default function CoachPage() {
         setWeeklyTasks(tasks)
       }
 
-      // Send notification for coaching sessions
-      if (taskForm.task_type === 'coaching_session' && taskForm.scheduled_start_time) {
-        try {
-          console.log('📤 Sending coaching session notification...')
-          
-          const sessionDate = new Date(taskModalDate)
-          const formattedDate = sessionDate.toLocaleDateString('tr-TR', {
-            day: 'numeric',
-            month: 'long',
-            weekday: 'long'
-          })
-          
-          const response = await fetch('/api/notifications/send', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              userId: selectedStudent.id,
-              title: '📅 Yeni Koçluk Seansı',
-              body: `${taskTitle} - ${formattedDate} ${taskForm.scheduled_start_time}`,
-              data: {
-                type: 'new_coaching_session',
-                taskId: 'task-created', // We don't have the ID yet, but that's ok
-                taskTitle: taskTitle,
-                sessionDate: taskModalDate.toISOString().split('T')[0],
-                sessionTime: taskForm.scheduled_start_time,
-                coachName: profile?.full_name || 'Koçunuz'
-              }
-            })
-          })
-
-          if (response.ok) {
-            const result = await response.json()
-            console.log('✅ Coaching session notification sent successfully:', result)
-          } else {
-            const errorText = await response.text()
-            console.error('❌ Failed to send coaching session notification:', errorText)
-          }
-        } catch (notificationError) {
-          console.error('❌ Error sending coaching session notification:', notificationError)
-          // Don't show error to user - task creation was successful
+      // Send notification for all new tasks
+      try {
+        console.log('📤 Sending new task notification...')
+        
+        const taskDate = new Date(taskModalDate)
+        const formattedDate = taskDate.toLocaleDateString('tr-TR', {
+          day: 'numeric',
+          month: 'long',
+          weekday: 'long'
+        })
+        
+        // Create appropriate notification based on task type
+        let notificationTitle = ''
+        let notificationBody = ''
+        let notificationType = ''
+        
+        switch (taskForm.task_type) {
+          case 'coaching_session':
+            notificationTitle = '📅 Yeni Koçluk Seansı'
+            notificationBody = taskForm.scheduled_start_time 
+              ? `${taskTitle} - ${formattedDate} ${taskForm.scheduled_start_time}`
+              : `${taskTitle} - ${formattedDate}`
+            notificationType = 'new_coaching_session'
+            break
+          case 'study':
+            notificationTitle = '📚 Yeni Çalışma Görevi'
+            notificationBody = `${taskTitle} - ${formattedDate}`
+            notificationType = 'new_study_task'
+            break
+          case 'practice':
+            notificationTitle = '✏️ Yeni Soru Çözme Görevi'
+            notificationBody = `${taskTitle} - ${formattedDate} (${taskForm.problem_count} soru)`
+            notificationType = 'new_practice_task'
+            break
+          case 'exam':
+            notificationTitle = '📝 Yeni Sınav Görevi'
+            notificationBody = `${taskTitle} - ${formattedDate}`
+            notificationType = 'new_exam_task'
+            break
+          case 'review':
+            notificationTitle = '🔄 Yeni Tekrar Görevi'
+            notificationBody = `${taskTitle} - ${formattedDate}`
+            notificationType = 'new_review_task'
+            break
+          case 'resource':
+            notificationTitle = '📖 Yeni Kaynak Görevi'
+            notificationBody = `${taskTitle} - ${formattedDate}`
+            notificationType = 'new_resource_task'
+            break
+          default:
+            notificationTitle = '📋 Yeni Görev'
+            notificationBody = `${taskTitle} - ${formattedDate}`
+            notificationType = 'new_task'
         }
+        
+        const response = await fetch('/api/notifications/send', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            userId: selectedStudent.id,
+            title: notificationTitle,
+            body: notificationBody,
+            data: {
+              type: notificationType,
+              taskId: 'task-created', // We don't have the ID yet, but that's ok
+              taskTitle: taskTitle,
+              taskType: taskForm.task_type,
+              taskDate: taskModalDate.toISOString().split('T')[0],
+              taskTime: taskForm.scheduled_start_time || null,
+              estimatedDuration: taskForm.estimated_duration,
+              problemCount: taskForm.problem_count || null,
+              coachName: profile?.full_name || 'Koçunuz'
+            }
+          })
+        })
+
+        if (response.ok) {
+          const result = await response.json()
+          console.log('✅ Task notification sent successfully:', result)
+        } else {
+          const errorText = await response.text()
+          console.error('❌ Failed to send task notification:', errorText)
+        }
+      } catch (notificationError) {
+        console.error('❌ Error sending task notification:', notificationError)
+        // Don't show error to user - task creation was successful
       }
 
       closeTaskModal()
