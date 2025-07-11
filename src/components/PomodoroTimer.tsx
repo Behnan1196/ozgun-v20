@@ -32,12 +32,76 @@ const PomodoroTimer: React.FC<PomodoroTimerProps> = ({ onTimerComplete }) => {
     }
   };
 
-  const showNotification = (message: string) => {
-    if (notificationsEnabled && !document.hasFocus()) {
-      new Notification('Pomodoro Timer', {
-        body: message,
-        icon: '/icons/icon-192x192.png'
-      });
+  const playNotificationSound = () => {
+    try {
+      // Create a simple notification sound using Audio API
+      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
+      
+      oscillator.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+      
+      oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
+      oscillator.frequency.setValueAtTime(600, audioContext.currentTime + 0.1);
+      oscillator.frequency.setValueAtTime(800, audioContext.currentTime + 0.2);
+      
+      gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+      
+      oscillator.start(audioContext.currentTime);
+      oscillator.stop(audioContext.currentTime + 0.3);
+    } catch (error) {
+      console.log('Audio notification not available:', error);
+    }
+  };
+
+  const showInAppNotification = (title: string, message: string) => {
+    // Create a temporary in-app notification
+    const notification = document.createElement('div');
+    notification.className = 'fixed top-4 right-4 bg-green-600 text-white px-6 py-4 rounded-lg shadow-lg z-50 max-w-sm';
+    notification.innerHTML = `
+      <div class="flex items-center">
+        <div class="mr-3">🎯</div>
+        <div>
+          <div class="font-semibold">${title}</div>
+          <div class="text-sm opacity-90">${message}</div>
+        </div>
+      </div>
+    `;
+    
+    document.body.appendChild(notification);
+    
+    // Auto remove after 5 seconds
+    setTimeout(() => {
+      if (notification.parentNode) {
+        notification.parentNode.removeChild(notification);
+      }
+    }, 5000);
+  };
+
+  const showNotification = (title: string, message: string) => {
+    // Always play sound
+    playNotificationSound();
+    
+    // Always show in-app notification
+    showInAppNotification(title, message);
+    
+    // Show browser notification if permission granted
+    if (notificationsEnabled) {
+      try {
+        const notification = new Notification(title, {
+          body: message,
+          icon: '/icons/icon-192x192.png',
+          tag: 'pomodoro-timer',
+          requireInteraction: true
+        });
+        
+        // Auto close after 10 seconds
+        setTimeout(() => notification.close(), 10000);
+      } catch (error) {
+        console.log('Browser notification failed:', error);
+      }
     }
   };
 
@@ -52,12 +116,12 @@ const PomodoroTimer: React.FC<PomodoroTimerProps> = ({ onTimerComplete }) => {
       setIsRunning(false);
       if (!isBreak) {
         // Work session completed
-        showNotification('Çalışma süresi bitti! Mola zamanı 🎉');
+        showNotification('Pomodoro Tamamlandı! 🎉', 'Çalışma süresi bitti! Mola zamanı.');
         setTimeLeft(breakDuration * 60);
         setIsBreak(true);
       } else {
         // Break completed
-        showNotification('Mola bitti! Çalışmaya devam 💪');
+        showNotification('Mola Bitti! 💪', 'Mola süresi bitti! Çalışmaya devam edin.');
         setTimeLeft(workDuration * 60);
         setIsBreak(false);
       }
