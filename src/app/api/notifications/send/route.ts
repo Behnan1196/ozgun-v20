@@ -121,34 +121,19 @@ export async function POST(request: NextRequest) {
 
         console.log('📡 Sending real-time web notification...');
         
-        // Create and subscribe to the channel first
+        // Send broadcast directly without subscribing to avoid channel conflicts
         const channel = supabase.channel(`user-${userId}`);
         
-        // Subscribe to the channel with timeout
-        const subscription = await new Promise((resolve) => {
-          const timeout = setTimeout(() => {
-            console.log('⏰ [API] Channel subscription timed out after 3 seconds');
-            resolve('TIMED_OUT');
-          }, 3000); // 3 second timeout
-
-          channel.subscribe((status) => {
-            console.log('📡 [API] Channel subscription status:', status);
-            clearTimeout(timeout);
-            resolve(status);
-          });
-        });
-
-        console.log('🔍 [API] Final subscription status:', subscription);
-        
-        if (subscription === 'SUBSCRIBED') {
-          // Now send the broadcast
+        try {
+          console.log('📡 [API] Sending broadcast directly to existing student channel...');
+          
           const broadcastResponse = await channel.send({
             type: 'broadcast',
             event: 'new_notification',
             payload: notificationPayload
           });
 
-          console.log('📡 [API] Broadcast response:', broadcastResponse);
+          console.log('📡 [API] Direct broadcast response:', broadcastResponse);
 
           if (broadcastResponse === 'ok') {
             console.log('✅ Real-time web notification sent successfully');
@@ -158,37 +143,13 @@ export async function POST(request: NextRequest) {
             results.web.error = 'Failed to send real-time notification';
           }
           
-          // Clean up the channel
-          supabase.removeChannel(channel);
-        } else {
-          console.error('❌ Failed to subscribe to notification channel. Status received:', subscription);
-          console.log('🔄 [API] Trying to send broadcast anyway since student may already be subscribed...');
-          
-          // Try to send broadcast anyway, since the student's channel might already be active
-          try {
-            const broadcastResponse = await channel.send({
-              type: 'broadcast',
-              event: 'new_notification',
-              payload: notificationPayload
-            });
-
-            console.log('📡 [API] Fallback broadcast response:', broadcastResponse);
-
-            if (broadcastResponse === 'ok') {
-              console.log('✅ Fallback real-time notification sent successfully');
-              results.web.sent = true;
-              results.web.error = null;
-            } else {
-              results.web.error = `Subscription failed (${subscription}) and fallback broadcast failed`;
-            }
-          } catch (fallbackError) {
-            console.error('❌ Fallback broadcast also failed:', fallbackError);
-            results.web.error = `Failed to subscribe to notification channel. Status: ${subscription}`;
-          }
-          
-          // Clean up the channel
-          supabase.removeChannel(channel);
+        } catch (error) {
+          console.error('❌ Error sending direct broadcast:', error);
+          results.web.error = error instanceof Error ? error.message : 'Unknown broadcast error';
         }
+        
+        // Clean up the channel
+        supabase.removeChannel(channel);
         
         // TODO: Add actual web push service when VAPID keys are configured
         // For now, using real-time notifications for immediate delivery
