@@ -102,7 +102,7 @@ interface Task {
   estimated_duration: number
   problem_count?: number
   priority: 'low' | 'medium' | 'high'
-  task_type: 'study' | 'practice' | 'exam' | 'review' | 'resource'
+  task_type: 'study' | 'practice' | 'exam' | 'review' | 'resource' | 'coaching_session'
   assigned_to: string
   assigned_by: string
   created_at: string
@@ -333,7 +333,7 @@ export default function CoachPage() {
     topic_id: '',
     resource_id: '',
     mock_exam_id: '',
-    task_type: 'study' as 'study' | 'practice' | 'exam' | 'review' | 'resource',
+    task_type: 'study' as 'study' | 'practice' | 'exam' | 'review' | 'resource' | 'coaching_session',
     scheduled_start_time: '',
     scheduled_end_time: '',
     estimated_duration: 60,
@@ -1379,6 +1379,12 @@ export default function CoachPage() {
       return
     }
 
+    // Validate start time for coaching sessions
+    if (taskForm.task_type === 'coaching_session' && !taskForm.scheduled_start_time) {
+      alert('Koçluk seansları için başlangıç saati belirtmelisiniz')
+      return
+    }
+
     // Generate default title if not provided
     const taskTitle = taskForm.title.trim() || 'Görev'
 
@@ -1427,6 +1433,50 @@ export default function CoachPage() {
 
       if (tasks) {
         setWeeklyTasks(tasks)
+      }
+
+      // Send notification for coaching sessions
+      if (taskForm.task_type === 'coaching_session' && taskForm.scheduled_start_time) {
+        try {
+          console.log('📤 Sending coaching session notification...')
+          
+          const sessionDate = new Date(taskModalDate)
+          const formattedDate = sessionDate.toLocaleDateString('tr-TR', {
+            day: 'numeric',
+            month: 'long',
+            weekday: 'long'
+          })
+          
+          const response = await fetch('/api/notifications/send', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              userId: selectedStudent.id,
+              title: '📅 Yeni Koçluk Seansı',
+              body: `${taskTitle} - ${formattedDate} ${taskForm.scheduled_start_time}`,
+              data: {
+                type: 'new_coaching_session',
+                taskId: 'task-created', // We don't have the ID yet, but that's ok
+                taskTitle: taskTitle,
+                sessionDate: taskModalDate.toISOString().split('T')[0],
+                sessionTime: taskForm.scheduled_start_time,
+                coachName: profile?.full_name || 'Koçunuz'
+              }
+            })
+          })
+
+          if (response.ok) {
+            const result = await response.json()
+            console.log('✅ Coaching session notification sent successfully:', result)
+          } else {
+            console.error('❌ Failed to send coaching session notification:', await response.text())
+          }
+        } catch (notificationError) {
+          console.error('❌ Error sending coaching session notification:', notificationError)
+          // Don't show error to user - task creation was successful
+        }
       }
 
       closeTaskModal()
@@ -2450,6 +2500,7 @@ export default function CoachPage() {
                   <option value="exam">Sınav</option>
                   <option value="review">Tekrar</option>
                   <option value="resource">Kaynak</option>
+                  <option value="coaching_session">Koçluk Seansı</option>
                 </select>
               </div>
 
@@ -2602,16 +2653,17 @@ export default function CoachPage() {
                 </div>
               )}
 
-              {/* Start Time - Optional */}
+              {/* Start Time - Required for coaching sessions */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Başlangıç (Opsiyonel)
+                  Başlangıç {taskForm.task_type === 'coaching_session' ? '*' : '(Opsiyonel)'}
                 </label>
                 <input
                   type="time"
                   value={taskForm.scheduled_start_time}
                   onChange={(e) => setTaskForm(prev => ({ ...prev, scheduled_start_time: e.target.value }))}
                   className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  required={taskForm.task_type === 'coaching_session'}
                 />
               </div>
 
@@ -4566,20 +4618,22 @@ export default function CoachPage() {
                           </div>
                           <div className="space-y-3">
                             {(() => {
-                              const taskTypes = ['study', 'practice', 'exam', 'review', 'resource']
+                              const taskTypes = ['study', 'practice', 'exam', 'review', 'resource', 'coaching_session']
                               const taskTypeNames: Record<string, string> = {
                                 'study': 'Çalışma',
                                 'practice': 'Soru Çöz',
                                 'exam': 'Sınav',
                                 'review': 'Tekrar',
-                                'resource': 'Kaynak'
+                                'resource': 'Kaynak',
+                                'coaching_session': 'Koçluk Seansı'
                               }
                               const taskTypeColors: Record<string, string> = {
                                 'study': 'bg-blue-500',
                                 'practice': 'bg-green-500',
                                 'exam': 'bg-red-500',
                                 'review': 'bg-yellow-500',
-                                'resource': 'bg-indigo-500'
+                                'resource': 'bg-indigo-500',
+                                'coaching_session': 'bg-purple-500'
                               }
                               
                               const filteredTasks = weeklyTasks.filter(t => {

@@ -1,6 +1,7 @@
 // Database types for TYT AYT Coaching System V3.0
 export type UserRole = 'admin' | 'coach' | 'student' | 'coordinator'
 export type TaskStatus = 'pending' | 'in_progress' | 'completed' | 'cancelled'
+export type TaskType = 'study' | 'practice' | 'exam' | 'review' | 'resource' | 'coaching_session'
 export type ResourceCategory = 'video' | 'document' | 'pdf' | 'application'
 export type DifficultyLevel = 'baslangic' | 'orta' | 'ileri' | 'uzman'
 
@@ -70,12 +71,22 @@ export interface Task {
   description?: string
   subject_id?: string
   topic_id?: string
+  resource_id?: string
+  mock_exam_id?: string
   assigned_by: string
   assigned_to: string
   status: TaskStatus
+  task_type: TaskType
+  scheduled_date?: string
+  scheduled_start_time?: string
+  scheduled_end_time?: string
+  estimated_duration?: number
+  problem_count?: number
+  priority?: 'low' | 'medium' | 'high'
   due_date?: string
   completed_at?: string
   created_at: string
+  updated_at?: string
 }
 
 export interface Announcement {
@@ -92,6 +103,15 @@ export interface StreamToken {
   user_id: string
   token: string
   expires_at: string
+  created_at: string
+}
+
+export interface DeviceToken {
+  id: string
+  user_id: string
+  token: string
+  platform: 'ios' | 'android'
+  updated_at: string
   created_at: string
 }
 
