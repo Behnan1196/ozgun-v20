@@ -38,7 +38,7 @@ export async function POST(request: NextRequest) {
       .eq('user_id', userId)
       .order('updated_at', { ascending: false });
 
-    // Get web push subscriptions (for future use)
+    // Get web push subscriptions
     console.log('🌐 Looking up web push subscriptions for user:', userId);
     const { data: webSubscriptions, error: webError } = await supabase
       .from('web_push_subscriptions')
@@ -104,10 +104,45 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Web push notifications will be implemented after package installation
+    // Handle web push subscriptions (real-time + fallback notifications)
     if (webSubscriptions && webSubscriptions.length > 0) {
-      console.log(`🌐 Found ${webSubscriptions.length} web subscription(s) for user ${userId} - Web push will be implemented after package installation`);
-      results.web.error = 'Web push implementation pending package installation';
+      console.log(`🌐 Found ${webSubscriptions.length} web subscription(s) for user ${userId}`);
+      
+      try {
+        // Send real-time notification via Supabase broadcast
+        const notificationPayload = {
+          type: 'notification',
+          userId: userId,
+          title: title,
+          body: messageBody,
+          data: data,
+          timestamp: new Date().toISOString()
+        };
+
+        console.log('📡 Sending real-time web notification...');
+        const broadcastResponse = await supabase
+          .channel(`user-${userId}`)
+          .send({
+            type: 'broadcast',
+            event: 'new_notification',
+            payload: notificationPayload
+          });
+
+        if (broadcastResponse === 'ok') {
+          console.log('✅ Real-time web notification sent successfully');
+          results.web.sent = true;
+        } else {
+          console.error('❌ Failed to send real-time notification:', broadcastResponse);
+          results.web.error = 'Failed to send real-time notification';
+        }
+        
+        // TODO: Add actual web push service when VAPID keys are configured
+        // For now, using real-time notifications for immediate delivery
+        
+      } catch (error) {
+        console.error('❌ Error handling web notification:', error);
+        results.web.error = error instanceof Error ? error.message : 'Unknown web notification error';
+      }
     } else {
       console.log('🌐 No web push subscriptions found for user:', userId);
       if (webError) {

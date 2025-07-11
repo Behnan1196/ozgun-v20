@@ -702,6 +702,50 @@ export default function CoachPage() {
     checkWebPushStatus()
   }, [])
 
+  // Listen for real-time notifications (web push fallback)
+  useEffect(() => {
+    if (!user?.id) return
+
+    console.log('🔔 [WEB-NOTIFICATIONS] Setting up real-time notification listener for user:', user.id)
+    
+    const notificationChannel = supabase
+      .channel(`user-${user.id}`)
+      .on('broadcast', { event: 'new_notification' }, (payload) => {
+        console.log('📨 [WEB-NOTIFICATIONS] Received real-time notification:', payload)
+        
+        try {
+          const { title, body, data } = payload.payload
+          
+          // Show browser notification if permission granted
+          if (Notification.permission === 'granted') {
+            new Notification(title, {
+              body: body,
+              icon: '/icons/icon-192x192.png',
+              badge: '/icons/icon-192x192.png',
+              tag: data?.type || 'notification',
+              requireInteraction: true,
+              data: data
+            })
+          }
+          
+          // Always show in-app notification as fallback
+          showInAppNotification(title, body)
+          
+        } catch (error) {
+          console.error('❌ [WEB-NOTIFICATIONS] Error processing notification:', error)
+        }
+      })
+      .subscribe((status) => {
+        console.log('🔔 [WEB-NOTIFICATIONS] Subscription status:', status)
+      })
+
+    // Cleanup subscription on unmount
+    return () => {
+      console.log('🔕 [WEB-NOTIFICATIONS] Cleaning up notification listener')
+      supabase.removeChannel(notificationChannel)
+    }
+  }, [user?.id])
+
   // Load user and profile
   useEffect(() => {
     const loadUser = async () => {
