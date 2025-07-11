@@ -32,13 +32,122 @@ const PomodoroTimer: React.FC<PomodoroTimerProps> = ({ onTimerComplete }) => {
     }
   };
 
-  const showNotification = (message: string) => {
-    if (notificationsEnabled && !document.hasFocus()) {
-      new Notification('Pomodoro Timer', {
-        body: message,
-        icon: '/icons/icon-192x192.png'
-      });
+  // Enhanced audio notification using Web Audio API
+  const playNotificationSound = () => {
+    try {
+      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+      
+      // Create a pleasant 3-tone notification sound
+      const playTone = (frequency: number, duration: number, delay: number) => {
+        setTimeout(() => {
+          const oscillator = audioContext.createOscillator();
+          const gainNode = audioContext.createGain();
+          
+          oscillator.connect(gainNode);
+          gainNode.connect(audioContext.destination);
+          
+          oscillator.frequency.setValueAtTime(frequency, audioContext.currentTime);
+          oscillator.type = 'sine';
+          
+          gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+          gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + duration);
+          
+          oscillator.start(audioContext.currentTime);
+          oscillator.stop(audioContext.currentTime + duration);
+        }, delay);
+      };
+      
+      // Three-tone sequence: C5, E5, G5
+      playTone(523.25, 0.2, 0);    // C5
+      playTone(659.25, 0.2, 150);  // E5  
+      playTone(783.99, 0.3, 300);  // G5
+      
+    } catch (error) {
+      console.log('Audio notification not available:', error);
     }
+  };
+
+  // Enhanced in-app notification with visual popup
+  const showInAppNotification = (title: string, message: string) => {
+    const notification = document.createElement('div');
+    notification.className = 'fixed top-4 right-4 bg-gradient-to-r from-blue-500 to-blue-600 text-white p-4 rounded-lg shadow-lg z-50 max-w-sm animate-pulse';
+    notification.style.animation = 'slideInRight 0.3s ease-out';
+    notification.innerHTML = `
+      <div class="flex items-start">
+        <div class="flex-1">
+          <h4 class="font-semibold text-sm">${title}</h4>
+          <p class="text-sm mt-1 opacity-90">${message}</p>
+        </div>
+        <button class="ml-2 text-white hover:text-gray-200 font-bold text-lg" onclick="this.parentElement.parentElement.remove()">
+          ×
+        </button>
+      </div>
+    `;
+
+    // Add animation styles
+    const style = document.createElement('style');
+    style.textContent = `
+      @keyframes slideInRight {
+        from { transform: translateX(100%); opacity: 0; }
+        to { transform: translateX(0); opacity: 1; }
+      }
+    `;
+    document.head.appendChild(style);
+
+    document.body.appendChild(notification);
+
+    // Auto-remove after 5 seconds
+    setTimeout(() => {
+      if (notification.parentElement) {
+        notification.style.animation = 'slideInRight 0.3s ease-out reverse';
+        setTimeout(() => notification.remove(), 300);
+      }
+    }, 5000);
+  };
+
+  // Enhanced browser notification - works regardless of focus
+  const showBrowserNotification = (title: string, message: string) => {
+    if (!notificationsEnabled) return;
+
+    try {
+      const notification = new Notification(title, {
+        body: message,
+        icon: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjQiIGhlaWdodD0iNjQiIHZpZXdCb3g9IjAgMCA2NCA2NCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMzIiIGN5PSIzMiIgcj0iMzIiIGZpbGw9IiM0Mjg1RjQiLz4KPHN2ZyB4PSIxNiIgeT0iMTYiIHdpZHRoPSIzMiIgaGVpZ2h0PSIzMiIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIj4KPHN0eWxlPi50aW1lci1mYWNle2ZpbGw6I2ZmZjt9PC9zdHlsZT4KPGNpcmNsZSBjeD0iMTIiIGN5PSIxMiIgcj0iMTAiIGNsYXNzPSJ0aW1lci1mYWNlIi8+CjxwYXRoIGQ9Im0xMiA2djZsNCAyIiBzdHJva2U9IiM0Mjg1RjQiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIi8+Cjwvc3ZnPgo8L3N2Zz4K',
+        tag: 'pomodoro-timer',
+        requireInteraction: true,
+        silent: false
+      });
+
+      notification.onclick = function(event) {
+        window.focus();
+        this.close();
+      };
+
+      // Auto-close after 10 seconds to prevent notification buildup
+      setTimeout(() => {
+        notification.close();
+      }, 10000);
+
+    } catch (error) {
+      console.log('Browser notification failed:', error);
+    }
+  };
+
+  // Comprehensive notification system
+  const showNotification = (message: string) => {
+    const title = isBreak ? '☕ Mola Zamanı!' : '🎯 Çalışma Zamanı!';
+    
+    // 1. Always play audio alert
+    playNotificationSound();
+    
+    // 2. Always show in-app notification
+    showInAppNotification(title, message);
+    
+    // 3. Show browser notification (works regardless of focus)
+    showBrowserNotification(title, message);
+    
+    // 4. Call the onTimerComplete callback
+    onTimerComplete?.();
   };
 
   useEffect(() => {
@@ -61,11 +170,10 @@ const PomodoroTimer: React.FC<PomodoroTimerProps> = ({ onTimerComplete }) => {
         setTimeLeft(workDuration * 60);
         setIsBreak(false);
       }
-      onTimerComplete?.();
     }
 
     return () => clearInterval(interval);
-  }, [isRunning, timeLeft, isBreak, onTimerComplete, notificationsEnabled, workDuration, breakDuration]);
+  }, [isRunning, timeLeft, isBreak, workDuration, breakDuration]);
 
   const toggleTimer = () => {
     setIsRunning(!isRunning);

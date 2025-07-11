@@ -62,6 +62,7 @@ import { MockExam } from '@/types/database'
 import { 
   showInAppNotification 
 } from '@/lib/webPushNotifications'
+import { VideoCallInvite } from '@/components/VideoCallInvite'
 
 // Interfaces
 interface Student {
@@ -521,76 +522,13 @@ export default function CoachPage() {
   const handleNotificationPermissionRequest = async () => {
     if (typeof window !== 'undefined' && 'Notification' in window) {
       try {
-        console.log('🔔 [NOTIFICATION-DEBUG] Current permission:', Notification.permission)
-        
         const permission = await Notification.requestPermission()
-        console.log('🔔 [NOTIFICATION-DEBUG] Permission result:', permission)
-        
         if (permission === 'granted') {
-          showInAppNotification('Bildirimler Etkinleştirildi', 'Tarayıcı bildirimleri başarıyla etkinleştirildi!')
-          
-          // Test notification to verify functionality
-          setTimeout(() => {
-            createTestNotification()
-          }, 1000)
-        } else {
-          showInAppNotification('Bildirim İzni Gerekli', 'Bildirimleri görmek için tarayıcı ayarlarından izin verin')
+          showInAppNotification('Bildirim İzni', 'Bildirim izni başarıyla verildi!')
         }
       } catch (error) {
         console.error('❌ [NOTIFICATIONS] Permission request failed:', error)
         showInAppNotification('Bildirim Hatası', 'Bildirim izni alınamadı')
-      }
-    }
-  }
-
-  // Add test notification function for debugging
-  const createTestNotification = () => {
-    if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
-      console.log('🧪 [TEST-NOTIFICATION] Creating test notification...')
-      console.log('🧪 [TEST-NOTIFICATION] Document visibility:', document.visibilityState)
-      console.log('🧪 [TEST-NOTIFICATION] Document hasFocus:', document.hasFocus())
-      console.log('🧪 [TEST-NOTIFICATION] Window focus state:', document.hasFocus() ? 'FOCUSED' : 'NOT_FOCUSED')
-      
-      try {
-        const testNotification = new Notification('🧪 Test Bildirimi', {
-          body: 'Bu bir test bildirimidir. Eğer bu mesajı görüyorsanız, bildirimler çalışıyor!',
-          icon: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTEyIDJDMTMuMSAyIDE0IDIuOSAxNCA0VjVDMTcuMyA2IDE5LjggOC43IDE5LjggMTJWMTZMMjEgMTdIMTNIMTFIM1YxNkM0LjIgMTYgNS4yIDE1IDUuMiAxM1Y5QzUuMiA2LjggNy4yIDUgOS40IDVWNEMxMCAyLjkgMTAuOSAyIDEyIDJaTTEyIDIxQzEzLjEgMjEgMTQgMjAuMSAxNCAxOUgxMEMxMCAyMC4xIDEwLjkgMjEgMTIgMjFaIiBmaWxsPSIjNDI4NUY0Ii8+Cjwvc3ZnPgo=',
-          tag: 'test_notification',
-          requireInteraction: true
-        })
-        
-        testNotification.onclick = function(event) {
-          console.log('🧪 [TEST-NOTIFICATION] CLICKED by user!')
-          showInAppNotification('Test Başarılı!', 'Bildirim tıklaması algılandı - bildirimler çalışıyor!')
-          this.close()
-        }
-        
-        testNotification.onshow = function() {
-          console.log('🧪 [TEST-NOTIFICATION] SHOWN event fired!')
-          console.log('🧪 [TEST-NOTIFICATION] If you don\'t see a popup, check:')
-          console.log('🧪 [TEST-NOTIFICATION] 1. Chrome Settings > Privacy > Notifications')
-          console.log('🧪 [TEST-NOTIFICATION] 2. Windows Notification Settings')
-          console.log('🧪 [TEST-NOTIFICATION] 3. Try switching to another tab/app')
-        }
-        
-        testNotification.onerror = function(error) {
-          console.error('🧪 [TEST-NOTIFICATION] ERROR:', error)
-        }
-        
-        testNotification.onclose = function() {
-          console.log('🧪 [TEST-NOTIFICATION] CLOSED')
-        }
-        
-        console.log('🧪 [TEST-NOTIFICATION] Test notification created successfully')
-        
-        // Auto-close after 10 seconds to avoid spam
-        setTimeout(() => {
-          testNotification.close()
-          console.log('🧪 [TEST-NOTIFICATION] Auto-closed after 10 seconds')
-        }, 10000)
-        
-      } catch (error) {
-        console.error('🧪 [TEST-NOTIFICATION] Failed to create test notification:', error)
       }
     }
   }
@@ -728,43 +666,31 @@ export default function CoachPage() {
   useEffect(() => {
     if (!user?.id) return
 
-    console.log('🔔 [WEB-NOTIFICATIONS] Setting up real-time notification listener for user:', user.id)
+
     
     const notificationChannel = supabase
       .channel(`user-${user.id}`)
       .on('broadcast', { event: 'new_notification' }, (payload) => {
-        console.log('📨 [WEB-NOTIFICATIONS] Received real-time notification:', payload)
-        
         try {
           const { title, body, data } = payload.payload
           
           // Show browser notification using service worker for system notifications
           if (Notification.permission === 'granted') {
             try {
-              console.log('🔍 [DEBUG] Creating system notification via service worker...');
-              console.log('🔍 [DEBUG] Document visibility:', document.visibilityState);
-              console.log('🔍 [DEBUG] Document hasFocus:', document.hasFocus());
-              
               // Use service worker for system-initiated notifications to bypass browser restrictions
               if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
-                console.log('🔧 [DEBUG] Using service worker for notification...');
                 
                 // Use service worker to show notification
                 navigator.serviceWorker.ready.then((registration) => {
                                      registration.showNotification(title, {
                      body: body,
-                     icon: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTEyIDJDMTMuMSAyIDE0IDIuOSAxNCA0VjVDMTcuMyA2IDE5LjggOC3IDE5LjggMTJWMTZMMjEgMTdIMTNIMTFIM1YxNkM0LjIgMTYgNS4yIDE1IDUuMiAxM1Y5QzUuMiA2LjggNy4yIDUgOS40IDVWNEMxMCAyLjkgMTAuOSAyIDEyIDJaTTEyIDIxQzEzLjEgMjEgMTQgMjAuMSAxNCAxOUgxMEMxMCAyMC4xIDEwLjkgMjEgMTIgMjFaIiBmaWxsPSIjNDI4NUY0Ci8+Cjwvc3ZnPgo=',
-                     tag: `${data?.type || 'notification'}_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
-                     requireInteraction: true,
-                     data: data,
-                     silent: false
-                   }).then(() => {
-                    console.log('✅ [SW] Service worker notification shown successfully');
-                  }).catch((error) => {
-                    console.error('❌ [SW] Service worker notification failed:', error);
+                     icon: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTEyIDJDMTMuMSAyIDE0IDIuOSAxNCA0VjVDMTcuMyA2IDE5LjggOC43IDE5LjggMTJWMTZMMjEgMTdIMTNIMTFIM1YxNkM0LjIgMTYgNS4yIDE1IDUuMiAxM1Y5QzUuMiA2LjggNy4yIDUgOS40IDVWNEMxMCAyLjkgMTAuOSAyIDEyIDJaTTEyIDIxQzEzLjEgMjEgMTQgMjAuMSAxNCAxOUgxMEMxMCAyMC4xIDEwLjkgMjEgMTIgMjFaIiBmaWxsPSIjNDI4NUY0Ii8+Cjwvc3ZnPgo=',
+                     tag: 'test_notification',
+                     requireInteraction: true
+                   }).catch((error) => {
+                    console.error('Service worker notification failed:', error);
                     
                     // Fallback to regular notification
-                    console.log('🔄 [DEBUG] Falling back to regular notification...');
                     const fallbackNotification = new Notification(title, {
                       body: body,
                       icon: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTEyIDJDMTMuMSAyIDE0IDIuOSAxNCA0VjVDMTcuMyA2IDE5LjggOC43IDE5LjggMTJWMTZMMjEgMTdIMTNIMTFIM1YxNkM0LjIgMTYgNS4yIDE1IDUuMiAxM1Y5QzUuMiA2LjggNy4yIDUgOS40IDVWNEMxMCAyLjkgMTAuOSAyIDEyIDJaTTEyIDIxQzEzLjEgMjEgMTQgMjAuMSAxNCAxOUgxMEMxMCAyMC4xIDEwLjkgMjEgMTIgMjFaIiBmaWxsPSIjNDI4NUY0Ci8+Cjwvc3ZnPgo=',
@@ -774,8 +700,6 @@ export default function CoachPage() {
                   });
                 });
               } else {
-                console.log('🔄 [DEBUG] No service worker available, using direct notification...');
-                
                 // Direct notification as fallback
                 const notification = new Notification(title, {
                   body: body,
@@ -786,33 +710,27 @@ export default function CoachPage() {
                 });
                 
                 notification.onclick = function(event) {
-                  console.log('🖱️ [DEBUG] Fallback notification clicked!');
                   window.focus();
                   this.close();
                 };
               }
               
             } catch (error) {
-              console.error('❌ Failed to create system notification:', error);
+              console.error('Failed to create notification:', error);
             }
-          } else {
-            console.log('🚫 [DEBUG] Notification permission not granted:', Notification.permission);
           }
           
           // Always show in-app notification as fallback
           showInAppNotification(title, body)
           
         } catch (error) {
-          console.error('❌ [WEB-NOTIFICATIONS] Error processing notification:', error)
+          console.error('Error processing notification:', error)
         }
       })
-      .subscribe((status) => {
-        console.log('🔔 [WEB-NOTIFICATIONS] Subscription status:', status)
-      })
+      .subscribe()
 
     // Cleanup subscription on unmount
     return () => {
-      console.log('🔕 [WEB-NOTIFICATIONS] Cleaning up notification listener')
       supabase.removeChannel(notificationChannel)
     }
   }, [user?.id])
@@ -4364,14 +4282,7 @@ export default function CoachPage() {
                                 İzin Ver
                               </button>
                             )}
-                            {Notification.permission === 'granted' && (
-                              <button
-                                onClick={createTestNotification}
-                                className="px-4 py-2 bg-green-600 text-white text-sm rounded-md hover:bg-green-700 transition-colors"
-                              >
-                                🧪 Test Et
-                              </button>
-                            )}
+
                           </div>
                         </div>
                       </div>
@@ -4745,11 +4656,11 @@ export default function CoachPage() {
                             {Math.round((weeklyTasks.filter(t => {
                               const taskDate = new Date(t.scheduled_date);
                               if (showMonthlyStats) {
-                                const monthStart = new Date(currentWeek);
-                                monthStart.setDate(1);
-                                const monthEnd = new Date(monthStart);
-                                monthEnd.setMonth(monthStart.getMonth() + 1);
-                                monthEnd.setDate(0);
+                                const monthStart = new Date(currentWeek)
+                                monthStart.setDate(1)
+                                const monthEnd = new Date(monthStart)
+                                monthEnd.setMonth(monthStart.getMonth() + 1)
+                                monthEnd.setDate(0)
                                 return taskDate >= monthStart && taskDate <= monthEnd && t.status === 'completed';
                               } else {
                                 const weekStart = getWeekStart(currentWeek);
@@ -4763,11 +4674,11 @@ export default function CoachPage() {
                             {weeklyTasks.filter(t => {
                               const taskDate = new Date(t.scheduled_date);
                               if (showMonthlyStats) {
-                                const monthStart = new Date(currentWeek);
-                                monthStart.setDate(1);
-                                const monthEnd = new Date(monthStart);
-                                monthEnd.setMonth(monthStart.getMonth() + 1);
-                                monthEnd.setDate(0);
+                                const monthStart = new Date(currentWeek)
+                                monthStart.setDate(1)
+                                const monthEnd = new Date(monthStart)
+                                monthEnd.setMonth(monthStart.getMonth() + 1)
+                                monthEnd.setDate(0)
                                 return taskDate >= monthStart && taskDate <= monthEnd && t.status === 'completed';
                               } else {
                                 const weekStart = getWeekStart(currentWeek);
@@ -5175,7 +5086,7 @@ export default function CoachPage() {
 
               {activeTab === 'video' && (
                 <div className="space-y-4 mb-6">
-                  <h3 className="font-semibold text-gray-900">Video Görüşme</h3>
+                  <h3 className="font-semibold text-gray-900">📹 Video Görüşme</h3>
                   {userRole === 'coordinator' ? (
                     <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
                       <p className="text-sm text-yellow-800">
@@ -5184,29 +5095,65 @@ export default function CoachPage() {
                     </div>
                   ) : userRole === 'coach' ? (
                     selectedStudent ? (
-                      <div className="h-[calc(100vh-12rem)]">
-                        <StreamVideo 
-                          partnerId={selectedStudent.id}
-                          partnerName={selectedStudent.full_name}
-                        />
+                      <div className="space-y-4">
+                        {/* Video Call Invite System */}
+                        {userRole && (
+                          <VideoCallInvite
+                            userRole={userRole}
+                            partnerId={selectedStudent.id}
+                            partnerName={selectedStudent.full_name}
+                            onCallStart={() => {
+                              console.log('Starting video call with:', selectedStudent.full_name);
+                            }}
+                          />
+                        )}
+                        
+                        {/* Video Call Interface */}
+                        <div className="h-[calc(100vh-20rem)]">
+                          <StreamVideo 
+                            partnerId={selectedStudent.id}
+                            partnerName={selectedStudent.full_name}
+                          />
+                        </div>
                       </div>
                     ) : (
-                      <p className="text-sm text-gray-500">
-                        Video görüşme için bir öğrenci seçin.
-                      </p>
+                      <div className="text-center py-8">
+                        <Video className="h-12 w-12 text-gray-400 mx-auto mb-3" />
+                        <p className="text-sm text-gray-500">
+                          Video görüşme için bir öğrenci seçin.
+                        </p>
+                      </div>
                     )
                   ) : (
                     assignedCoach ? (
-                      <div className="h-[calc(100vh-12rem)]">
-                        <StreamVideo 
-                          partnerId={assignedCoach.id}
-                          partnerName={assignedCoach.full_name}
-                        />
+                      <div className="space-y-4">
+                        {/* Video Call Invite System for Students */}
+                        {userRole && (
+                          <VideoCallInvite
+                            userRole={userRole}
+                            partnerId={assignedCoach.id}
+                            partnerName={assignedCoach.full_name}
+                            onCallStart={() => {
+                              console.log('Starting video call with coach:', assignedCoach.full_name);
+                            }}
+                          />
+                        )}
+                        
+                        {/* Video Call Interface */}
+                        <div className="h-[calc(100vh-20rem)]">
+                          <StreamVideo 
+                            partnerId={assignedCoach.id}
+                            partnerName={assignedCoach.full_name}
+                          />
+                        </div>
                       </div>
                     ) : (
-                      <p className="text-sm text-gray-500">
-                        Koç ataması yapılmamış.
-                      </p>
+                      <div className="text-center py-8">
+                        <Video className="h-12 w-12 text-gray-400 mx-auto mb-3" />
+                        <p className="text-sm text-gray-500">
+                          Koç ataması yapılmamış.
+                        </p>
+                      </div>
                     )
                   )}
                 </div>
