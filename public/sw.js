@@ -1,12 +1,12 @@
 // Service Worker for TYT-AYT Coaching Platform
 // Handles push notifications and offline functionality
 
-const CACHE_NAME = 'coaching-app-v1';
+const CACHE_NAME = 'coaching-app-v2'; // Increment version to force cache update
 const urlsToCache = [
-  '/',
-  '/login',
-  '/coach'
-  // Removed /manifest.json as it might not exist or be causing issues
+  // Only cache static assets, not HTML pages
+  // '/', // Removed to prevent serving stale HTML
+  // '/login', // Removed to prevent serving stale HTML  
+  // '/coach' // Removed to prevent serving stale HTML
 ];
 
 // Install event - cache resources (with error handling)
@@ -40,33 +40,96 @@ self.addEventListener('install', (event) => {
   );
 });
 
-// Activate event - take control immediately
+// Activate event - clean up old caches and take control immediately
 self.addEventListener('activate', (event) => {
   console.log('🚀 [SW] Service worker activated');
-  event.waitUntil(self.clients.claim());
+  event.waitUntil(
+    // Delete old caches
+    caches.keys().then((cacheNames) => {
+      return Promise.all(
+        cacheNames.map((cacheName) => {
+          if (cacheName !== CACHE_NAME) {
+            console.log('🗑️ [SW] Deleting old cache:', cacheName);
+            return caches.delete(cacheName);
+          }
+        })
+      );
+    }).then(() => {
+      return self.clients.claim();
+    })
+  );
 });
 
-// Fetch event - serve from cache when offline (with fallback)
+// Fetch event - network-first strategy for HTML documents
 self.addEventListener('fetch', (event) => {
+  const url = new URL(event.request.url);
+  
+  // For HTML documents (navigation requests), always try network first
+  if (event.request.mode === 'navigate' || 
+      event.request.destination === 'document' ||
+      event.request.headers.get('Accept')?.includes('text/html')) {
+    
+    event.respondWith(
+      fetch(event.request)
+        .then((response) => {
+          // Always return fresh HTML from network
+          console.log('🌐 [SW] Serving fresh HTML from network:', url.pathname);
+          return response;
+        })
+        .catch(() => {
+          // Only fallback to cache if network fails
+          return caches.match(event.request).then((cachedResponse) => {
+            if (cachedResponse) {
+              console.log('📦 [SW] Serving HTML from cache (offline):', url.pathname);
+              return cachedResponse;
+            }
+            // Final fallback for offline navigation
+            return new Response('App offline - please check your connection', { 
+              status: 200, 
+              headers: { 'Content-Type': 'text/html' } 
+            });
+          });
+        })
+    );
+    return;
+  }
+  
+  // For other resources (JS, CSS, images), try cache first
   event.respondWith(
     caches.match(event.request)
       .then((response) => {
-        // Return cached version or fetch from network
-        return response || fetch(event.request);
+        if (response) {
+          console.log('📦 [SW] Serving from cache:', url.pathname);
+          return response;
+        }
+        
+        // Fetch from network and cache static assets
+        return fetch(event.request).then((response) => {
+          // Only cache successful responses for static assets
+          if (response.status === 200 && 
+              (url.pathname.includes('/_next/static/') || 
+               url.pathname.includes('/icons/') ||
+               url.pathname.includes('.css') ||
+               url.pathname.includes('.js'))) {
+            
+            const responseToCache = response.clone();
+            caches.open(CACHE_NAME).then((cache) => {
+              cache.put(event.request, responseToCache);
+            });
+          }
+          
+          return response;
+        });
       })
       .catch(() => {
-        // If both cache and network fail, return a basic response for navigation requests
-        if (event.request.mode === 'navigate') {
-          return new Response('App offline', { 
-            status: 200, 
-            headers: { 'Content-Type': 'text/html' } 
-          });
-        }
+        // If both cache and network fail for non-navigation requests
+        console.log('❌ [SW] Resource unavailable:', url.pathname);
+        return new Response('Resource unavailable', { status: 404 });
       })
   );
 });
 
-// Push event - handle incoming push notifications
+// Push event - handle incoming push notifications with improved error handling
 self.addEventListener('push', (event) => {
   console.log('📨 [SW] Push notification received:', event);
   
@@ -75,7 +138,6 @@ self.addEventListener('push', (event) => {
   const options = {
     body: 'Yeni bir bildirim aldınız',
     icon: notificationIcon,
-    badge: notificationIcon,
     vibrate: [200, 100, 200],
     requireInteraction: true,
     actions: [
@@ -91,8 +153,10 @@ self.addEventListener('push', (event) => {
     ],
     data: {
       timestamp: Date.now(),
-      url: '/'
-    }
+      url: '/',
+      notificationId: `notification_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+    },
+    tag: `coaching_${Date.now()}` // Prevent duplicate notifications
   };
 
   if (event.data) {
@@ -131,12 +195,27 @@ self.addEventListener('push', (event) => {
     } catch (error) {
       console.error('❌ [SW] Error parsing push payload:', error);
       options.title = 'Coaching Platform';
-      options.body = event.data.text();
+      options.body = event.data ? event.data.text() : 'Yeni bildirim';
     }
+  } else {
+    options.title = 'Coaching Platform';
+    options.body = 'Yeni bir bildirim aldınız';
   }
 
   event.waitUntil(
     self.registration.showNotification(options.title, options)
+      .then(() => {
+        console.log('✅ [SW] Notification shown successfully:', options.title);
+      })
+      .catch((error) => {
+        console.error('❌ [SW] Failed to show notification:', error);
+        // Fallback: try showing a simpler notification
+        return self.registration.showNotification('Coaching Platform', {
+          body: 'Yeni bildirim',
+          icon: notificationIcon,
+          tag: `fallback_${Date.now()}`
+        });
+      })
   );
 });
 

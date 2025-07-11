@@ -43,15 +43,62 @@ export default function RootLayout({
         <script
           dangerouslySetInnerHTML={{
             __html: `
+              // Improved Service Worker Registration - prevents duplicates and "only works once" issues
               if ('serviceWorker' in navigator) {
-                window.addEventListener('load', function() {
-                  navigator.serviceWorker.register('/sw.js')
-                    .then(function(registration) {
-                      console.log('✅ [SW] Service Worker registered successfully:', registration.scope);
-                    }, function(err) {
-                      console.log('❌ [SW] Service Worker registration failed:', err);
+                window.addEventListener('load', async function() {
+                  try {
+                    // Check if service worker is already registered
+                    const existingRegistration = await navigator.serviceWorker.getRegistration('/sw.js');
+                    
+                    if (existingRegistration) {
+                      console.log('✅ [SW] Service Worker already registered:', existingRegistration.scope);
+                      
+                      // Check if it needs updating
+                      await existingRegistration.update();
+                      console.log('🔄 [SW] Service Worker updated');
+                      
+                      return;
+                    }
+
+                    // Register new service worker
+                    const registration = await navigator.serviceWorker.register('/sw.js', {
+                      scope: '/',
+                      updateViaCache: 'none' // Always check for updates
                     });
+                    
+                    console.log('✅ [SW] Service Worker registered successfully:', registration.scope);
+                    
+                    // Listen for updates
+                    registration.addEventListener('updatefound', () => {
+                      console.log('🔄 [SW] Service Worker update found');
+                      const newWorker = registration.installing;
+                      if (newWorker) {
+                        newWorker.addEventListener('statechange', () => {
+                          if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                            console.log('🔄 [SW] New service worker installed, will activate on next page load');
+                          }
+                        });
+                      }
+                    });
+                    
+                  } catch (err) {
+                    console.log('❌ [SW] Service Worker registration failed:', err);
+                  }
                 });
+                
+                // Listen for service worker messages
+                navigator.serviceWorker.addEventListener('message', (event) => {
+                  console.log('💬 [SW] Message received from service worker:', event.data);
+                });
+                
+                // Handle controller changes (service worker updates)
+                navigator.serviceWorker.addEventListener('controllerchange', () => {
+                  console.log('🔄 [SW] Service worker controller changed');
+                  // Optionally reload the page when a new service worker takes control
+                  // window.location.reload();
+                });
+              } else {
+                console.log('❌ [SW] Service workers are not supported in this browser');
               }
             `,
           }}
