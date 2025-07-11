@@ -2383,6 +2383,109 @@ export default function CoachPage() {
     }
   }
 
+  const handleAvatarUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) { // 5MB limit
+        alert('Dosya boyutu 5MB\'dan küçük olmalıdır.')
+        return
+      }
+      
+      const reader = new FileReader()
+      reader.onloadend = () => {
+        setAvatarPreview(reader.result as string)
+        setSettingsForm((prev: any) => ({ ...prev, avatar_url: reader.result as string }))
+      }
+      reader.readAsDataURL(file)
+    }
+  }
+
+  const handleRemoveAvatar = () => {
+    setAvatarPreview(null)
+    setSettingsForm((prev: any) => ({ ...prev, avatar_url: null }))
+  }
+
+  const updateProfile = async () => {
+    try {
+      const supabase = createClient()
+      
+      // If avatar_url is null, we need to remove the avatar from storage
+      if (profile?.avatar_url && !settingsForm.avatar_url) {
+        const avatarPath = profile.avatar_url.split('/').pop()
+        if (avatarPath) {
+          await supabase.storage.from('avatars').remove([avatarPath])
+        }
+      }
+      
+      const updates = {
+        full_name: settingsForm.full_name,
+        phone: settingsForm.phone,
+        avatar_url: settingsForm.avatar_url,
+        theme: settingsForm.theme,
+        language: settingsForm.language,
+        notifications_enabled: settingsForm.notifications_enabled,
+        email_notifications: settingsForm.email_notifications,
+        updated_at: new Date().toISOString()
+      }
+
+      const { error } = await supabase
+        .from('user_profiles')
+        .update(updates)
+        .eq('id', user.id)
+
+      if (error) {
+        console.error('Error updating profile:', error)
+        alert('Profil güncellenirken hata oluştu: ' + error.message)
+        return
+      }
+
+      // Update local state
+      setProfile((prev: any) => ({ ...prev, ...updates }))
+      alert('Profil başarıyla güncellendi!')
+      
+    } catch (error) {
+      console.error('Error updating profile:', error)
+      alert('Profil güncellenirken hata oluştu.')
+    }
+  }
+
+  const updatePassword = async () => {
+    if (settingsForm.new_password !== settingsForm.confirm_password) {
+      alert('Yeni şifreler eşleşmiyor!')
+      return
+    }
+
+    if (settingsForm.new_password.length < 6) {
+      alert('Yeni şifre en az 6 karakter olmalıdır!')
+      return
+    }
+
+    try {
+      const supabase = createClient()
+      const { error } = await supabase.auth.updateUser({
+        password: settingsForm.new_password
+      })
+
+      if (error) {
+        console.error('Error updating password:', error)
+        alert('Şifre güncellenirken hata oluştu: ' + error.message)
+        return
+      }
+
+      alert('Şifre başarıyla güncellendi!')
+      setSettingsForm((prev: any) => ({
+        ...prev,
+        current_password: '',
+        new_password: '',
+        confirm_password: ''
+      }))
+      
+    } catch (error) {
+      console.error('Error updating password:', error)
+      alert('Şifre güncellenirken hata oluştu.')
+    }
+  }
+
   const dayNames = ['Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi', 'Pazar']
   const weekDates = getWeekDates(currentWeek)
 
