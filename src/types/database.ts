@@ -127,6 +127,18 @@ export interface DeviceToken {
   created_at: string
 }
 
+// Web Push Subscription for browser notifications
+export interface WebPushSubscription {
+  id: string
+  user_id: string
+  endpoint: string
+  p256dh_key: string
+  auth_key: string
+  user_agent?: string
+  created_at: string
+  updated_at: string
+}
+
 // Extended types with relations
 export interface UserProfileWithStats extends UserProfile {
   task_count?: number
@@ -204,6 +216,11 @@ export type Database = {
         Row: DeviceToken
         Insert: Omit<DeviceToken, 'id' | 'created_at' | 'updated_at'>
         Update: Partial<Omit<DeviceToken, 'id' | 'created_at' | 'updated_at'>>
+      }
+      web_push_subscriptions: {
+        Row: WebPushSubscription
+        Insert: Omit<WebPushSubscription, 'id' | 'created_at' | 'updated_at'>
+        Update: Partial<Omit<WebPushSubscription, 'id' | 'created_at' | 'updated_at'>>
       }
     }
     Views: {

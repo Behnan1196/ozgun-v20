@@ -59,6 +59,13 @@ import StreamChat from '@/components/StreamChat'
 import StreamVideo from '@/components/StreamVideo'
 import PomodoroTimer from '@/components/PomodoroTimer'
 import { MockExam } from '@/types/database'
+import { 
+  subscribeToWebPush, 
+  unsubscribeFromWebPush, 
+  isSubscribedToWebPush, 
+  isWebPushSupported,
+  showInAppNotification 
+} from '@/lib/webPushNotifications'
 
 // Interfaces
 interface Student {
@@ -439,10 +446,16 @@ export default function CoachPage() {
     language: 'tr',
     notifications_enabled: true,
     email_notifications: true,
+    web_push_enabled: false,
     current_password: '',
     new_password: '',
     confirm_password: ''
   })
+
+  // Web push notification state
+  const [webPushSubscribed, setWebPushSubscribed] = useState(false)
+  const [webPushSupported, setWebPushSupported] = useState(false)
+  const [webPushLoading, setWebPushLoading] = useState(false)
 
   const [showStatsMonthly, setShowStatsMonthly] = useState(false)
   
@@ -477,6 +490,7 @@ export default function CoachPage() {
       language: profile?.language || 'tr',
       notifications_enabled: profile?.notifications_enabled !== false,
       email_notifications: profile?.email_notifications !== false,
+      web_push_enabled: false,
       current_password: '',
       new_password: '',
       confirm_password: ''
@@ -502,10 +516,58 @@ export default function CoachPage() {
       language: 'tr',
       notifications_enabled: true,
       email_notifications: true,
+      web_push_enabled: false,
       current_password: '',
       new_password: '',
       confirm_password: ''
     })
+  }
+
+  // Web Push Notification Functions
+  const checkWebPushStatus = async () => {
+    if (typeof window !== 'undefined') {
+      setWebPushSupported(isWebPushSupported())
+      const subscribed = await isSubscribedToWebPush()
+      setWebPushSubscribed(subscribed)
+    }
+  }
+
+  const handleWebPushToggle = async (enabled: boolean) => {
+    if (!user?.id) return
+
+    setWebPushLoading(true)
+    try {
+      if (enabled) {
+        console.log('🔔 [WEB-PUSH] Enabling web push notifications...')
+        const result = await subscribeToWebPush(user.id)
+        if (result.success) {
+          setWebPushSubscribed(true)
+          setSettingsForm(prev => ({ ...prev, web_push_enabled: true }))
+          showInAppNotification('Bildirimler Etkinleştirildi', 'Web bildirimleri başarıyla etkinleştirildi!')
+          console.log('✅ [WEB-PUSH] Web push notifications enabled successfully')
+        } else {
+          console.error('❌ [WEB-PUSH] Failed to enable notifications:', result.error)
+          showInAppNotification('Bildirim Hatası', result.error || 'Web bildirimleri etkinleştirilemedi')
+        }
+      } else {
+        console.log('🔕 [WEB-PUSH] Disabling web push notifications...')
+        const success = await unsubscribeFromWebPush(user.id)
+        if (success) {
+          setWebPushSubscribed(false)
+          setSettingsForm(prev => ({ ...prev, web_push_enabled: false }))
+          showInAppNotification('Bildirimler Kapatıldı', 'Web bildirimleri başarıyla kapatıldı')
+          console.log('✅ [WEB-PUSH] Web push notifications disabled successfully')
+        } else {
+          console.error('❌ [WEB-PUSH] Failed to disable notifications')
+          showInAppNotification('Bildirim Hatası', 'Web bildirimleri kapatılamadı')
+        }
+      }
+    } catch (error) {
+      console.error('❌ [WEB-PUSH] Error handling web push toggle:', error)
+      showInAppNotification('Bildirim Hatası', 'Bir hata oluştu')
+    } finally {
+      setWebPushLoading(false)
+    }
   }
 
   const handleAvatarUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -634,6 +696,11 @@ export default function CoachPage() {
       document.removeEventListener('mousedown', handleClickOutside)
     }
   }, [userMenuOpen])
+
+  // Check web push status when component loads
+  useEffect(() => {
+    checkWebPushStatus()
+  }, [])
 
   // Load user and profile
   useEffect(() => {
@@ -4158,6 +4225,39 @@ export default function CoachPage() {
                               className="sr-only peer"
                             />
                             <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                          </label>
+                        </div>
+                        
+                        <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                          <div>
+                            <h4 className="font-medium text-gray-800 flex items-center">
+                              <Globe className="h-4 w-4 mr-2 text-blue-600" />
+                              Web Push Bildirimleri
+                            </h4>
+                            <p className="text-sm text-gray-600">
+                              {webPushSupported 
+                                ? 'Tarayıcınızda anlık bildirimler alın' 
+                                : 'Tarayıcınız web bildirimleri desteklemiyor'
+                              }
+                            </p>
+                            {webPushSubscribed && (
+                              <p className="text-xs text-green-600 mt-1">✅ Etkin</p>
+                            )}
+                          </div>
+                          <label className="relative inline-flex items-center cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={webPushSubscribed}
+                              disabled={!webPushSupported || webPushLoading}
+                              onChange={(e) => handleWebPushToggle(e.target.checked)}
+                              className="sr-only peer disabled:cursor-not-allowed"
+                            />
+                            <div className={`w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600 ${!webPushSupported ? 'opacity-50 cursor-not-allowed' : ''} ${webPushLoading ? 'opacity-50' : ''}`}></div>
+                            {webPushLoading && (
+                              <div className="absolute inset-0 flex items-center justify-center">
+                                <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+                              </div>
+                            )}
                           </label>
                         </div>
                       </div>

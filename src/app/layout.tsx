@@ -40,6 +40,22 @@ export default function RootLayout({
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <meta name="description" content="TYT ve AYT sınavlarına hazırlık için kapsamlı koçluk platformu" />
         <link rel="icon" href="/favicon.ico" />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              if ('serviceWorker' in navigator) {
+                window.addEventListener('load', function() {
+                  navigator.serviceWorker.register('/sw.js')
+                    .then(function(registration) {
+                      console.log('✅ [SW] Service Worker registered successfully:', registration.scope);
+                    }, function(err) {
+                      console.log('❌ [SW] Service Worker registration failed:', err);
+                    });
+                });
+              }
+            `,
+          }}
+        />
       </head>
       <body>
         <AppThemeProvider>
