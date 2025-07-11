@@ -1577,7 +1577,7 @@ export default function CoachPage() {
   }
 
   const updateTask = async () => {
-    if (!editingTask || !taskModalDate) {
+    if (!editingTask || !taskModalDate || !selectedStudent) {
       alert('Düzenleme hatası')
       return
     }
@@ -1594,8 +1594,23 @@ export default function CoachPage() {
       return
     }
 
+    // Validate start time for coaching sessions
+    if (taskForm.task_type === 'coaching_session' && !taskForm.scheduled_start_time) {
+      alert('Koçluk seansları için başlangıç saati belirtmelisiniz')
+      return
+    }
+
     // Generate default title if not provided
     const taskTitle = taskForm.title.trim() || 'Görev'
+
+    // Check if this is a coaching session and if time/date changed
+    const isCoachingSession = taskForm.task_type === 'coaching_session'
+    const newDate = taskModalDate.toISOString().split('T')[0]
+    const newTime = taskForm.scheduled_start_time
+    
+    const dateChanged = isCoachingSession && editingTask.scheduled_date !== newDate
+    const timeChanged = isCoachingSession && editingTask.scheduled_start_time !== newTime
+    const sessionChanged = dateChanged || timeChanged
 
     try {
       const { error } = await supabase
@@ -1608,7 +1623,7 @@ export default function CoachPage() {
           resource_id: taskForm.resource_id || null,
           mock_exam_id: taskForm.mock_exam_id || null,
           task_type: taskForm.task_type,
-          scheduled_date: taskModalDate.toISOString().split('T')[0],
+          scheduled_date: newDate,
           scheduled_start_time: taskForm.scheduled_start_time || null,
           scheduled_end_time: taskForm.scheduled_end_time || null,
           estimated_duration: taskForm.estimated_duration,
@@ -1621,6 +1636,61 @@ export default function CoachPage() {
         console.error('Task update error:', error)
         alert('Görev güncellenirken hata oluştu')
         return
+      }
+
+      // Send notification for coaching session changes
+      if (sessionChanged && newTime) {
+        try {
+          console.log('📤 Sending coaching session update notification...')
+          
+          const sessionDate = new Date(newDate)
+          const formattedDate = sessionDate.toLocaleDateString('tr-TR', {
+            day: 'numeric',
+            month: 'long',
+            weekday: 'long'
+          })
+          
+          let changeMessage = ''
+          if (dateChanged && timeChanged) {
+            changeMessage = 'tarih ve saati değiştirildi'
+          } else if (dateChanged) {
+            changeMessage = 'tarihi değiştirildi'
+          } else if (timeChanged) {
+            changeMessage = 'saati değiştirildi'
+          }
+          
+          const response = await fetch('/api/notifications/send', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              userId: selectedStudent.id,
+              title: '🔄 Koçluk Seansı Güncellendi',
+              body: `${taskTitle} ${changeMessage} - Yeni: ${formattedDate} ${newTime}`,
+              data: {
+                type: 'session_updated',
+                taskId: editingTask.id,
+                taskTitle: taskTitle,
+                oldDate: editingTask.scheduled_date,
+                oldTime: editingTask.scheduled_start_time,
+                newDate: newDate,
+                newTime: newTime,
+                coachName: profile?.full_name || 'Koçunuz'
+              }
+            })
+          })
+
+          if (response.ok) {
+            const result = await response.json()
+            console.log('✅ Session update notification sent successfully:', result)
+          } else {
+            console.error('❌ Failed to send session update notification:', await response.text())
+          }
+        } catch (notificationError) {
+          console.error('❌ Error sending session update notification:', notificationError)
+          // Don't show error to user - task update was successful
+        }
       }
 
       // Refresh tasks
