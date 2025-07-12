@@ -48,6 +48,18 @@ export async function POST(request: NextRequest) {
       
       for (const tokenData of mobileTokens) {
         try {
+          // Determine notification channel and priority based on type
+          let channelId = 'default';
+          let priority = 'default';
+          
+          if (data.type === 'video_call_invite' || data.type === 'incoming_call') {
+            channelId = 'calls';
+            priority = 'high';
+          } else if (data.type === 'session_reminder') {
+            channelId = 'session_reminders';
+            priority = 'default';
+          }
+          
           const pushMessage = {
             to: tokenData.token,
             sound: 'default',
@@ -58,11 +70,43 @@ export async function POST(request: NextRequest) {
               platform: tokenData.platform,
               timestamp: new Date().toISOString(),
             },
-            priority: 'high',
-            channelId: 'default',
+            priority: priority,
+            channelId: channelId,
+            // Android specific settings
+            ...(tokenData.platform === 'android' && {
+              android: {
+                channelId: channelId,
+                priority: priority,
+                sound: 'default',
+                vibrate: [0, 250, 250, 250],
+                lights: {
+                  color: '#3B82F6',
+                  onMs: 1000,
+                  offMs: 500,
+                },
+              }
+            }),
+            // iOS specific settings
+            ...(tokenData.platform === 'ios' && {
+              ios: {
+                sound: 'default',
+                badge: 1,
+              }
+            }),
           };
 
           console.log('📡 Sending mobile push notification...');
+          console.log('📡 Platform:', tokenData.platform);
+          console.log('📡 Channel:', channelId);
+          console.log('📡 Priority:', priority);
+          console.log('📡 Message preview:', {
+            to: `${tokenData.token.substring(0, 20)}...`,
+            title,
+            body: messageBody,
+            channelId,
+            priority
+          });
+          
           const response = await fetch('https://exp.host/--/api/v2/push/send', {
             method: 'POST',
             headers: {
@@ -74,6 +118,7 @@ export async function POST(request: NextRequest) {
           });
 
           const result = await response.json();
+          console.log('📡 Expo Push API response:', result);
           
           if (response.ok) {
             const ticketData = Array.isArray(result.data) ? result.data[0] : result.data;

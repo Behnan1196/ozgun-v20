@@ -744,90 +744,87 @@ export default function CoachPage() {
   useEffect(() => {
     if (!user?.id) return
 
-
+    console.log('📡 [WEB-COACH] Setting up real-time notification listener for user:', user.id)
     
     const notificationChannel = supabase
       .channel(`user-${user.id}`)
       .on('broadcast', { event: 'new_notification' }, (payload) => {
+        console.log('📨 [WEB-COACH] Real-time notification received:', payload)
+        
         try {
           const { title, body, data } = payload.payload
           
+          console.log('📨 [WEB-COACH] Notification details:', {
+            title,
+            body,
+            data,
+            timestamp: new Date().toISOString()
+          })
+          
           // Show browser notification using service worker for system notifications
           if (Notification.permission === 'granted') {
+            console.log('📨 [WEB-COACH] Showing browser notification')
+            
             try {
               // Use service worker for system-initiated notifications to bypass browser restrictions
               if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+                console.log('📨 [WEB-COACH] Using service worker for notification')
                 
                 // Use service worker to show notification
                 navigator.serviceWorker.ready.then((registration) => {
-                                     registration.showNotification(title, {
-                     body: body,
-                     icon: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTEyIDJDMTMuMSAyIDE0IDIuOSAxNCA0VjVDMTcuMyA2IDE5LjggOC43IDE5LjggMTJWMTZMMjEgMTdIMTNIMTFIM1YxNkM0LjIgMTYgNS4yIDE1IDUuMiAxM1Y5QzUuMiA2LjggNy4yIDUgOS40IDVWNEMxMCAyLjkgMTAuOSAyIDEyIDJaTTEyIDIxQzEzLjEgMjEgMTQgMjAuMSAxNCAxOUgxMEMxMCAyMC4xIDEwLjkgMjEgMTIgMjFaIiBmaWxsPSIjNDI4NUY0Ci8+Cjwvc3ZnPgo=',
-                     tag: `${data?.type || 'notification'}_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
-                     requireInteraction: true,
-                     data: data,
-                     silent: false
-                   }).catch((error) => {
-                    console.error('Service worker notification failed:', error);
-                    
-                    // Fallback to regular notification
-                    const fallbackNotification = new Notification(title, {
-                      body: body,
-                      icon: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTEyIDJDMTMuMSAyIDE0IDIuOSAxNCA0VjVDMTcuMyA2IDE5LjggOC43IDE5LjggMTJWMTZMMjEgMTdIMTNIMTFIM1YxNkM0LjIgMTYgNS4yIDE1IDUuMiAxM1Y5QzUuMiA2LjggNy4yIDUgOS40IDVWNEMxMCAyLjkgMTAuOSAyIDEyIDJaTTEyIDIxQzEzLjEgMjEgMTQgMjAuMSAxNCAxOUgxMEMxMCAyMC4xIDEwLjkgMjEgMTIgMjFaIiBmaWxsPSIjNDI4NUY0Ci8+Cjwvc3ZnPgo=',
-                      tag: `${data?.type || 'notification'}_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
-                      requireInteraction: true
-                    });
-                  });
-                });
+                  registration.showNotification(title, {
+                    body: body,
+                    icon: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTEyIDJDMTMuMSAyIDE0IDIuOSAxNCA0VjVDMTcuMyA2IDE5LjggOC43IDE5LjggMTJWMTZMMjEgMTdIMTNIMTFIM1YxNkM0LjIgMTYgNS4yIDE1IDUuMiAxM1Y5QzUuMiA2LjggNy4yIDUgOS40IDVWNEMxMCAyLjkgMTAuOSAyIDEyIDJaTTEyIDIxQzEzLjEgMjEgMTQgMjAuMSAxNCAxOUgxMEMxMCAyMC4xIDEwLjkgMjEgMTIgMjFaIiBmaWxsPSIjNDI4NUY0Ci8+Cjwvc3ZnPgo=',
+                    tag: `${data?.type || 'notification'}_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
+                    requireInteraction: true,
+                    data: data,
+                    silent: false
+                  }).then(() => {
+                    console.log('✅ [WEB-COACH] Service worker notification shown successfully')
+                  }).catch((error) => {
+                    console.error('❌ [WEB-COACH] Service worker notification failed:', error)
+                  })
+                })
               } else {
-                // Direct notification as fallback
+                console.log('📨 [WEB-COACH] Using regular notification API')
+                
+                // Fallback to regular notification API
                 const notification = new Notification(title, {
                   body: body,
                   icon: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTEyIDJDMTMuMSAyIDE0IDIuOSAxNCA0VjVDMTcuMyA2IDE5LjggOC43IDE5LjggMTJWMTZMMjEgMTdIMTNIMTFIM1YxNkM0LjIgMTYgNS4yIDE1IDUuMiAxM1Y5QzUuMiA2LjggNy4yIDUgOS40IDVWNEMxMCAyLjkgMTAuOSAyIDEyIDJaTTEyIDIxQzEzLjEgMjEgMTQgMjAuMSAxNCAxOUgxMEMxMCAyMC4xIDEwLjkgMjEgMTIgMjFaIiBmaWxsPSIjNDI4NUY0Ci8+Cjwvc3ZnPgo=',
                   tag: `${data?.type || 'notification'}_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
                   requireInteraction: true,
-                  data: data
-                });
+                  silent: false
+                })
                 
-                notification.onclick = function(event) {
-                  window.focus();
-                  this.close();
-                };
+                notification.onclick = () => {
+                  window.focus()
+                  notification.close()
+                }
+                
+                console.log('✅ [WEB-COACH] Regular notification shown successfully')
               }
-              
             } catch (error) {
-              console.error('Failed to create notification:', error);
+              console.error('❌ [WEB-COACH] Error showing browser notification:', error)
             }
+          } else {
+            console.warn('⚠️ [WEB-COACH] Notification permission not granted:', Notification.permission)
           }
-          
-          // Handle video call join notifications
-          if (data?.type === 'video_call_join') {
-            setPendingCallInvite({
-              callId: data.callId,
-              callerName: data.callerName,
-              callerId: data.callerId,
-              expiresAt: Date.now() + 30000 // 30 seconds to join
-            })
-            
-            // Auto-expire the invite after 30 seconds
-            setTimeout(() => {
-              setPendingCallInvite(prev => 
-                prev?.callId === data.callId ? null : prev
-              )
-            }, 30000)
-          }
-          
-          // Always show in-app notification as fallback
-          showInAppNotification(title, body)
-          
         } catch (error) {
-          console.error('Error processing notification:', error)
+          console.error('❌ [WEB-COACH] Error processing notification:', error)
         }
       })
-      .subscribe()
+      .subscribe((status) => {
+        console.log('📡 [WEB-COACH] Notification channel status:', status)
+        if (status === 'SUBSCRIBED') {
+          console.log('✅ [WEB-COACH] Successfully subscribed to notification channel')
+        } else if (status === 'CHANNEL_ERROR') {
+          console.error('❌ [WEB-COACH] Error subscribing to notification channel')
+        }
+      })
 
-    // Cleanup subscription on unmount
     return () => {
+      console.log('📡 [WEB-COACH] Cleaning up notification channel')
       supabase.removeChannel(notificationChannel)
     }
   }, [user?.id])
