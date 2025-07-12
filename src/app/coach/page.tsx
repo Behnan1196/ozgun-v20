@@ -337,6 +337,7 @@ export default function CoachPage() {
 
   // Real-time subscription
   const [realtimeConnected, setRealtimeConnected] = useState(false)
+  const [partnerOnline, setPartnerOnline] = useState(false)
   const dropdownRef = React.useRef<HTMLDivElement>(null)
   const [showTaskModal, setShowTaskModal] = useState(false)
   const [taskModalDate, setTaskModalDate] = useState<Date | null>(null)
@@ -676,6 +677,69 @@ export default function CoachPage() {
   }, [userMenuOpen])
 
   // Removed web push status check - using only real-time + mobile notifications
+
+  // Partner presence tracking
+  useEffect(() => {
+    if (!user?.id) return
+
+    let partnerId: string | null = null
+    if (userRole === 'coach' || userRole === 'coordinator') {
+      partnerId = selectedStudent?.id || null
+    } else if (userRole === 'student') {
+      partnerId = assignedCoach?.id || null
+    }
+
+    if (!partnerId) {
+      setPartnerOnline(false)
+      return
+    }
+
+    const presenceChannel = supabase
+      .channel(`presence-${partnerId}`, {
+        config: {
+          presence: {
+            key: user.id,
+          },
+        },
+      })
+      .on('presence', { event: 'sync' }, () => {
+        const presenceState = presenceChannel.presenceState()
+        // Check if partner is present in any channel
+        const isPartnerOnline = Object.keys(presenceState).some(key => 
+          Object.values(presenceState[key]).some((presence: any) => 
+            presence.user_id === partnerId
+          )
+        )
+        setPartnerOnline(isPartnerOnline)
+      })
+      .on('presence', { event: 'join' }, ({ key, newPresences }) => {
+        // Check if the partner joined
+        const partnerJoined = newPresences.some((presence: any) => presence.user_id === partnerId)
+        if (partnerJoined) {
+          setPartnerOnline(true)
+        }
+      })
+      .on('presence', { event: 'leave' }, ({ key, leftPresences }) => {
+        // Check if the partner left
+        const partnerLeft = leftPresences.some((presence: any) => presence.user_id === partnerId)
+        if (partnerLeft) {
+          setPartnerOnline(false)
+        }
+      })
+      .subscribe(async (status) => {
+        if (status === 'SUBSCRIBED') {
+          // Track our own presence to let others know we're online
+          await presenceChannel.track({
+            user_id: user.id,
+            online_at: new Date().toISOString(),
+          })
+        }
+      })
+
+    return () => {
+      supabase.removeChannel(presenceChannel)
+    }
+  }, [user?.id, selectedStudent?.id, assignedCoach?.id, userRole])
 
   // Listen for real-time notifications (web push fallback)
   useEffect(() => {
@@ -2593,25 +2657,33 @@ export default function CoachPage() {
                 <div className="flex items-center space-x-3">
                   <span className="text-sm font-medium text-gray-300">Aktif Öğrenci:</span>
                   {myStudents.length > 0 ? (
-                    <select
-                      value={selectedStudent?.id || ''}
-                      onChange={(e) => {
-                        if (e.target.value === '') {
-                          setSelectedStudent(null)
-                        } else {
-                          const student = myStudents.find(s => s.student.id === e.target.value)?.student
-                          setSelectedStudent(student || null)
-                        }
-                      }}
-                      className="border border-slate-600 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 min-w-[200px] bg-slate-700 text-white"
-                    >
-                      <option value="">Öğrenci seçiniz...</option>
-                      {myStudents.map(assignment => (
-                        <option key={assignment.student.id} value={assignment.student.id}>
-                          {assignment.student.full_name || 'İsimsiz Öğrenci'}
-                        </option>
-                      ))}
-                    </select>
+                    <div className="flex items-center space-x-2">
+                      <select
+                        value={selectedStudent?.id || ''}
+                        onChange={(e) => {
+                          if (e.target.value === '') {
+                            setSelectedStudent(null)
+                          } else {
+                            const student = myStudents.find(s => s.student.id === e.target.value)?.student
+                            setSelectedStudent(student || null)
+                          }
+                        }}
+                        className="border border-slate-600 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 min-w-[200px] bg-slate-700 text-white"
+                      >
+                        <option value="">Öğrenci seçiniz...</option>
+                        {myStudents.map(assignment => (
+                          <option key={assignment.student.id} value={assignment.student.id}>
+                            {assignment.student.full_name || 'İsimsiz Öğrenci'}
+                          </option>
+                        ))}
+                      </select>
+                      {/* Student Online Status */}
+                      {selectedStudent && (
+                        <div className="flex items-center space-x-1" title={partnerOnline ? 'Çevrimiçi' : 'Çevrimdışı'}>
+                          <div className={`w-2 h-2 rounded-full ${partnerOnline ? 'bg-green-400' : 'bg-gray-400'}`}></div>
+                        </div>
+                      )}
+                    </div>
                   ) : (
                     <span className="text-sm text-gray-400 italic bg-slate-700 px-3 py-2 rounded-md">
                       Henüz öğrenci ataması yapılmamış
@@ -2627,6 +2699,10 @@ export default function CoachPage() {
                         {assignedCoach.full_name?.charAt(0) || 'K'}
                       </div>
                       <span className="text-sm font-medium text-white">{assignedCoach.full_name}</span>
+                      {/* Coach Online Status */}
+                      <div className="flex items-center space-x-1" title={partnerOnline ? 'Çevrimiçi' : 'Çevrimdışı'}>
+                        <div className={`w-2 h-2 rounded-full ${partnerOnline ? 'bg-green-300' : 'bg-gray-300'}`}></div>
+                      </div>
                     </div>
                   ) : (
                     <span className="text-sm text-gray-400 italic bg-slate-700 px-3 py-2 rounded-md">
@@ -4372,14 +4448,6 @@ export default function CoachPage() {
               <div className="flex items-center space-x-3">
                 <div className="text-sm text-gray-600 bg-blue-50 px-3 py-2 rounded-md border border-blue-200">
                   <span className="font-medium">{formatDate(weekDates[0])} - {formatDate(weekDates[6])}</span>
-                </div>
-                
-                {/* Real-time connection status */}
-                <div className="flex items-center space-x-2 text-sm">
-                  <div className={`w-2 h-2 rounded-full ${realtimeConnected ? 'bg-green-500' : 'bg-red-500'}`}></div>
-                  <span className={`${realtimeConnected ? 'text-green-600' : 'text-red-600'}`}>
-                    {realtimeConnected ? 'Canlı' : 'Çevrimdışı'}
-                  </span>
                 </div>
               </div>
             </div>
