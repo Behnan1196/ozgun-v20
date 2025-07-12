@@ -220,22 +220,7 @@ export function VideoCallInvite({
     }
   };
 
-  const cancelInvitation = async () => {
-    if (!pendingInvite) return;
 
-    try {
-      const { error } = await supabase
-        .from('video_call_invites')
-        .update({ status: 'expired' })
-        .eq('id', pendingInvite.id);
-
-      if (error) throw error;
-
-      setPendingInvite(null);
-    } catch (error) {
-      console.error('Error canceling invitation:', error);
-    }
-  };
 
   // Received invitation UI
   if (receivedInvite) {
@@ -282,28 +267,21 @@ export function VideoCallInvite({
   // Pending invitation UI (for sender)
   if (pendingInvite) {
     return (
-      <div className={`bg-yellow-50 border border-yellow-200 rounded-lg p-4 ${className}`}>
+      <div className={`bg-green-50 border border-green-200 rounded-lg p-4 ${className}`}>
         <div className="flex items-start space-x-3">
           <div className="flex-shrink-0">
-            <Clock className="h-6 w-6 text-yellow-600" />
+            <CheckCircle className="h-6 w-6 text-green-600" />
           </div>
           <div className="flex-1">
-            <h3 className="text-lg font-semibold text-yellow-900">
-              Davet Gönderildi
+            <h3 className="text-lg font-semibold text-green-900">
+              ✅ Davet Gönderildi
             </h3>
-            <p className="text-yellow-700 mt-1">
+            <p className="text-green-700 mt-1">
               <strong>{partnerName}</strong> adlı kişiye video görüşme daveti gönderildi
             </p>
-            <p className="text-yellow-600 text-sm mt-1">
-              Yanıt bekleniyor...
+            <p className="text-green-600 text-sm mt-1">
+              Yanıt bekleniyor... Başka bir mesaj göndermek isterseniz sohbet sekmesini kullanabilirsiniz.
             </p>
-            <button
-              onClick={cancelInvitation}
-              className="flex items-center space-x-2 bg-red-600 text-white px-3 py-1.5 rounded-lg hover:bg-red-700 transition-colors text-sm mt-2"
-            >
-              <X className="h-4 w-4" />
-              <span>Daveti İptal Et</span>
-            </button>
           </div>
         </div>
       </div>
