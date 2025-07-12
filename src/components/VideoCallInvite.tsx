@@ -319,11 +319,8 @@ export function VideoCallInvite({
         </div>
         <div className="flex-1">
           <h3 className="text-lg font-semibold text-gray-900">
-            Video Görüşme Daveti Gönder
-          </h3>
-          <p className="text-gray-600 mt-1">
             <strong>{partnerName}</strong> adlı kişiye video görüşme daveti gönder
-          </p>
+          </h3>
           
           <div className="mt-3">
             <label className="block text-sm font-medium text-gray-700 mb-1">

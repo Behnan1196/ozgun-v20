@@ -39,12 +39,10 @@ const CallUI = ({
   partnerName,
   partnerId,
   onStartCall,
-  onInviteUser,
 }: {
   partnerName: string;
   partnerId: string;
   onStartCall: () => void;
-  onInviteUser: () => void;
 }) => {
   const { useCallCallingState } = useCallStateHooks();
   const callingState = useCallCallingState();
@@ -68,13 +66,7 @@ const CallUI = ({
               onClick={onStartCall}
               className="px-6 py-3 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 block mx-auto"
             >
-              📞 Görüşmeyi Başlat
-            </button>
-            <button
-              onClick={onInviteUser}
-              className="px-6 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 block mx-auto"
-            >
-              📨 {partnerName}i Davet Et
+              📞 Görüşmeye Katıl
             </button>
           </div>
         </div>
@@ -89,14 +81,7 @@ const CallUI = ({
           <VerticalLayout />
         </div>
         <div className="p-4 bg-gray-50 border-t responsive-controls">
-          <div className="flex items-center justify-between">
-            <button
-              onClick={onInviteUser}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 flex items-center space-x-2"
-            >
-              <span>📨</span>
-              <span>Davet Et</span>
-            </button>
+          <div className="flex items-center justify-center">
             <CallControls onLeave={() => call?.leave()} />
           </div>
         </div>
@@ -147,62 +132,7 @@ export function StreamVideoCall({ partnerId, partnerName, className = '' }: Stre
     }
   }
 
-  const handleInviteUser = async () => {
-    if (!videoCall) {
-      console.error('No video call available to send invite for')
-      return
-    }
 
-    try {
-      // Get current user data from supabase
-      const supabase = createClient()
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) {
-        console.error('No authenticated user found')
-        return
-      }
-
-      // Get user's profile to get their name
-      const { data: userProfile } = await supabase
-        .from('user_profiles')
-        .select('full_name')
-        .eq('id', user.id)
-        .single()
-        
-      const callerName = userProfile?.full_name || 'Someone'
-      const callId = videoCall.id
-
-      // Send notification to the partner
-      const response = await fetch('/api/notifications/send', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          userId: partnerId,
-          title: '📞 Video Call Invitation',
-          body: `${callerName} is inviting you to join a video call. Tap to join!`,
-          data: {
-            type: 'video_call_join',
-            callId: callId,
-            callerName: callerName,
-            callerId: user.id,
-            action: 'join_call'
-          }
-        })
-      })
-
-      if (response.ok) {
-        console.log('✅ Video call invitation sent successfully')
-        // You could show a success message here
-      } else {
-        console.error('❌ Failed to send video call invitation')
-      }
-      
-    } catch (error) {
-      console.error('❌ Error sending video call invitation:', error)
-    }
-  }
 
   // Camera troubleshooting tips
   const renderTroubleshootingTips = () => (
@@ -335,12 +265,11 @@ export function StreamVideoCall({ partnerId, partnerName, className = '' }: Stre
     <div className={`h-full flex flex-col ${className}`}>
       <StreamVideo client={videoClient}>
         <StreamCall call={videoCall}>
-          <CallUI 
-            partnerName={partnerName} 
-            partnerId={partnerId}
-            onStartCall={handleStartCall} 
-            onInviteUser={handleInviteUser}
-          />
+                <CallUI
+        partnerName={partnerName}
+        partnerId={partnerId}
+        onStartCall={handleStartCall}
+      />
         </StreamCall>
       </StreamVideo>
     </div>
