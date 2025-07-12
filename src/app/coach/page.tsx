@@ -2693,14 +2693,14 @@ export default function CoachPage() {
                 <div className="flex items-center space-x-3">
                   <span className="text-sm font-medium text-gray-300">Koçunuz:</span>
                   {assignedCoach ? (
-                    <div className="flex items-center space-x-2 bg-green-600 px-3 py-2 rounded-md">
-                      <div className="w-6 h-6 bg-green-700 rounded-full flex items-center justify-center text-white text-xs font-medium">
+                    <div className="flex items-center space-x-2 bg-slate-600 px-3 py-2 rounded-md">
+                      <div className="w-6 h-6 bg-slate-700 rounded-full flex items-center justify-center text-white text-xs font-medium">
                         {assignedCoach.full_name?.charAt(0) || 'K'}
                       </div>
                       <span className="text-sm font-medium text-white">{assignedCoach.full_name}</span>
                       {/* Coach Online Status */}
                       <div className="flex items-center space-x-1" title={partnerOnline ? 'Çevrimiçi' : 'Çevrimdışı'}>
-                        <div className={`w-2 h-2 rounded-full ${partnerOnline ? 'bg-green-300' : 'bg-gray-300'}`}></div>
+                        <div className={`w-2 h-2 rounded-full ${partnerOnline ? 'bg-green-400' : 'bg-gray-400'}`}></div>
                       </div>
                     </div>
                   ) : (
