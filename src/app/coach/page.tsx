@@ -694,8 +694,12 @@ export default function CoachPage() {
       return
     }
 
+    // Create a shared channel name that both users will use
+    // Sort the IDs to ensure consistency
+    const sharedChannelName = `presence-${[user.id, partnerId].sort().join('-')}`
+
     const presenceChannel = supabase
-      .channel(`presence-${partnerId}`, {
+      .channel(sharedChannelName, {
         config: {
           presence: {
             key: user.id,
@@ -704,25 +708,19 @@ export default function CoachPage() {
       })
       .on('presence', { event: 'sync' }, () => {
         const presenceState = presenceChannel.presenceState()
-        // Check if partner is present in any channel
-        const isPartnerOnline = Object.keys(presenceState).some(key => 
-          Object.values(presenceState[key]).some((presence: any) => 
-            presence.user_id === partnerId
-          )
-        )
+        // Check if partner is present in the shared channel
+        const isPartnerOnline = Object.keys(presenceState).includes(partnerId)
         setPartnerOnline(isPartnerOnline)
       })
       .on('presence', { event: 'join' }, ({ key, newPresences }) => {
         // Check if the partner joined
-        const partnerJoined = newPresences.some((presence: any) => presence.user_id === partnerId)
-        if (partnerJoined) {
+        if (key === partnerId) {
           setPartnerOnline(true)
         }
       })
       .on('presence', { event: 'leave' }, ({ key, leftPresences }) => {
         // Check if the partner left
-        const partnerLeft = leftPresences.some((presence: any) => presence.user_id === partnerId)
-        if (partnerLeft) {
+        if (key === partnerId) {
           setPartnerOnline(false)
         }
       })
@@ -731,6 +729,7 @@ export default function CoachPage() {
           // Track our own presence to let others know we're online
           await presenceChannel.track({
             user_id: user.id,
+            user_name: profile?.full_name || user.email,
             online_at: new Date().toISOString(),
           })
         }
@@ -739,7 +738,7 @@ export default function CoachPage() {
     return () => {
       supabase.removeChannel(presenceChannel)
     }
-  }, [user?.id, selectedStudent?.id, assignedCoach?.id, userRole])
+  }, [user?.id, selectedStudent?.id, assignedCoach?.id, userRole, profile?.full_name])
 
   // Listen for real-time notifications (web push fallback)
   useEffect(() => {
