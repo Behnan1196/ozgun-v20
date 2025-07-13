@@ -783,6 +783,8 @@ export default function CoachPage() {
                     console.log('✅ [WEB-COACH] Service worker notification shown successfully')
                   }).catch((error) => {
                     console.error('❌ [WEB-COACH] Service worker notification failed:', error)
+                    // Fallback to in-app notification
+                    showInAppNotification(title, body)
                   })
                 })
               } else {
@@ -806,9 +808,13 @@ export default function CoachPage() {
               }
             } catch (error) {
               console.error('❌ [WEB-COACH] Error showing browser notification:', error)
+              // Fallback to in-app notification
+              showInAppNotification(title, body)
             }
           } else {
             console.warn('⚠️ [WEB-COACH] Notification permission not granted:', Notification.permission)
+            // Show in-app notification as fallback
+            showInAppNotification(title, body)
           }
         } catch (error) {
           console.error('❌ [WEB-COACH] Error processing notification:', error)
