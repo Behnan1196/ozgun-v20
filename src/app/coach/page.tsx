@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect, useRef } from 'react'
+import React, { useState, useEffect, useRef, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { redirect, useRouter } from 'next/navigation'
 import { 
@@ -63,6 +63,7 @@ import {
   showInAppNotification 
 } from '@/lib/webPushNotifications'
 import { VideoCallInvite } from '@/components/VideoCallInvite'
+
 
 // Interfaces
 interface Student {
@@ -472,6 +473,88 @@ export default function CoachPage() {
   const gridContainerRef = useRef<HTMLDivElement>(null)
 
   const supabase = createClient()
+
+  const showInAppNotification = (title: string, body: string) => {
+    // Simple alert fallback for notifications
+    alert(`${title}: ${body}`);
+  };
+
+  const handleWebNotification = useCallback(async (payload: any) => {
+    try {
+      const { title, body, data } = payload.payload;
+      
+      // Try to show browser notification first
+      if (Notification.permission === 'granted') {
+        const notification = new Notification(title, {
+          body: body,
+          icon: '/icons/icon-192x192.png',
+          badge: '/icons/icon-192x192.png',
+          data: data,
+        });
+        
+        notification.onclick = () => {
+          window.focus();
+          notification.close();
+        };
+      } else {
+        // If browser notifications are not available, show in-app notification
+        showInAppNotification(title, body);
+      }
+    } catch (error) {
+      console.error('❌ [WEB-COACH] Error showing browser notification:', error);
+      // Fallback to in-app notification
+      showInAppNotification(payload.payload.title, payload.payload.body);
+    }
+  }, []);
+
+  const handleWebPushNotification = useCallback(async (payload: any) => {
+    try {
+      const { title, body, data } = payload.payload;
+      
+      // Check if service worker is available
+      if ('serviceWorker' in navigator) {
+        const registration = await navigator.serviceWorker.ready;
+        if (registration) {
+          // Service worker will handle the notification
+          return;
+        }
+      }
+      
+      // Fallback to in-app notification
+      showInAppNotification(title, body);
+    } catch (error) {
+      console.error('❌ [WEB-COACH] Service worker notification failed:', error);
+      // Fallback to in-app notification
+      showInAppNotification(payload.payload.title, payload.payload.body);
+    }
+  }, []);
+
+  const setupWebNotifications = useCallback(async () => {
+    if (!profile) return;
+    
+    try {
+      const permission = await Notification.requestPermission();
+      if (permission !== 'granted') {
+        console.warn('⚠️ [WEB-COACH] Notification permission not granted:', Notification.permission);
+        return;
+      }
+      
+      // Set up real-time notifications
+      const channelName = `user-notifications-${profile.id}`;
+      const channel = supabase
+        .channel(channelName)
+        .on('broadcast', { event: 'new_notification' }, handleWebNotification)
+        .subscribe();
+
+      return () => {
+        supabase.removeChannel(channel);
+      };
+    } catch (error) {
+      console.error('❌ [WEB-COACH] Error processing notification:', error);
+    }
+  }, [profile, handleWebNotification]);
+
+  // Real-time subscription for task updates removed due to missing dependencies
 
   // Logout function
   const handleLogout = async () => {
