@@ -103,7 +103,7 @@ export default function LoginPage() {
               ÖZGÜN Koçluk
             </Typography>
             <Typography variant="body2" color="text.secondary">
-              Sistemi V1.3
+              Sistemi V1.4
             </Typography>
           </Box>
 
@@ -156,7 +156,7 @@ export default function LoginPage() {
 
           <Box sx={{ mt: 3, textAlign: 'center' }}>
             <Typography variant="caption" color="text.secondary">
-              © 2024 ÖZGÜN Koçluk Sistemi. Tüm hakları saklıdır.
+              © 2025 ÖZGÜN Koçluk Sistemi. Tüm hakları saklıdır.
             </Typography>
           </Box>
         </Paper>

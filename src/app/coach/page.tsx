@@ -2765,8 +2765,8 @@ export default function CoachPage() {
 
       {/* Task Creation Modal */}
       {showTaskModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg p-6 w-full max-w-2xl mx-4 max-h-[90vh] flex flex-col">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold">
                 {editingTask ? 'Görev Düzenle' : 'Yeni Görev'}
@@ -2779,7 +2779,7 @@ export default function CoachPage() {
               </button>
             </div>
 
-            <div className="space-y-4">
+            <div className="space-y-4 overflow-y-auto flex-1">
               {/* Task Type - Required */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -2834,7 +2834,7 @@ export default function CoachPage() {
               {(taskForm.task_type === 'study' || taskForm.task_type === 'review') && taskForm.subject_id && (
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Konu (Opsiyonel)
+                    Konu
                   </label>
                   <select
                     value={taskForm.topic_id}
@@ -2857,7 +2857,7 @@ export default function CoachPage() {
               {taskForm.task_type === 'practice' && taskForm.subject_id && (
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Konu (Opsiyonel)
+                    Konu
                   </label>
                   <select
                     value={taskForm.topic_id}
@@ -2925,7 +2925,7 @@ export default function CoachPage() {
               {/* Task Description - Optional */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Görev Açıklaması (Opsiyonel)
+                  Görev Açıklaması
                 </label>
                 <input
                   type="text"
@@ -2954,35 +2954,35 @@ export default function CoachPage() {
                 </div>
               )}
 
-              {/* Start Time - Required for coaching sessions */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Başlangıç {taskForm.task_type === 'coaching_session' ? '*' : '(Opsiyonel)'}
-                </label>
-                <input
-                  type="time"
-                  value={taskForm.scheduled_start_time}
-                  onChange={(e) => setTaskForm(prev => ({ ...prev, scheduled_start_time: e.target.value }))}
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  required={taskForm.task_type === 'coaching_session'}
-                />
-              </div>
-
-              {/* Duration - Optional */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Süre (Opsiyonel)
-                </label>
-                <input
-                  type="number"
-                  min="15"
-                  max="480"
-                  step="15"
-                  value={taskForm.estimated_duration}
-                  onChange={(e) => setTaskForm(prev => ({ ...prev, estimated_duration: parseInt(e.target.value) || 60 }))}
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Dakika cinsinden"
-                />
+              {/* Start Time and Duration - Same Row */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Başlangıç {taskForm.task_type === 'coaching_session' ? '*' : ''}
+                  </label>
+                  <input
+                    type="time"
+                    value={taskForm.scheduled_start_time}
+                    onChange={(e) => setTaskForm(prev => ({ ...prev, scheduled_start_time: e.target.value }))}
+                    className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    required={taskForm.task_type === 'coaching_session'}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Süre
+                  </label>
+                  <input
+                    type="number"
+                    min="15"
+                    max="480"
+                    step="15"
+                    value={taskForm.estimated_duration}
+                    onChange={(e) => setTaskForm(prev => ({ ...prev, estimated_duration: parseInt(e.target.value) || 60 }))}
+                    className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="Dakika cinsinden"
+                  />
+                </div>
               </div>
 
               {/* Date Display */}
@@ -2998,7 +2998,7 @@ export default function CoachPage() {
             </div>
 
             {/* Modal Actions */}
-            <div className="flex items-center justify-end space-x-3 mt-6">
+            <div className="flex items-center justify-end space-x-3 mt-6 pt-4 border-t border-gray-200 bg-white">
               <button
                 onClick={closeTaskModal}
                 className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-md"
