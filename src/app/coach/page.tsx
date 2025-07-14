@@ -1573,8 +1573,8 @@ export default function CoachPage() {
       return
     }
 
-    // Validate mock exam selection for exam tasks
-    if ((taskForm.task_type === 'exam' || taskForm.task_type === 'practice') && !taskForm.mock_exam_id) {
+    // Validate mock exam selection for exam tasks only (optional for practice)
+    if (taskForm.task_type === 'exam' && !taskForm.mock_exam_id) {
       alert('Sınav türü görevler için bir deneme sınavı seçmelisiniz')
       return
     }
@@ -1799,8 +1799,8 @@ export default function CoachPage() {
       return
     }
 
-    // Validate mock exam selection for exam tasks
-    if ((taskForm.task_type === 'exam' || taskForm.task_type === 'practice') && !taskForm.mock_exam_id) {
+    // Validate mock exam selection for exam tasks only (optional for practice)
+    if (taskForm.task_type === 'exam' && !taskForm.mock_exam_id) {
       alert('Sınav türü görevler için bir deneme sınavı seçmelisiniz')
       return
     }
@@ -2880,7 +2880,7 @@ export default function CoachPage() {
               {(taskForm.task_type === 'exam' || taskForm.task_type === 'practice') && (
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Deneme Sınavı *
+                    Deneme Sınavı {taskForm.task_type === 'exam' ? '*' : ''}
                   </label>
                   <select
                     value={taskForm.mock_exam_id}
