@@ -139,6 +139,25 @@ export interface WebPushSubscription {
   updated_at: string
 }
 
+// Student Goals for tracking student objectives
+export interface Goal {
+  id: string
+  student_id: string
+  coach_id: string
+  goal_type: 'tyt_target' | 'ayt_target' | 'university_target' | 'department_target' | 'study_hours' | 'custom'
+  title: string
+  description?: string
+  target_value?: string
+  current_value?: string
+  target_date?: string
+  priority: 'low' | 'medium' | 'high'
+  status: 'active' | 'completed' | 'paused' | 'cancelled'
+  is_active: boolean
+  created_by: string
+  created_at: string
+  updated_at: string
+}
+
 // Extended types with relations
 export interface UserProfileWithStats extends UserProfile {
   task_count?: number
@@ -221,6 +240,11 @@ export type Database = {
         Row: WebPushSubscription
         Insert: Omit<WebPushSubscription, 'id' | 'created_at' | 'updated_at'>
         Update: Partial<Omit<WebPushSubscription, 'id' | 'created_at' | 'updated_at'>>
+      }
+      student_goals: {
+        Row: Goal
+        Insert: Omit<Goal, 'id' | 'created_at' | 'updated_at'>
+        Update: Partial<Omit<Goal, 'id' | 'created_at' | 'updated_at'>>
       }
     }
     Views: {
