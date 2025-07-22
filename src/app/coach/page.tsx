@@ -5084,15 +5084,13 @@ export default function CoachPage() {
                                     
                                     let bgColor = 'bg-gray-200' // Default for no tasks
                                     if (totalTasks === 0) {
-                                      bgColor = 'bg-gray-200' // White/gray for no tasks
-                                    } else if (completionRate >= 80) {
-                                      bgColor = 'bg-green-500' // Green for excellent (80%+)
-                                    } else if (completionRate >= 60) {
-                                      bgColor = 'bg-yellow-500' // Yellow for good (60%+)
-                                    } else if (completionRate >= 40) {
-                                      bgColor = 'bg-orange-500' // Orange for moderate (40%+)
+                                      bgColor = 'bg-gray-200' // Gray for no tasks
+                                    } else if (completionRate === 100) {
+                                      bgColor = 'bg-green-500' // Green for 100% completion
+                                    } else if (completionRate >= 20) {
+                                      bgColor = 'bg-yellow-500' // Yellow for 20%+ completion
                                     } else {
-                                      bgColor = 'bg-red-400' // Red for poor completion or 0% (but tasks exist)
+                                      bgColor = 'bg-red-400' // Red for 0-20% completion
                                     }
                                     
                                     return (
@@ -5101,9 +5099,16 @@ export default function CoachPage() {
                                           className={`w-full h-full rounded ${bgColor} flex items-center justify-center transition-all duration-300`}
                                           title={`${date.getDate()} - ${completedTasks}/${totalTasks} görev (${Math.round(completionRate)}%)`}
                                         >
-                                          <span className="text-[10px] text-white font-bold">
-                                            {date.getDate()}
-                                          </span>
+                                          <div className="flex flex-col items-center justify-center">
+                                            <span className="text-[8px] text-white font-bold leading-none">
+                                              {date.getDate()}
+                                            </span>
+                                            {totalTasks > 0 && (
+                                              <span className="text-[6px] text-white font-bold leading-none mt-0.5">
+                                                {completedTasks}/{totalTasks}
+                                              </span>
+                                            )}
+                                          </div>
                                         </div>
                                       </div>
                                     )
@@ -5137,15 +5142,13 @@ export default function CoachPage() {
                                   
                                   let bgColor = 'bg-gray-200' // Default for no tasks
                                   if (totalTasks === 0) {
-                                    bgColor = 'bg-gray-200' // White/gray for no tasks
-                                  } else if (completionRate >= 80) {
-                                    bgColor = 'bg-green-500' // Green for excellent (80%+)
-                                  } else if (completionRate >= 60) {
-                                    bgColor = 'bg-yellow-500' // Yellow for good (60%+)
-                                  } else if (completionRate >= 40) {
-                                    bgColor = 'bg-orange-500' // Orange for moderate (40%+)
+                                    bgColor = 'bg-gray-200' // Gray for no tasks
+                                  } else if (completionRate === 100) {
+                                    bgColor = 'bg-green-500' // Green for 100% completion
+                                  } else if (completionRate >= 20) {
+                                    bgColor = 'bg-yellow-500' // Yellow for 20%+ completion
                                   } else {
-                                    bgColor = 'bg-red-400' // Red for poor completion or 0% (but tasks exist)
+                                    bgColor = 'bg-red-400' // Red for 0-20% completion
                                   }
                                   
                                   return (
@@ -5154,9 +5157,16 @@ export default function CoachPage() {
                                         className={`w-full h-full rounded ${bgColor} flex items-center justify-center transition-all duration-300`}
                                         title={`${completedTasks}/${totalTasks} görev (${Math.round(completionRate)}%)`}
                                       >
-                                        <span className="text-xs text-white font-bold">
-                                          {totalTasks > 0 ? Math.round(completionRate) : ''}
-                                        </span>
+                                        <div className="flex flex-col items-center justify-center">
+                                          <span className="text-[8px] text-white font-bold leading-none">
+                                            {dayDate.getDate()}
+                                          </span>
+                                          {totalTasks > 0 && (
+                                            <span className="text-[6px] text-white font-bold leading-none mt-0.5">
+                                              {completedTasks}/{totalTasks}
+                                            </span>
+                                          )}
+                                        </div>
                                       </div>
                                     </div>
                                   )
@@ -5164,28 +5174,7 @@ export default function CoachPage() {
                               </div>
                             </>
                           )}
-                          <div className="mt-3 flex items-center justify-center space-x-4 text-xs">
-                            <div className="flex items-center">
-                              <div className="w-3 h-3 bg-green-500 rounded mr-1"></div>
-                              <span className="text-orange-600">Mükemmel (80%+)</span>
-                            </div>
-                            <div className="flex items-center">
-                              <div className="w-3 h-3 bg-yellow-500 rounded mr-1"></div>
-                              <span className="text-orange-600">İyi (60%+)</span>
-                            </div>
-                            <div className="flex items-center">
-                              <div className="w-3 h-3 bg-orange-500 rounded mr-1"></div>
-                              <span className="text-orange-600">Orta (40%+)</span>
-                            </div>
-                            <div className="flex items-center">
-                              <div className="w-3 h-3 bg-red-400 rounded mr-1"></div>
-                              <span className="text-orange-600">Düşük (0-39%)</span>
-                            </div>
-                            <div className="flex items-center">
-                              <div className="w-3 h-3 bg-gray-200 rounded mr-1"></div>
-                              <span className="text-orange-600">Görev Yok</span>
-                            </div>
-                          </div>
+
                         </div>
                     </div>
                   ) : (
