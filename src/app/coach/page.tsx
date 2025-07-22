@@ -2331,7 +2331,7 @@ export default function CoachPage() {
           coach_id: user.id,
           exam_type: examForm.exam_type,
           exam_date: examForm.exam_date,
-          exam_name: examForm.exam_name.trim(),
+          exam_name: examForm.exam_name.trim() || null,
           exam_duration: examForm.exam_duration,
           
                     // Only include relevant scores based on exam type
@@ -2411,7 +2411,7 @@ export default function CoachPage() {
         .update({
           exam_type: examForm.exam_type,
           exam_date: examForm.exam_date,
-          exam_name: examForm.exam_name.trim(),
+          exam_name: examForm.exam_name.trim() || null,
           exam_duration: examForm.exam_duration,
           
           // Only include relevant scores based on exam type
@@ -4063,7 +4063,7 @@ export default function CoachPage() {
               </button>
               <button
                 onClick={editingExam ? updateExamResult : createExamResult}
-                disabled={!selectedStudent || !examForm.exam_name.trim() || !examForm.exam_date || 
+                disabled={!selectedStudent || !examForm.exam_date || 
                   (examForm.exam_type === 'Tarama' && examForm.tarama_lessons.length === 0)}
                 className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
               >
