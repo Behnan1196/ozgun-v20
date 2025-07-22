@@ -1187,8 +1187,8 @@ export default function CoachPage() {
           updated_at
         `)
         .eq('assigned_to', selectedStudent.id)
-        .gte('scheduled_date', weekStart.toISOString().split('T')[0])
-        .lte('scheduled_date', weekEnd.toISOString().split('T')[0])
+        .gte('scheduled_date', formatDateForDB(weekStart))
+        .lte('scheduled_date', formatDateForDB(weekEnd))
         .order('scheduled_date')
         .order('created_at')
 
@@ -1336,8 +1336,8 @@ export default function CoachPage() {
             completed_at
           `)
           .eq('assigned_to', selectedStudent.id)
-          .gte('scheduled_date', weekStart.toISOString().split('T')[0])
-          .lte('scheduled_date', weekEnd.toISOString().split('T')[0])
+          .gte('scheduled_date', formatDateForDB(weekStart))
+          .lte('scheduled_date', formatDateForDB(weekEnd))
           .order('scheduled_date')
           .order('created_at')
 
@@ -1504,6 +1504,13 @@ export default function CoachPage() {
     return d
   }
 
+  const formatDateForDB = (date: Date) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+
   const getWeekDates = (date: Date) => {
     const weekStart = getWeekStart(date)
     const dates = []
@@ -1591,6 +1598,9 @@ export default function CoachPage() {
     const taskTitle = taskForm.title.trim() || 'Görev'
 
     try {
+      // Format date in local timezone to avoid UTC shift issues
+      const localDateStr = formatDateForDB(taskModalDate);
+
       const { error } = await supabase
         .from('tasks')
         .insert({
@@ -1601,7 +1611,7 @@ export default function CoachPage() {
           resource_id: taskForm.resource_id || null,
           mock_exam_id: taskForm.mock_exam_id || null,
           task_type: taskForm.task_type,
-          scheduled_date: taskModalDate.toISOString().split('T')[0],
+          scheduled_date: localDateStr,
           scheduled_start_time: taskForm.scheduled_start_time || null,
           scheduled_end_time: taskForm.scheduled_end_time || null,
           estimated_duration: taskForm.estimated_duration,
@@ -1628,8 +1638,8 @@ export default function CoachPage() {
         .select('*')
         .eq('assigned_to', selectedStudent.id)
         .eq('assigned_by', user?.id)
-        .gte('scheduled_date', weekStart.toISOString().split('T')[0])
-        .lte('scheduled_date', weekEnd.toISOString().split('T')[0])
+        .gte('scheduled_date', formatDateForDB(weekStart))
+        .lte('scheduled_date', formatDateForDB(weekEnd))
         .order('scheduled_date')
         .order('created_at')
 
@@ -1670,7 +1680,7 @@ export default function CoachPage() {
               taskId: 'task-created', // We don't have the ID yet, but that's ok
               taskTitle: taskTitle,
               taskType: taskForm.task_type,
-              taskDate: taskModalDate.toISOString().split('T')[0],
+              taskDate: localDateStr,
               taskTime: taskForm.scheduled_start_time || null,
               estimatedDuration: taskForm.estimated_duration,
               problemCount: taskForm.problem_count || null,
@@ -1822,7 +1832,8 @@ export default function CoachPage() {
 
     // Check if this is a coaching session and if time/date changed
     const isCoachingSession = taskForm.task_type === 'coaching_session'
-    const newDate = taskModalDate.toISOString().split('T')[0]
+    // Format date in local timezone to avoid UTC shift issues
+    const newDate = formatDateForDB(taskModalDate);
     const newTime = taskForm.scheduled_start_time
     
     const dateChanged = isCoachingSession && editingTask.scheduled_date !== newDate
@@ -1926,8 +1937,8 @@ export default function CoachPage() {
         .select('*')
         .eq('assigned_to', selectedStudent?.id)
         .eq('assigned_by', user?.id)
-        .gte('scheduled_date', weekStart.toISOString().split('T')[0])
-        .lte('scheduled_date', weekEnd.toISOString().split('T')[0])
+        .gte('scheduled_date', formatDateForDB(weekStart))
+        .lte('scheduled_date', formatDateForDB(weekEnd))
         .order('scheduled_date')
         .order('created_at')
 
