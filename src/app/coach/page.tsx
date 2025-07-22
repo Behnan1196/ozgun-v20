@@ -315,6 +315,7 @@ export default function CoachPage() {
   const [currentWeek, setCurrentWeek] = useState(new Date())
   const [activeTab, setActiveTab] = useState('statistics')
   const [weeklyTasks, setWeeklyTasks] = useState<Task[]>([])
+  const [monthlyTasks, setMonthlyTasks] = useState<Task[]>([])
   const [subjects, setSubjects] = useState<Subject[]>([])
   const [topics, setTopics] = useState<Topic[]>([])
   const [resources, setResources] = useState<Resource[]>([])
@@ -1152,6 +1153,44 @@ export default function CoachPage() {
 
     loadMockExamResults()
   }, [selectedStudent])
+
+  // Load monthly tasks for statistics
+  useEffect(() => {
+    const loadMonthlyTasks = async () => {
+      if (!selectedStudent || !user) return
+
+      const monthStart = new Date(currentWeek)
+      monthStart.setDate(1)
+      const monthEnd = new Date(monthStart)
+      monthEnd.setMonth(monthStart.getMonth() + 1)
+      monthEnd.setDate(0)
+
+      let query = supabase
+        .from('tasks')
+        .select('*')
+        .eq('assigned_to', selectedStudent.id)
+        .gte('scheduled_date', formatDateForDB(monthStart))
+        .lte('scheduled_date', formatDateForDB(monthEnd))
+        .order('scheduled_date')
+
+      if (userRole === 'coach') {
+        query = query.eq('assigned_by', user.id)
+      }
+
+      const { data: tasks, error } = await query
+
+      if (error) {
+        console.error('Error loading monthly tasks:', error)
+        return
+      }
+
+      if (tasks) {
+        setMonthlyTasks(tasks)
+      }
+    }
+
+    loadMonthlyTasks()
+  }, [selectedStudent, currentWeek, userRole, user])
 
   // Load weekly tasks with real-time updates
   useEffect(() => {
@@ -2590,19 +2629,7 @@ export default function CoachPage() {
 
   // Add this function after other helper functions
   const calculateMonthlyStats = () => {
-    if (!selectedStudent || !weeklyTasks.length) return []
-
-    const monthStart = new Date(currentWeek)
-    monthStart.setDate(1)
-    const monthEnd = new Date(monthStart)
-    monthEnd.setMonth(monthStart.getMonth() + 1)
-    monthEnd.setDate(0)
-
-    // Filter tasks for the current month
-    const monthlyTasks = weeklyTasks.filter(task => {
-      const taskDate = new Date(task.scheduled_date)
-      return taskDate >= monthStart && taskDate <= monthEnd && task.status === 'completed'
-    })
+    if (!selectedStudent || !monthlyTasks.length) return []
 
     // Group by subject and calculate total problems
     const subjectStats = subjects.map(subject => {
@@ -4783,44 +4810,14 @@ export default function CoachPage() {
                           </div>
                           <div className="text-3xl font-bold text-green-700 mb-2">
                             %{(() => {
-                              const filteredTasks = weeklyTasks.filter(t => {
-                                const taskDate = new Date(t.scheduled_date);
-                                if (showMonthlyStats) {
-                                  const monthStart = new Date(currentWeek)
-                                  monthStart.setDate(1)
-                                  const monthEnd = new Date(monthStart)
-                                  monthEnd.setMonth(monthStart.getMonth() + 1)
-                                  monthEnd.setDate(0)
-                                  return taskDate >= monthStart && taskDate <= monthEnd;
-                                } else {
-                                  const weekStart = getWeekStart(currentWeek);
-                                  const weekEnd = new Date(weekStart);
-                                  weekEnd.setDate(weekStart.getDate() + 6);
-                                  return taskDate >= weekStart && taskDate <= weekEnd;
-                                }
-                              });
+                              const filteredTasks = showMonthlyStats ? monthlyTasks : weeklyTasks;
                               const completedTasks = filteredTasks.filter(t => t.status === 'completed');
                               return Math.round((completedTasks.length / Math.max(filteredTasks.length, 1)) * 100);
                             })()}
                           </div>
                           <div className="text-xs text-green-600 mb-3">
                             {(() => {
-                              const filteredTasks = weeklyTasks.filter(t => {
-                                const taskDate = new Date(t.scheduled_date);
-                                if (showMonthlyStats) {
-                                  const monthStart = new Date(currentWeek)
-                                  monthStart.setDate(1)
-                                  const monthEnd = new Date(monthStart)
-                                  monthEnd.setMonth(monthStart.getMonth() + 1)
-                                  monthEnd.setDate(0)
-                                  return taskDate >= monthStart && taskDate <= monthEnd;
-                                } else {
-                                  const weekStart = getWeekStart(currentWeek);
-                                  const weekEnd = new Date(weekStart);
-                                  weekEnd.setDate(weekStart.getDate() + 6);
-                                  return taskDate >= weekStart && taskDate <= weekEnd;
-                                }
-                              });
+                              const filteredTasks = showMonthlyStats ? monthlyTasks : weeklyTasks;
                               const completedTasks = filteredTasks.filter(t => t.status === 'completed');
                               return `${completedTasks.length}/${filteredTasks.length} görev`;
                             })()}
@@ -4831,22 +4828,7 @@ export default function CoachPage() {
                               className="bg-green-500 h-2 rounded-full transition-all duration-300"
                               style={{
                                 width: `${(() => {
-                                  const filteredTasks = weeklyTasks.filter(t => {
-                                    const taskDate = new Date(t.scheduled_date);
-                                    if (showMonthlyStats) {
-                                      const monthStart = new Date(currentWeek);
-                                      monthStart.setDate(1);
-                                      const monthEnd = new Date(monthStart);
-                                      monthEnd.setMonth(monthStart.getMonth() + 1);
-                                      monthEnd.setDate(0);
-                                      return taskDate >= monthStart && taskDate <= monthEnd;
-                                    } else {
-                                      const weekStart = getWeekStart(currentWeek);
-                                      const weekEnd = new Date(weekStart);
-                                      weekEnd.setDate(weekStart.getDate() + 6);
-                                      return taskDate >= weekStart && taskDate <= weekEnd;
-                                    }
-                                  });
+                                  const filteredTasks = showMonthlyStats ? monthlyTasks : weeklyTasks;
                                   const completedTasks = filteredTasks.filter(t => t.status === 'completed');
                                   return Math.round((completedTasks.length / Math.max(filteredTasks.length, 1)) * 100);
                                 })()}%`
@@ -4865,25 +4847,8 @@ export default function CoachPage() {
               </div>
               <div className="text-3xl font-bold text-blue-700 mb-2">
                 {(() => {
-                  if (showMonthlyStats) {
-                    const monthStart = new Date(currentWeek)
-                    monthStart.setDate(1)
-                    const monthEnd = new Date(monthStart)
-                    monthEnd.setMonth(monthStart.getMonth() + 1)
-                    monthEnd.setDate(0)
-                    return Math.round(weeklyTasks.filter(t => {
-                      const taskDate = new Date(t.scheduled_date)
-                      return taskDate >= monthStart && taskDate <= monthEnd && t.status === 'completed'
-                    }).reduce((acc, t) => acc + t.estimated_duration, 0) / 60 * 10) / 10
-                  } else {
-                    const weekStart = getWeekStart(currentWeek);
-                    const weekEnd = new Date(weekStart);
-                    weekEnd.setDate(weekStart.getDate() + 6);
-                    return Math.round(weeklyTasks.filter(t => {
-                      const taskDate = new Date(t.scheduled_date);
-                      return taskDate >= weekStart && taskDate <= weekEnd && t.status === 'completed';
-                    }).reduce((acc, t) => acc + t.estimated_duration, 0) / 60 * 10) / 10
-                  }
+                  const tasks = showMonthlyStats ? monthlyTasks : weeklyTasks;
+                  return Math.round(tasks.filter(t => t.status === 'completed').reduce((acc, t) => acc + t.estimated_duration, 0) / 60 * 10) / 10;
                 })()} saat
               </div>
               <div className="text-xs text-blue-600 mb-3">
@@ -4899,7 +4864,7 @@ export default function CoachPage() {
                     return Array.from({length: daysInMonth}, (_, i) => {
                       const dayDate = new Date(monthStart)
                       dayDate.setDate(i + 1)
-                      const dayTasks = weeklyTasks.filter(t => {
+                      const dayTasks = monthlyTasks.filter(t => {
                         const taskDate = new Date(t.scheduled_date)
                         return taskDate.toDateString() === dayDate.toDateString() && t.status === 'completed'
                       })
@@ -5002,23 +4967,7 @@ export default function CoachPage() {
                                 'coaching_session': 'bg-purple-500'
                               }
                               
-                              const filteredTasks = weeklyTasks.filter(t => {
-                                if (showMonthlyStats) {
-                                  const taskDate = new Date(t.scheduled_date)
-                                  const monthStart = new Date(currentWeek)
-                                  monthStart.setDate(1)
-                                  const monthEnd = new Date(monthStart)
-                                  monthEnd.setMonth(monthStart.getMonth() + 1)
-                                  monthEnd.setDate(0)
-                                  return taskDate >= monthStart && taskDate <= monthEnd
-                                } else {
-                                  const taskDate = new Date(t.scheduled_date)
-                                  const weekStart = getWeekStart(currentWeek)
-                                  const weekEnd = new Date(weekStart)
-                                  weekEnd.setDate(weekStart.getDate() + 6)
-                                  return taskDate >= weekStart && taskDate <= weekEnd
-                                }
-                              })
+                              const filteredTasks = showMonthlyStats ? monthlyTasks : weeklyTasks;
                               
                               return taskTypes.map(type => {
                                 const count = filteredTasks.filter(t => t.task_type === type).length
@@ -5088,7 +5037,7 @@ export default function CoachPage() {
                                       return <div key={`empty-${index}`} className="aspect-square" />
                                     }
                                     
-                                    const dayTasks = weeklyTasks.filter(t => {
+                                    const dayTasks = monthlyTasks.filter(t => {
                                       const taskDate = new Date(t.scheduled_date)
                                       return taskDate.toDateString() === date.toDateString()
                                     })
