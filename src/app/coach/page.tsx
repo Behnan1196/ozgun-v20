@@ -1282,10 +1282,31 @@ export default function CoachPage() {
                       }
                     : task
                 ))
+                
+                // Also update monthly tasks if the task is in current month
+                const taskDate = new Date(payload.new.scheduled_date)
+                const monthStart = new Date(currentWeek)
+                monthStart.setDate(1)
+                const monthEnd = new Date(monthStart)
+                monthEnd.setMonth(monthStart.getMonth() + 1)
+                monthEnd.setDate(0)
+                
+                if (taskDate >= monthStart && taskDate <= monthEnd) {
+                  setMonthlyTasks(prev => prev.map(task => 
+                    task.id === payload.new.id 
+                      ? { 
+                          ...task, 
+                          ...payload.new,
+                          completed_at: payload.new.completed_at || undefined
+                        }
+                      : task
+                  ))
+                }
               } else if (payload.eventType === 'INSERT') {
                 console.log('➕ New task inserted:', payload.new.id)
-                // Check if the new task is in the current week
                 const taskDate = new Date(payload.new.scheduled_date)
+                
+                // Check if the new task is in the current week
                 const weekStart = getWeekStart(currentWeek)
                 const weekEnd = new Date(weekStart)
                 weekEnd.setDate(weekStart.getDate() + 6)
@@ -1296,9 +1317,24 @@ export default function CoachPage() {
                     completed_at: payload.new.completed_at || undefined 
                   } as Task])
                 }
+                
+                // Also check if the new task is in the current month
+                const monthStart = new Date(currentWeek)
+                monthStart.setDate(1)
+                const monthEnd = new Date(monthStart)
+                monthEnd.setMonth(monthStart.getMonth() + 1)
+                monthEnd.setDate(0)
+                
+                if (taskDate >= monthStart && taskDate <= monthEnd) {
+                  setMonthlyTasks(prev => [...prev, { 
+                    ...payload.new, 
+                    completed_at: payload.new.completed_at || undefined 
+                  } as Task])
+                }
               } else if (payload.eventType === 'DELETE') {
                 console.log('🗑️ Task deleted:', payload.old.id)
                 setWeeklyTasks(prev => prev.filter(task => task.id !== payload.old.id))
+                setMonthlyTasks(prev => prev.filter(task => task.id !== payload.old.id))
               }
             }
           )
@@ -5046,11 +5082,18 @@ export default function CoachPage() {
                                     const totalTasks = dayTasks.length
                                     const completionRate = totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0
                                     
-                                    let bgColor = 'bg-gray-200'
-                                    if (completionRate >= 80) bgColor = 'bg-green-500'
-                                    else if (completionRate >= 60) bgColor = 'bg-yellow-500'
-                                    else if (completionRate >= 40) bgColor = 'bg-orange-500'
-                                    else if (completionRate > 0) bgColor = 'bg-red-400'
+                                    let bgColor = 'bg-gray-200' // Default for no tasks
+                                    if (totalTasks === 0) {
+                                      bgColor = 'bg-gray-200' // White/gray for no tasks
+                                    } else if (completionRate >= 80) {
+                                      bgColor = 'bg-green-500' // Green for excellent (80%+)
+                                    } else if (completionRate >= 60) {
+                                      bgColor = 'bg-yellow-500' // Yellow for good (60%+)
+                                    } else if (completionRate >= 40) {
+                                      bgColor = 'bg-orange-500' // Orange for moderate (40%+)
+                                    } else {
+                                      bgColor = 'bg-red-400' // Red for poor completion or 0% (but tasks exist)
+                                    }
                                     
                                     return (
                                       <div key={date.getTime()} className="aspect-square">
@@ -5092,11 +5135,18 @@ export default function CoachPage() {
                                   const totalTasks = dayTasks.length
                                   const completionRate = totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0
                                   
-                                  let bgColor = 'bg-gray-200'
-                                  if (completionRate >= 80) bgColor = 'bg-green-500'
-                                  else if (completionRate >= 60) bgColor = 'bg-yellow-500'
-                                  else if (completionRate >= 40) bgColor = 'bg-orange-500'
-                                  else if (completionRate > 0) bgColor = 'bg-red-400'
+                                  let bgColor = 'bg-gray-200' // Default for no tasks
+                                  if (totalTasks === 0) {
+                                    bgColor = 'bg-gray-200' // White/gray for no tasks
+                                  } else if (completionRate >= 80) {
+                                    bgColor = 'bg-green-500' // Green for excellent (80%+)
+                                  } else if (completionRate >= 60) {
+                                    bgColor = 'bg-yellow-500' // Yellow for good (60%+)
+                                  } else if (completionRate >= 40) {
+                                    bgColor = 'bg-orange-500' // Orange for moderate (40%+)
+                                  } else {
+                                    bgColor = 'bg-red-400' // Red for poor completion or 0% (but tasks exist)
+                                  }
                                   
                                   return (
                                     <div key={dayIndex} className="aspect-square">
@@ -5126,6 +5176,14 @@ export default function CoachPage() {
                             <div className="flex items-center">
                               <div className="w-3 h-3 bg-orange-500 rounded mr-1"></div>
                               <span className="text-orange-600">Orta (40%+)</span>
+                            </div>
+                            <div className="flex items-center">
+                              <div className="w-3 h-3 bg-red-400 rounded mr-1"></div>
+                              <span className="text-orange-600">Düşük (0-39%)</span>
+                            </div>
+                            <div className="flex items-center">
+                              <div className="w-3 h-3 bg-gray-200 rounded mr-1"></div>
+                              <span className="text-orange-600">Görev Yok</span>
                             </div>
                           </div>
                         </div>
