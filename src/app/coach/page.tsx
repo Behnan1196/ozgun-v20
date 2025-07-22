@@ -1499,7 +1499,9 @@ export default function CoachPage() {
     const d = new Date(date)
     const day = d.getDay()
     const diff = d.getDate() - day + (day === 0 ? -6 : 1) // adjust when day is sunday
-    return new Date(d.setDate(diff))
+    d.setDate(diff)
+    d.setHours(0, 0, 0, 0) // Ensure consistent time for date comparisons
+    return d
   }
 
   const getWeekDates = (date: Date) => {
@@ -4426,7 +4428,14 @@ export default function CoachPage() {
           <div className="p-4 h-full flex flex-col min-h-0">
             {/* Week Navigation */}
             <div className="flex items-center justify-between mb-4 bg-white rounded-lg p-3 shadow-sm border border-blue-200">
-              <div className="flex items-center space-x-4">
+              <div className="flex items-center">
+                <h2 className="text-2xl font-bold text-gray-800 flex items-center space-x-2">
+                  <Calendar className="h-6 w-6 text-blue-600" />
+                  <span>Haftalık Program</span>
+                </h2>
+              </div>
+              
+              <div className="flex items-center space-x-3">
                 <button
                   onClick={() => navigateWeek('prev')}
                   className="p-2 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
@@ -4434,10 +4443,9 @@ export default function CoachPage() {
                   <ChevronLeft className="h-4 w-4" />
                 </button>
                 
-                <h2 className="text-2xl font-bold text-gray-800 flex items-center space-x-2">
-                  <Calendar className="h-6 w-6 text-blue-600" />
-                  <span>Haftalık Program</span>
-                </h2>
+                <div className="text-sm text-gray-600 bg-blue-50 px-3 py-2 rounded-md border border-blue-200">
+                  <span className="font-medium">{formatDate(weekDates[0])} - {formatDate(weekDates[6])}</span>
+                </div>
                 
                 <button
                   onClick={() => navigateWeek('next')}
@@ -4445,12 +4453,6 @@ export default function CoachPage() {
                 >
                   <ChevronRight className="h-4 w-4" />
                 </button>
-              </div>
-              
-              <div className="flex items-center space-x-3">
-                <div className="text-sm text-gray-600 bg-blue-50 px-3 py-2 rounded-md border border-blue-200">
-                  <span className="font-medium">{formatDate(weekDates[0])} - {formatDate(weekDates[6])}</span>
-                </div>
               </div>
             </div>
 
@@ -4729,27 +4731,33 @@ export default function CoachPage() {
                     <h3 className="font-semibold text-gray-900 flex items-center">
                       📊 Gelişim İstatistikleri
                     </h3>
-                    <div className="flex items-center space-x-2">
-                      <span className={`text-sm ${!showMonthlyStats ? 'text-blue-600 font-medium' : 'text-gray-500'}`}>Haftalık</span>
+                    <div className="flex items-center bg-gray-100 rounded-lg p-1">
                       <button
-                        onClick={() => setShowMonthlyStats(!showMonthlyStats)}
-                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                          showMonthlyStats ? 'bg-blue-600' : 'bg-gray-200'
+                        onClick={() => setShowMonthlyStats(false)}
+                        className={`px-3 py-1 text-sm font-medium rounded-md transition-colors ${
+                          !showMonthlyStats 
+                            ? 'bg-white text-blue-600 shadow-sm' 
+                            : 'text-gray-600 hover:text-gray-800'
                         }`}
                       >
-                        <span
-                          className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                            showMonthlyStats ? 'translate-x-6' : 'translate-x-1'
-                          }`}
-                        />
+                        Haftalık
                       </button>
-                      <span className={`text-sm ${showMonthlyStats ? 'text-blue-600 font-medium' : 'text-gray-500'}`}>Aylık</span>
+                      <button
+                        onClick={() => setShowMonthlyStats(true)}
+                        className={`px-3 py-1 text-sm font-medium rounded-md transition-colors ${
+                          showMonthlyStats 
+                            ? 'bg-white text-blue-600 shadow-sm' 
+                            : 'text-gray-600 hover:text-gray-800'
+                        }`}
+                      >
+                        Aylık
+                      </button>
                     </div>
                   </div>
                   {selectedStudent ? (
                     <div className="space-y-6">
                       {/* Progress Overview Cards */}
-                      <div className="grid grid-cols-1 gap-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         {/* Completion Rate Card */}
                         <div className="p-4 bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-lg">
                           <div className="flex items-center justify-between mb-3">
@@ -4759,62 +4767,74 @@ export default function CoachPage() {
                             <div className="text-green-600">✓</div>
                           </div>
                           <div className="text-3xl font-bold text-green-700 mb-2">
-                            {Math.round((weeklyTasks.filter(t => {
-                              const taskDate = new Date(t.scheduled_date);
-                              if (showMonthlyStats) {
-                                const monthStart = new Date(currentWeek)
-                                monthStart.setDate(1)
-                                const monthEnd = new Date(monthStart)
-                                monthEnd.setMonth(monthStart.getMonth() + 1)
-                                monthEnd.setDate(0)
-                                return taskDate >= monthStart && taskDate <= monthEnd && t.status === 'completed';
-                              } else {
-                                const weekStart = getWeekStart(currentWeek);
-                                const weekEnd = new Date(weekStart);
-                                weekEnd.setDate(weekStart.getDate() + 6);
-                                return taskDate >= weekStart && taskDate <= weekEnd && t.status === 'completed';
-                              }
-                            }).length / Math.max(weeklyTasks.length, 1)) * 100)}%
+                            %{(() => {
+                              const filteredTasks = weeklyTasks.filter(t => {
+                                const taskDate = new Date(t.scheduled_date);
+                                if (showMonthlyStats) {
+                                  const monthStart = new Date(currentWeek)
+                                  monthStart.setDate(1)
+                                  const monthEnd = new Date(monthStart)
+                                  monthEnd.setMonth(monthStart.getMonth() + 1)
+                                  monthEnd.setDate(0)
+                                  return taskDate >= monthStart && taskDate <= monthEnd;
+                                } else {
+                                  const weekStart = getWeekStart(currentWeek);
+                                  const weekEnd = new Date(weekStart);
+                                  weekEnd.setDate(weekStart.getDate() + 6);
+                                  return taskDate >= weekStart && taskDate <= weekEnd;
+                                }
+                              });
+                              const completedTasks = filteredTasks.filter(t => t.status === 'completed');
+                              return Math.round((completedTasks.length / Math.max(filteredTasks.length, 1)) * 100);
+                            })()}
                           </div>
                           <div className="text-xs text-green-600 mb-3">
-                            {weeklyTasks.filter(t => {
-                              const taskDate = new Date(t.scheduled_date);
-                              if (showMonthlyStats) {
-                                const monthStart = new Date(currentWeek)
-                                monthStart.setDate(1)
-                                const monthEnd = new Date(monthStart)
-                                monthEnd.setMonth(monthStart.getMonth() + 1)
-                                monthEnd.setDate(0)
-                                return taskDate >= monthStart && taskDate <= monthEnd && t.status === 'completed';
-                              } else {
-                                const weekStart = getWeekStart(currentWeek);
-                                const weekEnd = new Date(weekStart);
-                                weekEnd.setDate(weekStart.getDate() + 6);
-                                return taskDate >= weekStart && taskDate <= weekEnd && t.status === 'completed';
-                              }
-                            }).length}/{weeklyTasks.length} görev
+                            {(() => {
+                              const filteredTasks = weeklyTasks.filter(t => {
+                                const taskDate = new Date(t.scheduled_date);
+                                if (showMonthlyStats) {
+                                  const monthStart = new Date(currentWeek)
+                                  monthStart.setDate(1)
+                                  const monthEnd = new Date(monthStart)
+                                  monthEnd.setMonth(monthStart.getMonth() + 1)
+                                  monthEnd.setDate(0)
+                                  return taskDate >= monthStart && taskDate <= monthEnd;
+                                } else {
+                                  const weekStart = getWeekStart(currentWeek);
+                                  const weekEnd = new Date(weekStart);
+                                  weekEnd.setDate(weekStart.getDate() + 6);
+                                  return taskDate >= weekStart && taskDate <= weekEnd;
+                                }
+                              });
+                              const completedTasks = filteredTasks.filter(t => t.status === 'completed');
+                              return `${completedTasks.length}/${filteredTasks.length} görev`;
+                            })()}
                           </div>
                           {/* Progress Bar */}
                           <div className="w-full bg-green-200 rounded-full h-2">
                             <div 
                               className="bg-green-500 h-2 rounded-full transition-all duration-300"
                               style={{
-                                width: `${Math.round((weeklyTasks.filter(t => {
-                                  const taskDate = new Date(t.scheduled_date);
-                                  if (showMonthlyStats) {
-                                    const monthStart = new Date(currentWeek);
-                                    monthStart.setDate(1);
-                                    const monthEnd = new Date(monthStart);
-                                    monthEnd.setMonth(monthStart.getMonth() + 1);
-                                    monthEnd.setDate(0);
-                                    return taskDate >= monthStart && taskDate <= monthEnd && t.status === 'completed';
-                                  } else {
-                                    const weekStart = getWeekStart(currentWeek);
-                                    const weekEnd = new Date(weekStart);
-                                    weekEnd.setDate(weekStart.getDate() + 6);
-                                    return taskDate >= weekStart && taskDate <= weekEnd && t.status === 'completed';
-                                  }
-                                }).length / Math.max(weeklyTasks.length, 1)) * 100)}%`
+                                width: `${(() => {
+                                  const filteredTasks = weeklyTasks.filter(t => {
+                                    const taskDate = new Date(t.scheduled_date);
+                                    if (showMonthlyStats) {
+                                      const monthStart = new Date(currentWeek);
+                                      monthStart.setDate(1);
+                                      const monthEnd = new Date(monthStart);
+                                      monthEnd.setMonth(monthStart.getMonth() + 1);
+                                      monthEnd.setDate(0);
+                                      return taskDate >= monthStart && taskDate <= monthEnd;
+                                    } else {
+                                      const weekStart = getWeekStart(currentWeek);
+                                      const weekEnd = new Date(weekStart);
+                                      weekEnd.setDate(weekStart.getDate() + 6);
+                                      return taskDate >= weekStart && taskDate <= weekEnd;
+                                    }
+                                  });
+                                  const completedTasks = filteredTasks.filter(t => t.status === 'completed');
+                                  return Math.round((completedTasks.length / Math.max(filteredTasks.length, 1)) * 100);
+                                })()}%`
                               }}
                             ></div>
                           </div>
@@ -4841,9 +4861,15 @@ export default function CoachPage() {
                       return taskDate >= monthStart && taskDate <= monthEnd && t.status === 'completed'
                     }).reduce((acc, t) => acc + t.estimated_duration, 0) / 60 * 10) / 10
                   } else {
-                    return Math.round(weeklyTasks.filter(t => t.status === 'completed').reduce((acc, t) => acc + t.estimated_duration, 0) / 60 * 10) / 10
+                    const weekStart = getWeekStart(currentWeek);
+                    const weekEnd = new Date(weekStart);
+                    weekEnd.setDate(weekStart.getDate() + 6);
+                    return Math.round(weeklyTasks.filter(t => {
+                      const taskDate = new Date(t.scheduled_date);
+                      return taskDate >= weekStart && taskDate <= weekEnd && t.status === 'completed';
+                    }).reduce((acc, t) => acc + t.estimated_duration, 0) / 60 * 10) / 10
                   }
-                })()}h
+                })()} saat
               </div>
               <div className="text-xs text-blue-600 mb-3">
                 {showMonthlyStats ? 'Bu ay toplam' : 'Bu hafta tahmini'}
