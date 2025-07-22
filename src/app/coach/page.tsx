@@ -2654,9 +2654,9 @@ export default function CoachPage() {
   const calculateMonthlyStats = () => {
     if (!selectedStudent || !monthlyTasks.length) return []
 
-    // Group by subject and calculate total problems
+    // Group by subject and calculate total problems for completed tasks only
     const subjectStats = subjects.map(subject => {
-      const subjectTasks = monthlyTasks.filter(task => task.subject_id === subject.id)
+      const subjectTasks = monthlyTasks.filter(task => task.subject_id === subject.id && task.status === 'completed')
       const totalProblems = subjectTasks.reduce((sum, task) => sum + (task.problem_count || 0), 0)
       return {
         subject: subject.name,
@@ -5089,21 +5089,21 @@ export default function CoachPage() {
                                           <div className="relative w-full h-full flex items-center justify-center">
                                             {/* Tasks completion ratio in center (bigger) or day if no tasks */}
                                             {totalTasks > 0 ? (
-                                              <span className="text-[9px] text-white font-bold leading-none">
-                                                {completedTasks}/{totalTasks}
-                                              </span>
-                                            ) : (
-                                              <span className="text-[8px] text-white font-bold leading-none">
-                                                {date.getDate()}
-                                              </span>
-                                            )}
-                                            
-                                            {/* Day number in bottom right (smaller) when tasks exist */}
-                                            {totalTasks > 0 && (
-                                              <span className="absolute bottom-0.5 right-0.5 text-[6px] text-white font-semibold leading-none">
-                                                {date.getDate()}
-                                              </span>
-                                            )}
+                                                                    <span className="text-[11px] text-white font-bold leading-none">
+                        {completedTasks}/{totalTasks}
+                      </span>
+                    ) : (
+                      <span className="text-[10px] text-white font-bold leading-none">
+                        {date.getDate()}
+                      </span>
+                    )}
+                    
+                    {/* Day number in bottom right (smaller) when tasks exist */}
+                    {totalTasks > 0 && (
+                      <span className="absolute bottom-0.5 right-0.5 text-[8px] text-white font-semibold leading-none">
+                        {date.getDate()}
+                      </span>
+                    )}
                                           </div>
                                         </div>
                                       </div>

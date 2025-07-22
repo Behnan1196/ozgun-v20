@@ -42,10 +42,24 @@ export async function PATCH(
       return NextResponse.json({ error: 'Task not found' }, { status: 404 })
     }
 
-    // Permission check: coaches can update tasks they assigned, students can update tasks assigned to them
-    const canUpdate = profile.role === 'coach' 
-      ? task.assigned_by === user.id 
-      : task.assigned_to === user.id
+    // Permission check: coaches can update any task assigned to their students, students can update tasks assigned to them
+    let canUpdate = false
+    
+    if (profile.role === 'coach' || profile.role === 'coordinator') {
+      // Check if this task is assigned to one of the coach's students
+      const { data: assignment } = await supabase
+        .from('coach_student_assignments')
+        .select('student_id')
+        .eq('coach_id', user.id)
+        .eq('student_id', task.assigned_to)
+        .eq('is_active', true)
+        .single()
+      
+      canUpdate = !!assignment
+    } else {
+      // Students can only update tasks assigned to them
+      canUpdate = task.assigned_to === user.id
+    }
 
     if (!canUpdate) {
       return NextResponse.json({ error: 'Permission denied' }, { status: 403 })
