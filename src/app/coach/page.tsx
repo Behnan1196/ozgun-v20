@@ -5156,18 +5156,18 @@ export default function CoachPage() {
                                         <div className="relative w-full h-full flex items-center justify-center">
                                           {/* Tasks completion ratio in center (bigger) or day if no tasks */}
                                           {totalTasks > 0 ? (
-                                            <span className="text-[9px] text-white font-bold leading-none">
+                                            <span className="text-[11px] text-white font-bold leading-none">
                                               {completedTasks}/{totalTasks}
                                             </span>
                                           ) : (
-                                            <span className="text-[8px] text-white font-bold leading-none">
+                                            <span className="text-[10px] text-white font-bold leading-none">
                                               {dayDate.getDate()}
                                             </span>
                                           )}
                                           
                                           {/* Day number in bottom right (smaller) when tasks exist */}
                                           {totalTasks > 0 && (
-                                            <span className="absolute bottom-0.5 right-0.5 text-[6px] text-white font-semibold leading-none">
+                                            <span className="absolute bottom-0.5 right-0.5 text-[8px] text-white font-semibold leading-none">
                                               {dayDate.getDate()}
                                             </span>
                                           )}
