@@ -2331,7 +2331,7 @@ export default function CoachPage() {
           coach_id: user.id,
           exam_type: examForm.exam_type,
           exam_date: examForm.exam_date,
-          exam_name: examForm.exam_name.trim() || null,
+          exam_name: examForm.exam_name.trim() || '',
           exam_duration: examForm.exam_duration,
           
                     // Only include relevant scores based on exam type
@@ -2411,7 +2411,7 @@ export default function CoachPage() {
         .update({
           exam_type: examForm.exam_type,
           exam_date: examForm.exam_date,
-          exam_name: examForm.exam_name.trim() || null,
+          exam_name: examForm.exam_name.trim() || '',
           exam_duration: examForm.exam_duration,
           
           // Only include relevant scores based on exam type
