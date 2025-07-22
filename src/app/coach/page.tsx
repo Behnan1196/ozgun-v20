@@ -1699,7 +1699,6 @@ export default function CoachPage() {
         .from('tasks')
         .select('*')
         .eq('assigned_to', selectedStudent.id)
-        .eq('assigned_by', user?.id)
         .gte('scheduled_date', formatDateForDB(weekStart))
         .lte('scheduled_date', formatDateForDB(weekEnd))
         .order('scheduled_date')
@@ -2036,6 +2035,7 @@ export default function CoachPage() {
 
       // Update local state
       setWeeklyTasks(prev => prev.filter(t => t.id !== task.id))
+      setMonthlyTasks(prev => prev.filter(t => t.id !== task.id))
     } catch (error) {
       console.error('Error deleting task:', error)
       alert('Görev silinirken hata oluştu')
