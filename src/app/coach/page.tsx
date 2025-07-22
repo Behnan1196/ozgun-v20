@@ -3246,7 +3246,7 @@ export default function CoachPage() {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Sınav Adı *
+                    Sınav Adı
                   </label>
                   <input
                     type="text"
@@ -3254,7 +3254,6 @@ export default function CoachPage() {
                     onChange={(e) => setExamForm(prev => ({ ...prev, exam_name: e.target.value }))}
                     className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     placeholder="Örn: 1. Deneme Sınavı"
-                    required
                   />
                 </div>
                 
@@ -5674,26 +5673,24 @@ export default function CoachPage() {
 
               {activeTab === 'exams' && (
                 <div className="space-y-6 mb-6">
-                  <h3 className="font-semibold text-gray-900 flex items-center">
-                    🏆 Sınav Sonuçları
-                  </h3>
+                  <div className="flex items-center justify-between">
+                    <h3 className="font-semibold text-gray-900 flex items-center">
+                      🏆 Sınav Sonuçları
+                    </h3>
+                    {selectedStudent && (
+                      <button
+                        onClick={openExamModal}
+                        className="px-3 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700 transition-colors"
+                      >
+                        + Sınav Sonucu Ekle
+                      </button>
+                    )}
+                  </div>
                   
                   {selectedStudent ? (
                     <>
                       {/* Exam Results Section */}
                       <div>
-                        <div className="flex items-center justify-between mb-4">
-                          <h4 className="font-medium text-gray-800 flex items-center">
-                            📝 Deneme Sınavı Sonuçları
-                          </h4>
-                          <button
-                            onClick={openExamModal}
-                            className="px-3 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700 transition-colors"
-                          >
-                            + Sınav Sonucu Ekle
-                          </button>
-                        </div>
-                        
                         {mockExamResults.length > 0 ? (
                           <div className="space-y-3">
                             {mockExamResults.map((result) => (
