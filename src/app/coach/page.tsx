@@ -5099,13 +5099,22 @@ export default function CoachPage() {
                                           className={`w-full h-full rounded ${bgColor} flex items-center justify-center transition-all duration-300`}
                                           title={`${date.getDate()} - ${completedTasks}/${totalTasks} görev (${Math.round(completionRate)}%)`}
                                         >
-                                          <div className="flex flex-col items-center justify-center">
-                                            <span className="text-[8px] text-white font-bold leading-none">
-                                              {date.getDate()}
-                                            </span>
-                                            {totalTasks > 0 && (
-                                              <span className="text-[6px] text-white font-bold leading-none mt-0.5">
+                                          <div className="relative w-full h-full flex items-center justify-center">
+                                            {/* Tasks completion ratio in center (bigger) or day if no tasks */}
+                                            {totalTasks > 0 ? (
+                                              <span className="text-[9px] text-white font-bold leading-none">
                                                 {completedTasks}/{totalTasks}
+                                              </span>
+                                            ) : (
+                                              <span className="text-[8px] text-white font-bold leading-none">
+                                                {date.getDate()}
+                                              </span>
+                                            )}
+                                            
+                                            {/* Day number in bottom right (smaller) when tasks exist */}
+                                            {totalTasks > 0 && (
+                                              <span className="absolute bottom-0.5 right-0.5 text-[6px] text-white font-semibold leading-none">
+                                                {date.getDate()}
                                               </span>
                                             )}
                                           </div>
@@ -5157,13 +5166,22 @@ export default function CoachPage() {
                                         className={`w-full h-full rounded ${bgColor} flex items-center justify-center transition-all duration-300`}
                                         title={`${completedTasks}/${totalTasks} görev (${Math.round(completionRate)}%)`}
                                       >
-                                        <div className="flex flex-col items-center justify-center">
-                                          <span className="text-[8px] text-white font-bold leading-none">
-                                            {dayDate.getDate()}
-                                          </span>
-                                          {totalTasks > 0 && (
-                                            <span className="text-[6px] text-white font-bold leading-none mt-0.5">
+                                        <div className="relative w-full h-full flex items-center justify-center">
+                                          {/* Tasks completion ratio in center (bigger) or day if no tasks */}
+                                          {totalTasks > 0 ? (
+                                            <span className="text-[9px] text-white font-bold leading-none">
                                               {completedTasks}/{totalTasks}
+                                            </span>
+                                          ) : (
+                                            <span className="text-[8px] text-white font-bold leading-none">
+                                              {dayDate.getDate()}
+                                            </span>
+                                          )}
+                                          
+                                          {/* Day number in bottom right (smaller) when tasks exist */}
+                                          {totalTasks > 0 && (
+                                            <span className="absolute bottom-0.5 right-0.5 text-[6px] text-white font-semibold leading-none">
+                                              {dayDate.getDate()}
                                             </span>
                                           )}
                                         </div>
