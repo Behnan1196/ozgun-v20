@@ -1765,7 +1765,11 @@ export default function CoachPage() {
   }
 
   const getTasksForDay = (date: Date) => {
-    const dateStr = date.toISOString().split('T')[0]
+    // Use local timezone formatting to avoid UTC timezone shift issues
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const dateStr = `${year}-${month}-${day}`;
     return weeklyTasks.filter(task => task.scheduled_date === dateStr)
   }
 
@@ -4923,42 +4927,42 @@ export default function CoachPage() {
                 })()}
               </div>
             </div>
+                      </div>
 
-                        {/* Monthly/Weekly Question Stats */}
-                        <div className="p-4 bg-gradient-to-r from-blue-50 to-cyan-50 border border-blue-200 rounded-lg">
-                          <div className="flex items-center justify-between mb-3">
-                            <div className="text-sm font-medium text-blue-800">
-                              {showMonthlyStats ? 'Aylık' : 'Haftalık'} Çözülen Soru Miktarı
+                      {/* Monthly/Weekly Question Stats - Full Width */}
+                      <div className="p-4 bg-gradient-to-r from-blue-50 to-cyan-50 border border-blue-200 rounded-lg">
+                        <div className="flex items-center justify-between mb-3">
+                          <div className="text-sm font-medium text-blue-800">
+                            {showMonthlyStats ? 'Aylık' : 'Haftalık'} Çözülen Soru Miktarı
+                          </div>
+                          <div className="text-blue-600">📚</div>
+                        </div>
+                        <div className="space-y-4">
+                          {(showMonthlyStats ? calculateMonthlyStats() : calculateWeeklyStats()).map((stat, index) => (
+                            <div key={index} className="flex items-center">
+                              <div className="w-24 text-xs text-blue-700 font-medium">
+                                {stat.subject}
+                              </div>
+                              <div className="flex-1 mx-3">
+                                <div className="w-full bg-blue-200 rounded-full h-2">
+                                  <div 
+                                    className="bg-blue-500 h-2 rounded-full transition-all duration-500"
+                                    style={{ 
+                                      width: `${Math.min((stat.totalProblems / Math.max(...(showMonthlyStats ? calculateMonthlyStats() : calculateWeeklyStats()).map(s => s.totalProblems))) * 100, 100)}%` 
+                                    }}
+                                  ></div>
+                                </div>
+                              </div>
+                              <div className="text-xs text-blue-600 w-16 text-right">
+                                {stat.totalProblems} soru
+                              </div>
                             </div>
-                            <div className="text-blue-600">📚</div>
-                          </div>
-                          <div className="space-y-4">
-                            {(showMonthlyStats ? calculateMonthlyStats() : calculateWeeklyStats()).map((stat, index) => (
-                              <div key={index} className="flex items-center">
-                                <div className="w-24 text-xs text-blue-700 font-medium">
-                                  {stat.subject}
-                                </div>
-                                <div className="flex-1 mx-3">
-                                  <div className="w-full bg-blue-200 rounded-full h-2">
-                                    <div 
-                                      className="bg-blue-500 h-2 rounded-full transition-all duration-500"
-                                      style={{ 
-                                        width: `${Math.min((stat.totalProblems / Math.max(...(showMonthlyStats ? calculateMonthlyStats() : calculateWeeklyStats()).map(s => s.totalProblems))) * 100, 100)}%` 
-                                      }}
-                                    ></div>
-                                  </div>
-                                </div>
-                                <div className="text-xs text-blue-600 w-16 text-right">
-                                  {stat.totalProblems} soru
-                                </div>
-                              </div>
-                            ))}
-                            {(showMonthlyStats ? calculateMonthlyStats() : calculateWeeklyStats()).length === 0 && (
-                              <div className="text-center py-4 text-gray-500">
-                                <p>Henüz soru çözülmemiş.</p>
-                              </div>
-                            )}
-                          </div>
+                          ))}
+                          {(showMonthlyStats ? calculateMonthlyStats() : calculateWeeklyStats()).length === 0 && (
+                            <div className="text-center py-4 text-gray-500">
+                              <p>Henüz soru çözülmemiş.</p>
+                            </div>
+                          )}
                         </div>
                       </div>
 
