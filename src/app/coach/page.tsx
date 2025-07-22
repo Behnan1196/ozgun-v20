@@ -1173,10 +1173,6 @@ export default function CoachPage() {
         .lte('scheduled_date', formatDateForDB(monthEnd))
         .order('scheduled_date')
 
-      if (userRole === 'coach') {
-        query = query.eq('assigned_by', user.id)
-      }
-
       const { data: tasks, error } = await query
 
       if (error) {
@@ -1231,12 +1227,7 @@ export default function CoachPage() {
         .order('scheduled_date')
         .order('created_at')
 
-      // For coaches: load tasks they assigned to the selected student
-      // For students: load tasks assigned to them (by any coach)
-      if (userRole === 'coach') {
-        query = query.eq('assigned_by', user.id)
-      }
-      // For students, we don't filter by assigned_by, so they see all tasks assigned to them
+      // Both coaches and students see all tasks assigned to the student, regardless of who created them
 
       const { data: tasks } = await query
 
@@ -1415,10 +1406,6 @@ export default function CoachPage() {
           .lte('scheduled_date', formatDateForDB(weekEnd))
           .order('scheduled_date')
           .order('created_at')
-
-        if (userRole === 'coach') {
-          query = query.eq('assigned_by', user.id)
-        }
 
         const { data: tasks } = await query
 

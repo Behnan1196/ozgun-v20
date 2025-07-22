@@ -66,7 +66,6 @@ export default async function CoachStudentsPage() {
         .from('tasks')
         .select('id, status')
         .eq('assigned_to', studentData?.id)
-        .eq('assigned_by', user.id)
 
       const totalTasks = tasks?.length || 0
       const completedTasks = tasks?.filter(t => t.status === 'completed').length || 0
