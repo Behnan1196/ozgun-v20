@@ -2336,40 +2336,30 @@ export default function CoachPage() {
             // TYT Scores - Türkçe
             tyt_turkce_correct: examForm.tyt_turkce_correct,
             tyt_turkce_wrong: examForm.tyt_turkce_wrong,
-            tyt_turkce_net: examForm.tyt_turkce_correct - examForm.tyt_turkce_wrong / 4,
             
             // TYT Scores - Matematik
             tyt_matematik_correct: examForm.tyt_matematik_correct,
             tyt_matematik_wrong: examForm.tyt_matematik_wrong,
-            tyt_matematik_net: examForm.tyt_matematik_correct - examForm.tyt_matematik_wrong / 4,
             tyt_geometri_correct: examForm.tyt_geometri_correct,
             tyt_geometri_wrong: examForm.tyt_geometri_wrong,
-            tyt_geometri_net: examForm.tyt_geometri_correct - examForm.tyt_geometri_wrong / 4,
             
             // TYT Scores - Sosyal Bilimler
             tyt_tarih_correct: examForm.tyt_tarih_correct,
             tyt_tarih_wrong: examForm.tyt_tarih_wrong,
-            tyt_tarih_net: examForm.tyt_tarih_correct - examForm.tyt_tarih_wrong / 4,
             tyt_cografya_correct: examForm.tyt_cografya_correct,
             tyt_cografya_wrong: examForm.tyt_cografya_wrong,
-            tyt_cografya_net: examForm.tyt_cografya_correct - examForm.tyt_cografya_wrong / 4,
             tyt_felsefe_correct: examForm.tyt_felsefe_correct,
             tyt_felsefe_wrong: examForm.tyt_felsefe_wrong,
-            tyt_felsefe_net: examForm.tyt_felsefe_correct - examForm.tyt_felsefe_wrong / 4,
             tyt_din_correct: examForm.tyt_din_correct,
             tyt_din_wrong: examForm.tyt_din_wrong,
-            tyt_din_net: examForm.tyt_din_correct - examForm.tyt_din_wrong / 4,
             
             // TYT Scores - Fen Bilimleri
             tyt_fizik_correct: examForm.tyt_fizik_correct,
             tyt_fizik_wrong: examForm.tyt_fizik_wrong,
-            tyt_fizik_net: examForm.tyt_fizik_correct - examForm.tyt_fizik_wrong / 4,
             tyt_kimya_correct: examForm.tyt_kimya_correct,
             tyt_kimya_wrong: examForm.tyt_kimya_wrong,
-            tyt_kimya_net: examForm.tyt_kimya_correct - examForm.tyt_kimya_wrong / 4,
             tyt_biyoloji_correct: examForm.tyt_biyoloji_correct,
             tyt_biyoloji_wrong: examForm.tyt_biyoloji_wrong,
-            tyt_biyoloji_net: examForm.tyt_biyoloji_correct - examForm.tyt_biyoloji_wrong / 4,
             
             // TYT Total Net
             tyt_total_net: (examForm.tyt_turkce_correct - examForm.tyt_turkce_wrong / 4) + 
@@ -2385,10 +2375,8 @@ export default function CoachPage() {
           } : examForm.exam_type === 'AYT' ? {
             ayt_matematik_correct: examForm.ayt_matematik_correct,
             ayt_matematik_wrong: examForm.ayt_matematik_wrong,
-            ayt_matematik_net: examForm.ayt_matematik_correct - examForm.ayt_matematik_wrong / 4,
             ayt_geometri_correct: examForm.ayt_geometri_correct,
             ayt_geometri_wrong: examForm.ayt_geometri_wrong,
-            ayt_geometri_net: examForm.ayt_geometri_correct - examForm.ayt_geometri_wrong / 4,
             
             // AYT Total Net
             ayt_total_net: (examForm.ayt_matematik_correct - examForm.ayt_matematik_wrong / 4) + 
@@ -2444,40 +2432,30 @@ export default function CoachPage() {
             // TYT Scores - Türkçe
             tyt_turkce_correct: examForm.tyt_turkce_correct,
             tyt_turkce_wrong: examForm.tyt_turkce_wrong,
-            tyt_turkce_net: examForm.tyt_turkce_correct - examForm.tyt_turkce_wrong / 4,
             
             // TYT Scores - Matematik
             tyt_matematik_correct: examForm.tyt_matematik_correct,
             tyt_matematik_wrong: examForm.tyt_matematik_wrong,
-            tyt_matematik_net: examForm.tyt_matematik_correct - examForm.tyt_matematik_wrong / 4,
             tyt_geometri_correct: examForm.tyt_geometri_correct,
             tyt_geometri_wrong: examForm.tyt_geometri_wrong,
-            tyt_geometri_net: examForm.tyt_geometri_correct - examForm.tyt_geometri_wrong / 4,
             
             // TYT Scores - Sosyal Bilimler
             tyt_tarih_correct: examForm.tyt_tarih_correct,
             tyt_tarih_wrong: examForm.tyt_tarih_wrong,
-            tyt_tarih_net: examForm.tyt_tarih_correct - examForm.tyt_tarih_wrong / 4,
             tyt_cografya_correct: examForm.tyt_cografya_correct,
             tyt_cografya_wrong: examForm.tyt_cografya_wrong,
-            tyt_cografya_net: examForm.tyt_cografya_correct - examForm.tyt_cografya_wrong / 4,
             tyt_felsefe_correct: examForm.tyt_felsefe_correct,
             tyt_felsefe_wrong: examForm.tyt_felsefe_wrong,
-            tyt_felsefe_net: examForm.tyt_felsefe_correct - examForm.tyt_felsefe_wrong / 4,
             tyt_din_correct: examForm.tyt_din_correct,
             tyt_din_wrong: examForm.tyt_din_wrong,
-            tyt_din_net: examForm.tyt_din_correct - examForm.tyt_din_wrong / 4,
             
             // TYT Scores - Fen Bilimleri
             tyt_fizik_correct: examForm.tyt_fizik_correct,
             tyt_fizik_wrong: examForm.tyt_fizik_wrong,
-            tyt_fizik_net: examForm.tyt_fizik_correct - examForm.tyt_fizik_wrong / 4,
             tyt_kimya_correct: examForm.tyt_kimya_correct,
             tyt_kimya_wrong: examForm.tyt_kimya_wrong,
-            tyt_kimya_net: examForm.tyt_kimya_correct - examForm.tyt_kimya_wrong / 4,
             tyt_biyoloji_correct: examForm.tyt_biyoloji_correct,
             tyt_biyoloji_wrong: examForm.tyt_biyoloji_wrong,
-            tyt_biyoloji_net: examForm.tyt_biyoloji_correct - examForm.tyt_biyoloji_wrong / 4,
             
             // TYT Total Net
             tyt_total_net: (examForm.tyt_turkce_correct - examForm.tyt_turkce_wrong / 4) + 
@@ -2494,10 +2472,8 @@ export default function CoachPage() {
             // Clear AYT and Tarama fields
             ayt_matematik_correct: null,
             ayt_matematik_wrong: null,
-            ayt_matematik_net: null,
             ayt_geometri_correct: null,
             ayt_geometri_wrong: null,
-            ayt_geometri_net: null,
             ayt_total_net: null,
             tarama_lessons: null,
             tarama_total_net: null,
@@ -2505,10 +2481,8 @@ export default function CoachPage() {
             // AYT Scores
             ayt_matematik_correct: examForm.ayt_matematik_correct,
             ayt_matematik_wrong: examForm.ayt_matematik_wrong,
-            ayt_matematik_net: examForm.ayt_matematik_correct - examForm.ayt_matematik_wrong / 4,
             ayt_geometri_correct: examForm.ayt_geometri_correct,
             ayt_geometri_wrong: examForm.ayt_geometri_wrong,
-            ayt_geometri_net: examForm.ayt_geometri_correct - examForm.ayt_geometri_wrong / 4,
             
             // AYT Total Net
             ayt_total_net: (examForm.ayt_matematik_correct - examForm.ayt_matematik_wrong / 4) + 
@@ -2517,34 +2491,24 @@ export default function CoachPage() {
             // Clear TYT and Tarama fields
             tyt_turkce_correct: null,
             tyt_turkce_wrong: null,
-            tyt_turkce_net: null,
             tyt_matematik_correct: null,
             tyt_matematik_wrong: null,
-            tyt_matematik_net: null,
             tyt_geometri_correct: null,
             tyt_geometri_wrong: null,
-            tyt_geometri_net: null,
             tyt_tarih_correct: null,
             tyt_tarih_wrong: null,
-            tyt_tarih_net: null,
             tyt_cografya_correct: null,
             tyt_cografya_wrong: null,
-            tyt_cografya_net: null,
             tyt_felsefe_correct: null,
             tyt_felsefe_wrong: null,
-            tyt_felsefe_net: null,
             tyt_din_correct: null,
             tyt_din_wrong: null,
-            tyt_din_net: null,
             tyt_fizik_correct: null,
             tyt_fizik_wrong: null,
-            tyt_fizik_net: null,
             tyt_kimya_correct: null,
             tyt_kimya_wrong: null,
-            tyt_kimya_net: null,
             tyt_biyoloji_correct: null,
             tyt_biyoloji_wrong: null,
-            tyt_biyoloji_net: null,
             tyt_total_net: null,
             tarama_lessons: null,
             tarama_total_net: null,
