@@ -3360,7 +3360,7 @@ export default function CoachPage() {
                           </div>
                         </div>
                         <div className="mt-2 text-sm text-blue-600">
-                          Net: {(examForm.tyt_turkce_correct - examForm.tyt_turkce_wrong / 4).toFixed(1)}
+                          Net: {(examForm.tyt_turkce_correct - examForm.tyt_turkce_wrong / 4).toFixed(2)}
                         </div>
                       </div>
 
@@ -3392,7 +3392,7 @@ export default function CoachPage() {
                           </div>
                         </div>
                         <div className="mt-2 text-sm text-green-600">
-                          Net: {(examForm.tyt_matematik_correct - examForm.tyt_matematik_wrong / 4).toFixed(1)}
+                          Net: {(examForm.tyt_matematik_correct - examForm.tyt_matematik_wrong / 4).toFixed(2)}
                         </div>
                       </div>
 
@@ -3424,7 +3424,7 @@ export default function CoachPage() {
                           </div>
                         </div>
                         <div className="mt-2 text-sm text-green-600">
-                          Net: {(examForm.tyt_geometri_correct - examForm.tyt_geometri_wrong / 4).toFixed(1)}
+                          Net: {(examForm.tyt_geometri_correct - examForm.tyt_geometri_wrong / 4).toFixed(2)}
                         </div>
                       </div>
 
@@ -3456,7 +3456,7 @@ export default function CoachPage() {
                           </div>
                         </div>
                         <div className="mt-2 text-sm text-purple-600">
-                          Net: {(examForm.tyt_tarih_correct - examForm.tyt_tarih_wrong / 4).toFixed(1)}
+                          Net: {(examForm.tyt_tarih_correct - examForm.tyt_tarih_wrong / 4).toFixed(2)}
                         </div>
                       </div>
 
@@ -3488,7 +3488,7 @@ export default function CoachPage() {
                           </div>
                         </div>
                         <div className="mt-2 text-sm text-purple-600">
-                          Net: {(examForm.tyt_cografya_correct - examForm.tyt_cografya_wrong / 4).toFixed(1)}
+                          Net: {(examForm.tyt_cografya_correct - examForm.tyt_cografya_wrong / 4).toFixed(2)}
                         </div>
                       </div>
 
@@ -3520,7 +3520,7 @@ export default function CoachPage() {
                           </div>
                         </div>
                         <div className="mt-2 text-sm text-purple-600">
-                          Net: {(examForm.tyt_felsefe_correct - examForm.tyt_felsefe_wrong / 4).toFixed(1)}
+                          Net: {(examForm.tyt_felsefe_correct - examForm.tyt_felsefe_wrong / 4).toFixed(2)}
                         </div>
                       </div>
 
@@ -3552,7 +3552,7 @@ export default function CoachPage() {
                           </div>
                         </div>
                         <div className="mt-2 text-sm text-purple-600">
-                          Net: {(examForm.tyt_din_correct - examForm.tyt_din_wrong / 4).toFixed(1)}
+                          Net: {(examForm.tyt_din_correct - examForm.tyt_din_wrong / 4).toFixed(2)}
                         </div>
                       </div>
 
@@ -3584,7 +3584,7 @@ export default function CoachPage() {
                           </div>
                         </div>
                         <div className="mt-2 text-sm text-orange-600">
-                          Net: {(examForm.tyt_fizik_correct - examForm.tyt_fizik_wrong / 4).toFixed(1)}
+                          Net: {(examForm.tyt_fizik_correct - examForm.tyt_fizik_wrong / 4).toFixed(2)}
                         </div>
                       </div>
 
@@ -3616,7 +3616,7 @@ export default function CoachPage() {
                           </div>
                         </div>
                         <div className="mt-2 text-sm text-orange-600">
-                          Net: {(examForm.tyt_kimya_correct - examForm.tyt_kimya_wrong / 4).toFixed(1)}
+                          Net: {(examForm.tyt_kimya_correct - examForm.tyt_kimya_wrong / 4).toFixed(2)}
                         </div>
                       </div>
 
@@ -3648,7 +3648,7 @@ export default function CoachPage() {
                           </div>
                         </div>
                         <div className="mt-2 text-sm text-orange-600">
-                          Net: {(examForm.tyt_biyoloji_correct - examForm.tyt_biyoloji_wrong / 4).toFixed(1)}
+                          Net: {(examForm.tyt_biyoloji_correct - examForm.tyt_biyoloji_wrong / 4).toFixed(2)}
                         </div>
                       </div>
                     </div>
@@ -3662,7 +3662,7 @@ export default function CoachPage() {
                           <div>
                             <div className="text-sm font-medium text-blue-800">Türkçe</div>
                             <div className="text-lg font-bold text-blue-600">
-                              {(examForm.tyt_turkce_correct - examForm.tyt_turkce_wrong / 4).toFixed(1)}
+                              {(examForm.tyt_turkce_correct - examForm.tyt_turkce_wrong / 4).toFixed(2)}
                             </div>
                           </div>
                           
@@ -3673,7 +3673,7 @@ export default function CoachPage() {
                               {(
                                 (examForm.tyt_matematik_correct - examForm.tyt_matematik_wrong / 4) +
                                 (examForm.tyt_geometri_correct - examForm.tyt_geometri_wrong / 4)
-                              ).toFixed(1)}
+                              ).toFixed(2)}
                             </div>
                           </div>
                           
@@ -3686,7 +3686,7 @@ export default function CoachPage() {
                                 (examForm.tyt_cografya_correct - examForm.tyt_cografya_wrong / 4) +
                                 (examForm.tyt_felsefe_correct - examForm.tyt_felsefe_wrong / 4) +
                                 (examForm.tyt_din_correct - examForm.tyt_din_wrong / 4)
-                              ).toFixed(1)}
+                              ).toFixed(2)}
                             </div>
                           </div>
                           
@@ -3698,7 +3698,7 @@ export default function CoachPage() {
                                 (examForm.tyt_fizik_correct - examForm.tyt_fizik_wrong / 4) +
                                 (examForm.tyt_kimya_correct - examForm.tyt_kimya_wrong / 4) +
                                 (examForm.tyt_biyoloji_correct - examForm.tyt_biyoloji_wrong / 4)
-                              ).toFixed(1)}
+                              ).toFixed(2)}
                             </div>
                           </div>
                         </div>
@@ -3718,7 +3718,7 @@ export default function CoachPage() {
                             (examForm.tyt_fizik_correct - examForm.tyt_fizik_wrong / 4) +
                             (examForm.tyt_kimya_correct - examForm.tyt_kimya_wrong / 4) +
                             (examForm.tyt_biyoloji_correct - examForm.tyt_biyoloji_wrong / 4)
-                          ).toFixed(1)}
+                          ).toFixed(2)}
                         </div>
                       </div>
                     </div>
@@ -3759,7 +3759,7 @@ export default function CoachPage() {
                           </div>
                         </div>
                         <div className="mt-2 text-sm text-blue-600">
-                          Net: {(examForm.ayt_matematik_correct - examForm.ayt_matematik_wrong / 4).toFixed(1)}
+                          Net: {(examForm.ayt_matematik_correct - examForm.ayt_matematik_wrong / 4).toFixed(2)}
                         </div>
                       </div>
 
@@ -3789,7 +3789,7 @@ export default function CoachPage() {
                           </div>
                         </div>
                         <div className="mt-2 text-sm text-green-600">
-                          Net: {(examForm.ayt_geometri_correct - examForm.ayt_geometri_wrong / 4).toFixed(1)}
+                          Net: {(examForm.ayt_geometri_correct - examForm.ayt_geometri_wrong / 4).toFixed(2)}
                         </div>
                       </div>
                     </div>
@@ -3802,7 +3802,7 @@ export default function CoachPage() {
                           {(
                             (examForm.ayt_matematik_correct - examForm.ayt_matematik_wrong / 4) +
                             (examForm.ayt_geometri_correct - examForm.ayt_geometri_wrong / 4)
-                          ).toFixed(1)}
+                          ).toFixed(2)}
                         </div>
                       </div>
                     </div>
@@ -3978,7 +3978,7 @@ export default function CoachPage() {
                               </div>
                               
                               <div className={`mt-2 text-sm text-${color}-600`}>
-                                Net: {(lesson.correct - lesson.wrong / 4).toFixed(1)}
+                                Net: {(lesson.correct - lesson.wrong / 4).toFixed(2)}
                               </div>
                             </div>
                           )
@@ -4015,7 +4015,7 @@ export default function CoachPage() {
                             <div>
                               <div className="text-sm font-medium text-green-800">Toplam Net</div>
                               <div className="text-2xl font-bold text-green-600">
-                                {examForm.tarama_lessons.reduce((sum, lesson) => sum + (lesson.correct - lesson.wrong / 4), 0).toFixed(1)}
+                                {examForm.tarama_lessons.reduce((sum, lesson) => sum + (lesson.correct - lesson.wrong / 4), 0).toFixed(2)}
                               </div>
                             </div>
                           </div>
@@ -4892,7 +4892,7 @@ export default function CoachPage() {
                           key={i}
                           className="bg-blue-400 rounded-sm flex-1 transition-all duration-300"
                           style={{ height: `${Math.min(maxHeight * 100, 100)}%` }}
-                          title={`${dayDate.getDate()} - ${dayHours.toFixed(1)} saat`}
+                          title={`${dayDate.getDate()} - ${dayHours.toFixed(2)} saat`}
                         ></div>
                       )
                     })
@@ -4912,7 +4912,7 @@ export default function CoachPage() {
                           key={index}
                           className="bg-blue-400 rounded-sm flex-1 transition-all duration-300"
                           style={{ height: `${Math.min(maxHeight * 100, 100)}%` }}
-                          title={`${dayHours.toFixed(1)} saat`}
+                          title={`${dayHours.toFixed(2)} saat`}
                         ></div>
                       )
                     })
