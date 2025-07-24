@@ -5697,9 +5697,8 @@ export default function CoachPage() {
                                                 (result.tyt_kimya_correct || 0) - (result.tyt_kimya_wrong || 0) / 4 +
                                                 (result.tyt_biyoloji_correct || 0) - (result.tyt_biyoloji_wrong || 0) / 4).toFixed(1))
                                             : result.exam_type === 'AYT' 
-                                              ? (result.ayt_total_net?.toFixed(1) || 
-                                                 ((result.ayt_matematik_correct || 0) - (result.ayt_matematik_wrong || 0) / 4 +
-                                                  (result.ayt_geometri_correct || 0) - (result.ayt_geometri_wrong || 0) / 4).toFixed(1))
+                                              ? ((result.ayt_matematik_correct || 0) - (result.ayt_matematik_wrong || 0) / 4 +
+                                                 (result.ayt_geometri_correct || 0) - (result.ayt_geometri_wrong || 0) / 4).toFixed(1)
                                               : result.tarama_total_net?.toFixed(1) || 
                                                 (result.tarama_lessons?.reduce((sum, lesson) => sum + lesson.net, 0).toFixed(1)) || '0.0'
                                         }
