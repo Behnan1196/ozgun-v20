@@ -2371,7 +2371,6 @@ export default function CoachPage() {
               ...lesson,
               net: lesson.correct - lesson.wrong / 4
             })),
-            tarama_total_net: examForm.tarama_lessons.reduce((sum, lesson) => sum + (lesson.correct - lesson.wrong / 4), 0),
           }),
           
           notes: examForm.notes.trim() || null
@@ -2447,7 +2446,6 @@ export default function CoachPage() {
             ayt_geometri_correct: null,
             ayt_geometri_wrong: null,
             tarama_lessons: null,
-            tarama_total_net: null,
           } : examForm.exam_type === 'AYT' ? {
             // AYT Scores
             ayt_matematik_correct: examForm.ayt_matematik_correct,
@@ -2477,54 +2475,38 @@ export default function CoachPage() {
             tyt_biyoloji_correct: null,
             tyt_biyoloji_wrong: null,
             tarama_lessons: null,
-            tarama_total_net: null,
           } : {
             // Tarama Scores
             tarama_lessons: examForm.tarama_lessons.map(lesson => ({
               ...lesson,
               net: lesson.correct - lesson.wrong / 4
             })),
-            tarama_total_net: examForm.tarama_lessons.reduce((sum, lesson) => sum + (lesson.correct - lesson.wrong / 4), 0),
             
             // Clear TYT and AYT fields
             tyt_turkce_correct: null,
             tyt_turkce_wrong: null,
-            tyt_turkce_net: null,
             tyt_matematik_correct: null,
             tyt_matematik_wrong: null,
-            tyt_matematik_net: null,
             tyt_geometri_correct: null,
             tyt_geometri_wrong: null,
-            tyt_geometri_net: null,
             tyt_tarih_correct: null,
             tyt_tarih_wrong: null,
-            tyt_tarih_net: null,
             tyt_cografya_correct: null,
             tyt_cografya_wrong: null,
-            tyt_cografya_net: null,
             tyt_felsefe_correct: null,
             tyt_felsefe_wrong: null,
-            tyt_felsefe_net: null,
             tyt_din_correct: null,
             tyt_din_wrong: null,
-            tyt_din_net: null,
             tyt_fizik_correct: null,
             tyt_fizik_wrong: null,
-            tyt_fizik_net: null,
             tyt_kimya_correct: null,
             tyt_kimya_wrong: null,
-            tyt_kimya_net: null,
             tyt_biyoloji_correct: null,
             tyt_biyoloji_wrong: null,
-            tyt_biyoloji_net: null,
-            tyt_total_net: null,
             ayt_matematik_correct: null,
             ayt_matematik_wrong: null,
-            ayt_matematik_net: null,
             ayt_geometri_correct: null,
             ayt_geometri_wrong: null,
-            ayt_geometri_net: null,
-            ayt_total_net: null,
           }),
           
           notes: examForm.notes.trim() || null,
