@@ -2360,27 +2360,11 @@ export default function CoachPage() {
             tyt_kimya_wrong: examForm.tyt_kimya_wrong,
             tyt_biyoloji_correct: examForm.tyt_biyoloji_correct,
             tyt_biyoloji_wrong: examForm.tyt_biyoloji_wrong,
-            
-            // TYT Total Net
-            tyt_total_net: (examForm.tyt_turkce_correct - examForm.tyt_turkce_wrong / 4) + 
-                         (examForm.tyt_matematik_correct - examForm.tyt_matematik_wrong / 4) + 
-                         (examForm.tyt_geometri_correct - examForm.tyt_geometri_wrong / 4) + 
-                         (examForm.tyt_tarih_correct - examForm.tyt_tarih_wrong / 4) + 
-                         (examForm.tyt_cografya_correct - examForm.tyt_cografya_wrong / 4) + 
-                         (examForm.tyt_felsefe_correct - examForm.tyt_felsefe_wrong / 4) + 
-                         (examForm.tyt_din_correct - examForm.tyt_din_wrong / 4) + 
-                         (examForm.tyt_fizik_correct - examForm.tyt_fizik_wrong / 4) + 
-                         (examForm.tyt_kimya_correct - examForm.tyt_kimya_wrong / 4) + 
-                         (examForm.tyt_biyoloji_correct - examForm.tyt_biyoloji_wrong / 4),
           } : examForm.exam_type === 'AYT' ? {
             ayt_matematik_correct: examForm.ayt_matematik_correct,
             ayt_matematik_wrong: examForm.ayt_matematik_wrong,
             ayt_geometri_correct: examForm.ayt_geometri_correct,
             ayt_geometri_wrong: examForm.ayt_geometri_wrong,
-            
-            // AYT Total Net
-            ayt_total_net: (examForm.ayt_matematik_correct - examForm.ayt_matematik_wrong / 4) + 
-                          (examForm.ayt_geometri_correct - examForm.ayt_geometri_wrong / 4),
           } : {
             // Tarama Scores
             tarama_lessons: examForm.tarama_lessons.map(lesson => ({
@@ -2457,24 +2441,11 @@ export default function CoachPage() {
             tyt_biyoloji_correct: examForm.tyt_biyoloji_correct,
             tyt_biyoloji_wrong: examForm.tyt_biyoloji_wrong,
             
-            // TYT Total Net
-            tyt_total_net: (examForm.tyt_turkce_correct - examForm.tyt_turkce_wrong / 4) + 
-                         (examForm.tyt_matematik_correct - examForm.tyt_matematik_wrong / 4) + 
-                         (examForm.tyt_geometri_correct - examForm.tyt_geometri_wrong / 4) + 
-                         (examForm.tyt_tarih_correct - examForm.tyt_tarih_wrong / 4) + 
-                         (examForm.tyt_cografya_correct - examForm.tyt_cografya_wrong / 4) + 
-                         (examForm.tyt_felsefe_correct - examForm.tyt_felsefe_wrong / 4) + 
-                         (examForm.tyt_din_correct - examForm.tyt_din_wrong / 4) + 
-                         (examForm.tyt_fizik_correct - examForm.tyt_fizik_wrong / 4) + 
-                         (examForm.tyt_kimya_correct - examForm.tyt_kimya_wrong / 4) + 
-                         (examForm.tyt_biyoloji_correct - examForm.tyt_biyoloji_wrong / 4),
-            
             // Clear AYT and Tarama fields
             ayt_matematik_correct: null,
             ayt_matematik_wrong: null,
             ayt_geometri_correct: null,
             ayt_geometri_wrong: null,
-            ayt_total_net: null,
             tarama_lessons: null,
             tarama_total_net: null,
           } : examForm.exam_type === 'AYT' ? {
@@ -2483,10 +2454,6 @@ export default function CoachPage() {
             ayt_matematik_wrong: examForm.ayt_matematik_wrong,
             ayt_geometri_correct: examForm.ayt_geometri_correct,
             ayt_geometri_wrong: examForm.ayt_geometri_wrong,
-            
-            // AYT Total Net
-            ayt_total_net: (examForm.ayt_matematik_correct - examForm.ayt_matematik_wrong / 4) + 
-                          (examForm.ayt_geometri_correct - examForm.ayt_geometri_wrong / 4),
             
             // Clear TYT and Tarama fields
             tyt_turkce_correct: null,
@@ -2509,7 +2476,6 @@ export default function CoachPage() {
             tyt_kimya_wrong: null,
             tyt_biyoloji_correct: null,
             tyt_biyoloji_wrong: null,
-            tyt_total_net: null,
             tarama_lessons: null,
             tarama_total_net: null,
           } : {
