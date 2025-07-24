@@ -258,11 +258,8 @@ interface MockExamResult {
   tyt_biyoloji_wrong?: number
   tyt_biyoloji_net?: number
 
-  // TYT Group Totals
+  // TYT Total Net
   tyt_total_net?: number
-  tyt_matematik_total_net?: number
-  tyt_sosyal_total_net?: number
-  tyt_fen_total_net?: number
   
   // AYT Scores
   ayt_matematik_correct?: number
@@ -2374,17 +2371,6 @@ export default function CoachPage() {
             tyt_biyoloji_wrong: examForm.tyt_biyoloji_wrong,
             tyt_biyoloji_net: examForm.tyt_biyoloji_correct - examForm.tyt_biyoloji_wrong / 4,
             
-            // TYT Group Totals
-            tyt_matematik_total_net: (examForm.tyt_matematik_correct - examForm.tyt_matematik_wrong / 4) + 
-                                   (examForm.tyt_geometri_correct - examForm.tyt_geometri_wrong / 4),
-            tyt_sosyal_total_net: (examForm.tyt_tarih_correct - examForm.tyt_tarih_wrong / 4) + 
-                                (examForm.tyt_cografya_correct - examForm.tyt_cografya_wrong / 4) + 
-                                (examForm.tyt_felsefe_correct - examForm.tyt_felsefe_wrong / 4) + 
-                                (examForm.tyt_din_correct - examForm.tyt_din_wrong / 4),
-            tyt_fen_total_net: (examForm.tyt_fizik_correct - examForm.tyt_fizik_wrong / 4) + 
-                             (examForm.tyt_kimya_correct - examForm.tyt_kimya_wrong / 4) + 
-                             (examForm.tyt_biyoloji_correct - examForm.tyt_biyoloji_wrong / 4),
-            
             // TYT Total Net
             tyt_total_net: (examForm.tyt_turkce_correct - examForm.tyt_turkce_wrong / 4) + 
                          (examForm.tyt_matematik_correct - examForm.tyt_matematik_wrong / 4) + 
@@ -2493,17 +2479,6 @@ export default function CoachPage() {
             tyt_biyoloji_wrong: examForm.tyt_biyoloji_wrong,
             tyt_biyoloji_net: examForm.tyt_biyoloji_correct - examForm.tyt_biyoloji_wrong / 4,
             
-            // TYT Group Totals
-            tyt_matematik_total_net: (examForm.tyt_matematik_correct - examForm.tyt_matematik_wrong / 4) + 
-                                   (examForm.tyt_geometri_correct - examForm.tyt_geometri_wrong / 4),
-            tyt_sosyal_total_net: (examForm.tyt_tarih_correct - examForm.tyt_tarih_wrong / 4) + 
-                                (examForm.tyt_cografya_correct - examForm.tyt_cografya_wrong / 4) + 
-                                (examForm.tyt_felsefe_correct - examForm.tyt_felsefe_wrong / 4) + 
-                                (examForm.tyt_din_correct - examForm.tyt_din_wrong / 4),
-            tyt_fen_total_net: (examForm.tyt_fizik_correct - examForm.tyt_fizik_wrong / 4) + 
-                             (examForm.tyt_kimya_correct - examForm.tyt_kimya_wrong / 4) + 
-                             (examForm.tyt_biyoloji_correct - examForm.tyt_biyoloji_wrong / 4),
-            
             // TYT Total Net
             tyt_total_net: (examForm.tyt_turkce_correct - examForm.tyt_turkce_wrong / 4) + 
                          (examForm.tyt_matematik_correct - examForm.tyt_matematik_wrong / 4) + 
@@ -2570,9 +2545,6 @@ export default function CoachPage() {
             tyt_biyoloji_correct: null,
             tyt_biyoloji_wrong: null,
             tyt_biyoloji_net: null,
-            tyt_matematik_total_net: null,
-            tyt_sosyal_total_net: null,
-            tyt_fen_total_net: null,
             tyt_total_net: null,
             tarama_lessons: null,
             tarama_total_net: null,
@@ -2615,9 +2587,6 @@ export default function CoachPage() {
             tyt_biyoloji_correct: null,
             tyt_biyoloji_wrong: null,
             tyt_biyoloji_net: null,
-            tyt_matematik_total_net: null,
-            tyt_sosyal_total_net: null,
-            tyt_fen_total_net: null,
             tyt_total_net: null,
             ayt_matematik_correct: null,
             ayt_matematik_wrong: null,
