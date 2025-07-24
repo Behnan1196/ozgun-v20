@@ -5653,13 +5653,11 @@ export default function CoachPage() {
                                         <>
                                           <div className="bg-blue-50 rounded p-2">
                                             <div className="font-medium text-blue-800">Matematik (30)</div>
-                                            <div className="text-blue-600">{(result.ayt_matematik_net?.toFixed(1) || 
-                                              ((result.ayt_matematik_correct || 0) - (result.ayt_matematik_wrong || 0) / 4).toFixed(1))} net</div>
+                                            <div className="text-blue-600">{((result.ayt_matematik_correct || 0) - (result.ayt_matematik_wrong || 0) / 4).toFixed(1)} net</div>
                                           </div>
                                           <div className="bg-green-50 rounded p-2">
                                             <div className="font-medium text-green-800">Geometri (10)</div>
-                                            <div className="text-green-600">{(result.ayt_geometri_net?.toFixed(1) || 
-                                              ((result.ayt_geometri_correct || 0) - (result.ayt_geometri_wrong || 0) / 4).toFixed(1))} net</div>
+                                            <div className="text-green-600">{((result.ayt_geometri_correct || 0) - (result.ayt_geometri_wrong || 0) / 4).toFixed(1)} net</div>
                                           </div>
                                         </>
                                       ) : (
