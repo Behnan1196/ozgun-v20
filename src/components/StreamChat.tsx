@@ -36,6 +36,7 @@ export function StreamChat({ partnerId, partnerName, className = '' }: StreamCha
   useEffect(() => {
     const init = async () => {
       if (isStreamReady && !initialized && partnerId) {
+        console.log('🔄 StreamChat: Initializing chat for partner:', partnerId)
         await initializeChat(partnerId)
         setInitialized(true)
       }
@@ -44,8 +45,21 @@ export function StreamChat({ partnerId, partnerName, className = '' }: StreamCha
     init()
   }, [isStreamReady, partnerId, initialized, initializeChat])
 
+  // Debug logging
+  useEffect(() => {
+    // console.log('🔍 StreamChat Debug:', {
+    //   isStreamReady,
+    //   chatClient: !!chatClient,
+    //   chatLoading,
+    //   chatError,
+    //   initialized,
+    //   partnerId
+    // })
+  }, [isStreamReady, chatClient, chatLoading, chatError, initialized, partnerId])
+
   // Loading state
   if (chatLoading || !chatClient) {
+    // console.log('🔄 StreamChat: Showing loading state -', { chatLoading, chatClient: !!chatClient })
     return (
       <div className={`flex items-center justify-center h-full ${className}`}>
         <div className="text-center space-y-3">

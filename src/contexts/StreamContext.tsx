@@ -114,10 +114,17 @@ export function StreamProvider({ children }: StreamProviderProps) {
   const [isStreamReady, setIsStreamReady] = useState(false)
   const isDemoMode = isBrowser ? StreamUtils.isDemoMode() : false
 
+  // Debug isStreamReady changes
+  useEffect(() => {
+    // console.log('🔍 StreamContext: isStreamReady changed to:', isStreamReady)
+  }, [isStreamReady])
+
   // Track mount state
   useEffect(() => {
+    console.log('🟢 StreamProvider MOUNTED')
     isMounted.current = true;
     return () => {
+      console.log('🔴 StreamProvider UNMOUNTED')
       isMounted.current = false;
     };
   }, []);
@@ -220,10 +227,11 @@ export function StreamProvider({ children }: StreamProviderProps) {
             console.error('❌ Auth user has no email:', authUser)
             throw new Error('Auth user has no email')
           }
-          if (!isSubscribed || !isMounted.current) {
-            console.error('❌ Component unmounted during auth')
-            throw new Error('Component unmounted during auth')
-          }
+                     if (!isSubscribed || !isMounted.current) {
+             console.warn('⚠️ Component unmounted during auth - continuing in background')
+             // Don't throw error, let initialization continue in background
+             // This prevents initialization failures due to React Strict Mode remounts
+           }
           console.log('✅ Auth user found:', authUser.id)
           
           // Get user profile
@@ -253,10 +261,10 @@ export function StreamProvider({ children }: StreamProviderProps) {
             console.error('❌ No user profile found')
             throw new Error('No user profile found')
           }
-          if (!isSubscribed || !isMounted.current) {
-            console.error('❌ Component unmounted during profile fetch')
-            throw new Error('Component unmounted during profile fetch')
-          }
+                     if (!isSubscribed || !isMounted.current) {
+             console.warn('⚠️ Component unmounted during profile fetch - continuing in background')
+             // Don't throw error, let initialization continue in background
+           }
           console.log('✅ User profile found:', profile.id)
           
           const currentUser = {
@@ -284,10 +292,10 @@ export function StreamProvider({ children }: StreamProviderProps) {
           // Generate token
           console.log('🔑 Generating token...')
           const token = await generateUserToken(currentUser.id)
-          if (!isSubscribed || !isMounted.current) {
-            console.error('❌ Component unmounted during token generation')
-            return;
-          }
+                     if (!isSubscribed || !isMounted.current) {
+             console.warn('⚠️ Component unmounted during token generation - continuing in background')
+             // Continue with token generation even if component unmounted
+           }
           console.log('🔑 Token generated, length:', token.length)
           
           // Clean up existing clients if they exist
@@ -304,12 +312,11 @@ export function StreamProvider({ children }: StreamProviderProps) {
           const chat = createStreamChatClient()
           console.log('💬 Connecting to Stream Chat with user:', streamUser.id)
           
-          await chat.connectUser(streamUser as StreamUser, token)
-          if (!isSubscribed || !isMounted.current) {
-            console.error('❌ Component unmounted during chat connection')
-            await chat.disconnectUser()
-            return;
-          }
+                     await chat.connectUser(streamUser as StreamUser, token)
+           if (!isSubscribed || !isMounted.current) {
+             console.warn('⚠️ Component unmounted during chat connection - continuing in background')
+             // Don't disconnect, let initialization complete
+           }
           setChatClient(chat)
           console.log('💬 Stream Chat client initialized successfully')
           
@@ -317,18 +324,17 @@ export function StreamProvider({ children }: StreamProviderProps) {
           const video = createStreamVideoClient({ 
             id: currentUser.id, 
             name: currentUser.full_name || currentUser.username 
-          }, token)
-          if (!isSubscribed || !isMounted.current) {
-            console.error('❌ Component unmounted during video setup')
-            await chat.disconnectUser()
-            return;
-          }
+                     }, token)
+           if (!isSubscribed || !isMounted.current) {
+             console.warn('⚠️ Component unmounted during video setup - continuing in background')
+             // Don't interrupt video setup
+           }
           setVideoClient(video)
           console.log('📹 Stream Video client initialized successfully')
           
           setIsStreamReady(true)
           hasInitialized.current = true
-          console.log('✅ Stream.io clients ready')
+          console.log('✅ Stream.io clients ready - isStreamReady set to TRUE')
           
         } catch (error) {
           if (!isSubscribed || !isMounted.current) return;
@@ -406,14 +412,20 @@ export function StreamProvider({ children }: StreamProviderProps) {
       
       try {
         const { data: { session } } = await supabase.auth.getSession()
+                 // console.log('🔍 StreamContext: Session check result:', {
+         //   hasSession: !!session,
+         //   hasInitialized: hasInitialized.current,
+         //   isMounted: isMounted.current
+         // })
         if (session && !hasInitialized.current && isMounted.current) {
           console.log('✅ Found existing session, starting initialization')
           // Wait briefly to ensure component is stable
-          initializationTimeout = setTimeout(() => {
-            if (isMounted.current && !hasInitialized.current) {
-              initializeStreamClients('session')
-            }
-          }, 100)
+                     initializationTimeout = setTimeout(() => {
+             if (isMounted.current && !hasInitialized.current) {
+               // console.log('🚀 StreamContext: Triggering initialization')
+               initializeStreamClients('session')
+             }
+           }, 100)
         } else {
           console.log('⏭️ No active session or already initialized')
         }

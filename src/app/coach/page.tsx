@@ -55,9 +55,9 @@ import {
   ResizablePanel, 
   ResizableHandle 
 } from '@/components/ui/resizable'
-import StreamChat from '@/components/StreamChat'
-import StreamVideo from '@/components/StreamVideo'
 import PomodoroTimer from '@/components/PomodoroTimer'
+import { CommunicationTab } from '@/components/CommunicationTab'
+import { StableStreamProvider } from '@/components/StableStreamProvider'
 import { MockExam } from '@/types/database'
 import { 
   showInAppNotification 
@@ -745,7 +745,7 @@ export default function CoachPage() {
   useEffect(() => {
     if (!user?.id) return
 
-    console.log('📡 [WEB-COACH] Setting up real-time notification listener for user:', user.id)
+          // console.log('📡 [WEB-COACH] Setting up real-time notification listener for user:', user.id)
     
     const notificationChannel = supabase
       .channel(`user-${user.id}`)
@@ -822,11 +822,11 @@ export default function CoachPage() {
         }
       })
       .subscribe((status) => {
-        console.log('📡 [WEB-COACH] Notification channel status:', status)
+        // console.log('📡 [WEB-COACH] Notification channel status:', status)
         if (status === 'SUBSCRIBED') {
-          console.log('✅ [WEB-COACH] Successfully subscribed to notification channel')
+          // console.log('✅ [WEB-COACH] Successfully subscribed to notification channel')
         } else if (status === 'CHANNEL_ERROR') {
-          console.error('❌ [WEB-COACH] Error subscribing to notification channel')
+          // console.error('❌ [WEB-COACH] Error subscribing to notification channel')
         }
       })
 
@@ -1241,7 +1241,7 @@ export default function CoachPage() {
       if (!selectedStudent || !user) return null
 
       try {
-        console.log(`🔄 Setting up real-time subscription for student: ${selectedStudent.id}`)
+        // console.log(`🔄 Setting up real-time subscription for student: ${selectedStudent.id}`)
         
         const subscription = supabase
           .channel(`task-updates-${selectedStudent.id}`, {
@@ -1330,18 +1330,18 @@ export default function CoachPage() {
             }
           )
           .subscribe((status) => {
-            console.log(`📊 Subscription status for ${selectedStudent.id}:`, status)
+            // console.log(`📊 Subscription status for ${selectedStudent.id}:`, status)
             if (status === 'SUBSCRIBED') {
-              console.log('✅ Real-time subscription active for tasks')
+              // console.log('✅ Real-time subscription active for tasks')
               setRealtimeConnected(true)
             } else if (status === 'CHANNEL_ERROR') {
-              console.error('❌ Real-time subscription error')
+              // console.error('❌ Real-time subscription error')
               setRealtimeConnected(false)
             } else if (status === 'TIMED_OUT') {
-              console.warn('⏰ Real-time subscription timed out')
+              // console.warn('⏰ Real-time subscription timed out')
               setRealtimeConnected(false)
             } else if (status === 'CLOSED') {
-              console.log('🔒 Real-time subscription closed')
+              // console.log('🔒 Real-time subscription closed')
               setRealtimeConnected(false)
             }
           })
@@ -1369,7 +1369,7 @@ export default function CoachPage() {
   useEffect(() => {
     if (!selectedStudent || !user || realtimeConnected) return
 
-    console.log('⚠️ Real-time not connected, using polling fallback')
+    // console.log('⚠️ Real-time not connected, using polling fallback')
     
     const pollInterval = setInterval(async () => {
       try {
@@ -1462,11 +1462,11 @@ export default function CoachPage() {
       
       if (gridElement) {
         const width = gridElement.clientWidth
-        console.log('Measuring grid width:', width)
+        // console.log('Measuring grid width:', width)
         setCalendarContainerWidth(width)
       } else if (containerElement) {
         const width = containerElement.clientWidth
-        console.log('Measuring container width:', width)
+        // console.log('Measuring container width:', width)
         setCalendarContainerWidth(width)
       }
     }
@@ -1477,7 +1477,7 @@ export default function CoachPage() {
     const resizeObserver = new ResizeObserver(entries => {
       for (let entry of entries) {
         const { width } = entry.contentRect
-        console.log('ResizeObserver width:', width)
+        // console.log('ResizeObserver width:', width)
         setCalendarContainerWidth(width)
       }
     })
@@ -1486,11 +1486,11 @@ export default function CoachPage() {
       // Observe both the container and grid for changes
       if (gridContainerRef.current) {
         resizeObserver.observe(gridContainerRef.current)
-        console.log('Observing grid container')
+        // console.log('Observing grid container')
       }
       if (calendarContainerRef.current) {
         resizeObserver.observe(calendarContainerRef.current)
-        console.log('Observing calendar container')
+        // console.log('Observing calendar container')
       }
     }
 
@@ -1528,7 +1528,7 @@ export default function CoachPage() {
 
   // Force re-render when container width changes
   useEffect(() => {
-    console.log('Container width state changed:', calendarContainerWidth)
+    // console.log('Container width state changed:', calendarContainerWidth)
   }, [calendarContainerWidth])
 
   // Calculate dynamic grid columns based on container width
@@ -1544,7 +1544,7 @@ export default function CoachPage() {
       currentWidth = calendarContainerRef.current.clientWidth
     }
     
-    console.log('Getting columns - State width:', calendarContainerWidth, 'Current width:', currentWidth) // Debug log
+    // console.log('Getting columns - State width:', calendarContainerWidth, 'Current width:', currentWidth) // Debug log
     
     // Define breakpoints based on container width, not viewport
     if (currentWidth < 600) return 1      // Very small: 1 column
@@ -2707,7 +2707,7 @@ export default function CoachPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header - Dark Theme */}
+      {/* Header - Dark Theme */}  
       <header className="bg-slate-800 shadow-lg border-b border-slate-700">
         <div className="max-w-full mx-auto px-6 sm:px-8">
           <div className="flex justify-between items-center h-14">
@@ -4486,9 +4486,10 @@ export default function CoachPage() {
 
              {/* Main Content with Resizable Panels */}
        <div className="h-[calc(100vh-4rem)]">
-         <ResizablePanelGroup direction="horizontal" className="h-full">
-                     {/* Left Panel - Weekly Plan */}
-          <ResizablePanel defaultSize={75} minSize={30} className="bg-white h-full">
+         <StableStreamProvider>
+           <ResizablePanelGroup direction="horizontal" className="h-full">
+                       {/* Left Panel - Weekly Plan */}
+            <ResizablePanel defaultSize={75} minSize={30} className="bg-white h-full">
           <div className="p-4 h-full flex flex-col min-h-0">
             {/* Week Navigation */}
             <div className="flex items-center justify-between mb-4 bg-white rounded-lg p-3 shadow-sm border border-blue-200">
@@ -4759,36 +4760,35 @@ export default function CoachPage() {
 
         {/* Right Panel - Tabbed Interface */}
         <ResizablePanel defaultSize={25} minSize={20} maxSize={70} className="bg-white">
-          <div className="h-full flex flex-col pb-6">
-            {/* Tab Headers */}
-            <div className="border-b">
-              <div className="flex">
-                {                [
-                  { id: 'statistics', label: 'Gelişimim', icon: BarChart3 },
-                  { id: 'profile', label: 'Bilgilerim', icon: User },
-                  { id: 'chat', label: 'Chat', icon: MessageCircle },
-                  { id: 'video', label: 'Video', icon: Video },
-                  { id: 'exams', label: 'Sınavlar', icon: Trophy },
-                  { id: 'tools', label: 'Araçlar', icon: Settings }
-                ].map(tab => (
-                  <button
-                    key={tab.id}
-                    onClick={() => setActiveTab(tab.id)}
-                    className={`flex-1 px-2 py-3 text-xs font-medium border-b-2 transition-colors ${
-                      activeTab === tab.id
-                        ? 'border-blue-500 text-blue-600 bg-blue-50'
-                        : 'border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50'
-                    }`}
-                  >
-                    <tab.icon className="h-3 w-3 mx-auto mb-1" />
-                    {tab.label}
-                  </button>
-                ))}
+            <div className="h-full flex flex-col pb-6">
+              {/* Tab Headers */}
+              <div className="border-b">
+                <div className="flex">
+                  {                [
+                    { id: 'statistics', label: 'Gelişimim', icon: BarChart3 },
+                    { id: 'profile', label: 'Bilgilerim', icon: User },
+                    { id: 'communication', label: 'İletişim', icon: MessageCircle },
+                    { id: 'exams', label: 'Sınavlar', icon: Trophy },
+                    { id: 'tools', label: 'Araçlar', icon: Settings }
+                  ].map(tab => (
+                    <button
+                      key={tab.id}
+                      onClick={() => setActiveTab(tab.id)}
+                      className={`flex-1 px-2 py-3 text-xs font-medium border-b-2 transition-colors ${
+                        activeTab === tab.id
+                          ? 'border-blue-500 text-blue-600 bg-blue-50'
+                          : 'border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+                      }`}
+                    >
+                      <tab.icon className="h-3 w-3 mx-auto mb-1" />
+                      {tab.label}
+                    </button>
+                  ))}
+                </div>
               </div>
-            </div>
 
-            {/* Tab Content */}
-            <div className="flex-1 p-4 overflow-y-auto">
+              {/* Tab Content */}
+              <div className="flex-1 p-4 overflow-y-auto">
               {activeTab === 'statistics' && (
                 <div className="space-y-6 mb-6">
                   <div className="flex items-center justify-between">
@@ -5192,117 +5192,16 @@ export default function CoachPage() {
                 </div>
               )}
 
-              {activeTab === 'chat' && (
+              {activeTab === 'communication' && (
                 <div className="space-y-4 mb-6">
-                  <h3 className="font-semibold text-gray-900">Mesajlaşma</h3>
-                  {userRole === 'coordinator' ? (
-                    <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-                      <p className="text-sm text-yellow-800">
-                        💬 Koordinatör olarak doğrudan mesajlaşma özelliği kullanılamaz.
-                      </p>
-                    </div>
-                  ) : userRole === 'coach' ? (
-                    selectedStudent ? (
-                      <div className="h-[calc(100vh-12rem)]">
-                        <StreamChat 
-                          partnerId={selectedStudent.id}
-                          partnerName={selectedStudent.full_name}
-                        />
-                      </div>
-                    ) : (
-                      <p className="text-sm text-gray-500">
-                        Mesajlaşmak için bir öğrenci seçin.
-                      </p>
-                    )
-                  ) : (
-                    assignedCoach ? (
-                      <div className="h-[calc(100vh-12rem)]">
-                        <StreamChat 
-                          partnerId={assignedCoach.id}
-                          partnerName={assignedCoach.full_name}
-                        />
-                      </div>
-                    ) : (
-                      <p className="text-sm text-gray-500">
-                        Koç ataması yapılmamış.
-                      </p>
-                    )
-                  )}
-                </div>
-              )}
-
-              {activeTab === 'video' && (
-                <div className="space-y-4 mb-6">
-                  <h3 className="font-semibold text-gray-900">📹 Video Görüşme</h3>
-                  {userRole === 'coordinator' ? (
-                    <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-                      <p className="text-sm text-yellow-800">
-                        📹 Koordinatör olarak doğrudan video görüşme özelliği kullanılamaz.
-                      </p>
-                    </div>
-                  ) : userRole === 'coach' ? (
-                    selectedStudent ? (
-                      <div className="space-y-4">
-                        {/* Video Call Invite System */}
-                        {userRole && (
-                          <VideoCallInvite
-                            userRole={userRole}
-                            partnerId={selectedStudent.id}
-                            partnerName={selectedStudent.full_name}
-                            onCallStart={() => {
-                              console.log('Starting video call with:', selectedStudent.full_name);
-                            }}
-                          />
-                        )}
-                        
-                        {/* Video Call Interface */}
-                        <div className="h-[calc(100vh-20rem)]">
-                          <StreamVideo 
-                            partnerId={selectedStudent.id}
-                            partnerName={selectedStudent.full_name}
-                          />
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="text-center py-8">
-                        <Video className="h-12 w-12 text-gray-400 mx-auto mb-3" />
-                        <p className="text-sm text-gray-500">
-                          Video görüşme için bir öğrenci seçin.
-                        </p>
-                      </div>
-                    )
-                  ) : (
-                    assignedCoach ? (
-                      <div className="space-y-4">
-                        {/* Video Call Invite System for Students */}
-                        {userRole && (
-                          <VideoCallInvite
-                            userRole={userRole}
-                            partnerId={assignedCoach.id}
-                            partnerName={assignedCoach.full_name}
-                            onCallStart={() => {
-                              console.log('Starting video call with coach:', assignedCoach.full_name);
-                            }}
-                          />
-                        )}
-                        
-                        {/* Video Call Interface */}
-                        <div className="h-[calc(100vh-20rem)]">
-                          <StreamVideo 
-                            partnerId={assignedCoach.id}
-                            partnerName={assignedCoach.full_name}
-                          />
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="text-center py-8">
-                        <Video className="h-12 w-12 text-gray-400 mx-auto mb-3" />
-                        <p className="text-sm text-gray-500">
-                          Koç ataması yapılmamış.
-                        </p>
-                      </div>
-                    )
-                  )}
+                  <h3 className="font-semibold text-gray-900">💬 İletişim</h3>
+                  <div className="h-[calc(100vh-12rem)]">
+                    <CommunicationTab
+                      userRole={userRole}
+                      selectedStudent={selectedStudent}
+                      assignedCoach={assignedCoach}
+                    />
+                  </div>
                 </div>
               )}
 
@@ -6029,6 +5928,7 @@ export default function CoachPage() {
            </div>
            </ResizablePanel>
          </ResizablePanelGroup>
+         </StableStreamProvider>
        </div>
 
 
