@@ -5616,48 +5616,49 @@ export default function CoachPage() {
                                           {/* Türkçe */}
                                           <div className="bg-blue-50 rounded p-2">
                                             <div className="font-medium text-blue-800">Türkçe</div>
-                                            <div className="text-blue-600">{result.tyt_turkce_net?.toFixed(1) || '0.0'} net</div>
+                                            <div className="text-blue-600">{(result.tyt_turkce_net?.toFixed(2) || 
+                                              ((result.tyt_turkce_correct || 0) - (result.tyt_turkce_wrong || 0) / 4).toFixed(2))} net</div>
                                           </div>
                                           
                                           {/* Matematik Group */}
                                           <div className="bg-green-50 rounded p-2">
                                             <div className="font-medium text-green-800">Matematik</div>
                                             <div className="text-green-600">{(
-                                              (result.tyt_matematik_net || 0) + 
-                                              (result.tyt_geometri_net || 0)
-                                            ).toFixed(1)} net</div>
+                                              ((result.tyt_matematik_correct || 0) - (result.tyt_matematik_wrong || 0) / 4) + 
+                                              ((result.tyt_geometri_correct || 0) - (result.tyt_geometri_wrong || 0) / 4)
+                                            ).toFixed(2)} net</div>
                                           </div>
                                           
                                           {/* Sosyal Group */}
                                           <div className="bg-purple-50 rounded p-2">
                                             <div className="font-medium text-purple-800">Sosyal Bilimler</div>
                                             <div className="text-purple-600">{(
-                                              (result.tyt_tarih_net || 0) + 
-                                              (result.tyt_cografya_net || 0) + 
-                                              (result.tyt_felsefe_net || 0) + 
-                                              (result.tyt_din_net || 0)
-                                            ).toFixed(1)} net</div>
+                                              ((result.tyt_tarih_correct || 0) - (result.tyt_tarih_wrong || 0) / 4) + 
+                                              ((result.tyt_cografya_correct || 0) - (result.tyt_cografya_wrong || 0) / 4) + 
+                                              ((result.tyt_felsefe_correct || 0) - (result.tyt_felsefe_wrong || 0) / 4) + 
+                                              ((result.tyt_din_correct || 0) - (result.tyt_din_wrong || 0) / 4)
+                                            ).toFixed(2)} net</div>
                                           </div>
                                           
                                           {/* Fen Group */}
                                           <div className="bg-orange-50 rounded p-2">
                                             <div className="font-medium text-orange-800">Fen Bilimleri</div>
                                             <div className="text-orange-600">{(
-                                              (result.tyt_fizik_net || 0) + 
-                                              (result.tyt_kimya_net || 0) + 
-                                              (result.tyt_biyoloji_net || 0)
-                                            ).toFixed(1)} net</div>
+                                              ((result.tyt_fizik_correct || 0) - (result.tyt_fizik_wrong || 0) / 4) + 
+                                              ((result.tyt_kimya_correct || 0) - (result.tyt_kimya_wrong || 0) / 4) + 
+                                              ((result.tyt_biyoloji_correct || 0) - (result.tyt_biyoloji_wrong || 0) / 4)
+                                            ).toFixed(2)} net</div>
                                           </div>
                                         </>
                                       ) : result.exam_type === 'AYT' ? (
                                         <>
                                           <div className="bg-blue-50 rounded p-2">
                                             <div className="font-medium text-blue-800">Matematik (30)</div>
-                                            <div className="text-blue-600">{((result.ayt_matematik_correct || 0) - (result.ayt_matematik_wrong || 0) / 4).toFixed(1)} net</div>
+                                            <div className="text-blue-600">{((result.ayt_matematik_correct || 0) - (result.ayt_matematik_wrong || 0) / 4).toFixed(2)} net</div>
                                           </div>
                                           <div className="bg-green-50 rounded p-2">
                                             <div className="font-medium text-green-800">Geometri (10)</div>
-                                            <div className="text-green-600">{((result.ayt_geometri_correct || 0) - (result.ayt_geometri_wrong || 0) / 4).toFixed(1)} net</div>
+                                            <div className="text-green-600">{((result.ayt_geometri_correct || 0) - (result.ayt_geometri_wrong || 0) / 4).toFixed(2)} net</div>
                                           </div>
                                         </>
                                       ) : (
@@ -5668,7 +5669,7 @@ export default function CoachPage() {
                                               <div key={index} className="bg-green-50 rounded p-2 col-span-2 md:col-span-1">
                                                 <div className="font-medium text-green-800">{lesson.subject}</div>
                                                 <div className="text-xs text-gray-600">{lesson.question_count} soru</div>
-                                                <div className="text-green-600">{lesson.net.toFixed(1)} net</div>
+                                                <div className="text-green-600">{lesson.net.toFixed(2)} net</div>
                                               </div>
                                             ))
                                           ) : (
@@ -5685,22 +5686,20 @@ export default function CoachPage() {
                                       <div className="text-sm font-medium text-indigo-800">
                                         Toplam Net: {
                                           result.exam_type === 'TYT' 
-                                            ? (result.tyt_total_net?.toFixed(1) || 
-                                               ((result.tyt_turkce_correct || 0) - (result.tyt_turkce_wrong || 0) / 4 +
-                                                (result.tyt_matematik_correct || 0) - (result.tyt_matematik_wrong || 0) / 4 +
-                                                (result.tyt_geometri_correct || 0) - (result.tyt_geometri_wrong || 0) / 4 +
-                                                (result.tyt_tarih_correct || 0) - (result.tyt_tarih_wrong || 0) / 4 +
-                                                (result.tyt_cografya_correct || 0) - (result.tyt_cografya_wrong || 0) / 4 +
-                                                (result.tyt_felsefe_correct || 0) - (result.tyt_felsefe_wrong || 0) / 4 +
-                                                (result.tyt_din_correct || 0) - (result.tyt_din_wrong || 0) / 4 +
-                                                (result.tyt_fizik_correct || 0) - (result.tyt_fizik_wrong || 0) / 4 +
-                                                (result.tyt_kimya_correct || 0) - (result.tyt_kimya_wrong || 0) / 4 +
-                                                (result.tyt_biyoloji_correct || 0) - (result.tyt_biyoloji_wrong || 0) / 4).toFixed(1))
+                                            ? ((result.tyt_turkce_correct || 0) - (result.tyt_turkce_wrong || 0) / 4 +
+                                               (result.tyt_matematik_correct || 0) - (result.tyt_matematik_wrong || 0) / 4 +
+                                               (result.tyt_geometri_correct || 0) - (result.tyt_geometri_wrong || 0) / 4 +
+                                               (result.tyt_tarih_correct || 0) - (result.tyt_tarih_wrong || 0) / 4 +
+                                               (result.tyt_cografya_correct || 0) - (result.tyt_cografya_wrong || 0) / 4 +
+                                               (result.tyt_felsefe_correct || 0) - (result.tyt_felsefe_wrong || 0) / 4 +
+                                               (result.tyt_din_correct || 0) - (result.tyt_din_wrong || 0) / 4 +
+                                               (result.tyt_fizik_correct || 0) - (result.tyt_fizik_wrong || 0) / 4 +
+                                               (result.tyt_kimya_correct || 0) - (result.tyt_kimya_wrong || 0) / 4 +
+                                               (result.tyt_biyoloji_correct || 0) - (result.tyt_biyoloji_wrong || 0) / 4).toFixed(2)
                                             : result.exam_type === 'AYT' 
                                               ? ((result.ayt_matematik_correct || 0) - (result.ayt_matematik_wrong || 0) / 4 +
-                                                 (result.ayt_geometri_correct || 0) - (result.ayt_geometri_wrong || 0) / 4).toFixed(1)
-                                              : result.tarama_total_net?.toFixed(1) || 
-                                                (result.tarama_lessons?.reduce((sum, lesson) => sum + lesson.net, 0).toFixed(1)) || '0.0'
+                                                 (result.ayt_geometri_correct || 0) - (result.ayt_geometri_wrong || 0) / 4).toFixed(2)
+                                              : (result.tarama_lessons?.reduce((sum, lesson) => sum + lesson.net, 0) || 0).toFixed(2)
                                         }
                                       </div>
                                     </div>
@@ -5762,7 +5761,7 @@ export default function CoachPage() {
                                 {mockExamResults.filter(r => r.exam_type === 'TYT').length > 0 
                                   ? (mockExamResults
                                       .filter(r => r.exam_type === 'TYT')
-                                      .reduce((acc, r) => acc + (r.tyt_total_net || 
+                                      .reduce((acc, r) => acc + 
                                         ((r.tyt_turkce_correct || 0) - (r.tyt_turkce_wrong || 0) / 4 +
                                          (r.tyt_matematik_correct || 0) - (r.tyt_matematik_wrong || 0) / 4 +
                                          (r.tyt_geometri_correct || 0) - (r.tyt_geometri_wrong || 0) / 4 +
@@ -5773,10 +5772,10 @@ export default function CoachPage() {
                                          (r.tyt_fizik_correct || 0) - (r.tyt_fizik_wrong || 0) / 4 +
                                          (r.tyt_kimya_correct || 0) - (r.tyt_kimya_wrong || 0) / 4 +
                                          (r.tyt_biyoloji_correct || 0) - (r.tyt_biyoloji_wrong || 0) / 4)
-                                      ), 0) / 
+                                      , 0) / 
                                       mockExamResults.filter(r => r.exam_type === 'TYT').length
-                                    ).toFixed(1)
-                                  : '0.0'
+                                    ).toFixed(2)
+                                  : '0.00'
                                 }
                               </div>
                               <div className="text-sm font-medium text-blue-800">TYT Ortalama Net</div>
@@ -5793,13 +5792,13 @@ export default function CoachPage() {
                                 {mockExamResults.filter(r => r.exam_type === 'AYT').length > 0 
                                   ? (mockExamResults
                                       .filter(r => r.exam_type === 'AYT')
-                                      .reduce((acc, r) => acc + (r.ayt_total_net || 
+                                      .reduce((acc, r) => acc + 
                                         ((r.ayt_matematik_correct || 0) - (r.ayt_matematik_wrong || 0) / 4 +
                                          (r.ayt_geometri_correct || 0) - (r.ayt_geometri_wrong || 0) / 4)
-                                      ), 0) / 
+                                      , 0) / 
                                       mockExamResults.filter(r => r.exam_type === 'AYT').length
-                                    ).toFixed(1)
-                                  : '0.0'
+                                    ).toFixed(2)
+                                  : '0.00'
                                 }
                               </div>
                               <div className="text-sm font-medium text-purple-800">AYT Ortalama Net</div>
@@ -5816,10 +5815,10 @@ export default function CoachPage() {
                                 {mockExamResults.filter(r => r.exam_type === 'Tarama').length > 0 
                                   ? (mockExamResults
                                       .filter(r => r.exam_type === 'Tarama')
-                                      .reduce((acc, r) => acc + (r.tarama_total_net || (r.tarama_lessons?.reduce((sum, lesson) => sum + lesson.net, 0)) || 0), 0) / 
+                                      .reduce((acc, r) => acc + (r.tarama_lessons?.reduce((sum, lesson) => sum + lesson.net, 0) || 0), 0) / 
                                       mockExamResults.filter(r => r.exam_type === 'Tarama').length
-                                    ).toFixed(1)
-                                  : '0.0'
+                                    ).toFixed(2)
+                                  : '0.00'
                                 }
                               </div>
                               <div className="text-sm font-medium text-green-800">Tarama Ortalama Net</div>
