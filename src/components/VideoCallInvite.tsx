@@ -38,44 +38,9 @@ export function VideoCallInvite({
   const sendInvitation = async () => {
     if (!user?.id || !partnerId) return;
 
-    setIsInviting(true);
-    try {
-      const invitation = {
-        from_user_name: user.user_metadata?.full_name || user.email,
-        message: inviteMessage.trim() || 'Video görüşme daveti'
-      };
-
-      // Send push notification
-      await fetch('/api/notifications/send', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          userId: partnerId,
-          title: '📹 Video Görüşme Daveti',
-          body: `${invitation.from_user_name} size video görüşme daveti gönderiyor: "${invitation.message}"`,
-          data: {
-            type: 'video_call_invite',
-            fromUserId: user.id,
-            fromUserName: invitation.from_user_name
-          }
-        })
-      });
-
-      // Show confirmation and allow sending another invitation
-      setJustSentInvite(true);
-      setInviteMessage('');
-      
-      // Hide the confirmation after 3 seconds
-      setTimeout(() => {
-        setJustSentInvite(false);
-      }, 3000);
-
-    } catch (error) {
-      console.error('Error sending invitation:', error);
-      alert('Davet gönderilirken hata oluştu');
-    } finally {
-      setIsInviting(false);
-    }
+    // Video invite system is temporarily disabled during notification cleanup
+    alert('Video daveti gönderme özelliği şu anda mevcut değil. Bildirim sistemi güncelleniyor.');
+    return;
   };
 
     // Show confirmation message if just sent an invite

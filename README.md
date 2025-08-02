@@ -7,7 +7,7 @@ A comprehensive Next.js coaching platform for TYT-AYT exam preparation with admi
 ### PWA (Progressive Web App)
 - ✅ Offline support with service worker
 - ✅ Mobile-responsive design with 7-tab navigation
-- ✅ Push notifications ready
+
 - ✅ App-like experience on mobile devices
 - ✅ Background sync for offline data
 
