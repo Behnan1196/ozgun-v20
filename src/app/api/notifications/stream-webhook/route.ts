@@ -91,7 +91,7 @@ async function sendFCMNotification(token: string, title: string, body: string, d
         notification: {
           channelId: 'chat',
           sound: 'default',
-          priority: 'high',
+          priority: 'high' as const,
         },
         data: {
           ...data,
