@@ -21,6 +21,7 @@ import {
   createVideoCall,
   StreamUtils 
 } from '@/lib/stream'
+import { initializeWebPushNotifications } from '@/lib/notifications'
 
 interface StreamContextType {
   // Chat
@@ -335,6 +336,13 @@ export function StreamProvider({ children }: StreamProviderProps) {
           setIsStreamReady(true)
           hasInitialized.current = true
           console.log('✅ Stream.io clients ready - isStreamReady set to TRUE')
+          
+          // Initialize web push notifications
+          if (currentUser.id) {
+            initializeWebPushNotifications(currentUser.id).catch(error => {
+              console.warn('⚠️ Web push notifications initialization failed:', error);
+            });
+          }
           
         } catch (error) {
           if (!isSubscribed || !isMounted.current) return;
