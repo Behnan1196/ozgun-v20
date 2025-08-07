@@ -110,20 +110,20 @@ async function sendFCMNotification(token: string, title: string, body: string, d
           },
         },
         fcmOptions: {
-          imageUrl: '/favicon.ico',
+          imageUrl: 'https://ozgun-v15.vercel.app/favicon.ico',
         },
       },
       webpush: {
         notification: {
           title,
           body,
-          icon: '/favicon.ico',
-          badge: '/favicon.ico',
+          icon: 'https://ozgun-v15.vercel.app/favicon.ico',
+          badge: 'https://ozgun-v15.vercel.app/favicon.ico',
           tag: 'chat_message',
           requireInteraction: true,
         },
         fcmOptions: {
-          link: '/',
+          link: 'https://ozgun-v15.vercel.app/',
         },
       },
     };
