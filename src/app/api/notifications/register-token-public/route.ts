@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { cookies } from 'next/headers';
 
 export async function POST(request: NextRequest) {
   try {
@@ -29,8 +30,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Create Supabase client with service role for public access
-    const supabase = createClient();
+    // Create Supabase client for public access
+    const cookieStore = cookies();
+    const supabase = createClient(cookieStore);
 
     // First, try to update existing token
     const { data: existingToken } = await supabase
