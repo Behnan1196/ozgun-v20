@@ -132,11 +132,11 @@ export async function POST(request: NextRequest) {
     
     // Find offline members (everyone except the sender)
     const offlineMembers = members
-      .filter(member => 
+      .filter((member: any) => // eslint-disable-line @typescript-eslint/no-explicit-any
         member.user_id !== sender.id && 
         !member.user?.online
       )
-      .map(member => member.user_id);
+      .map((member: any) => member.user_id); // eslint-disable-line @typescript-eslint/no-explicit-any
 
     if (offlineMembers.length === 0) {
       console.log('✅ All members are online, no notifications needed');
