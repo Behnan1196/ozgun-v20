@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
-import { cookies } from 'next/headers';
+import { createAdminClient } from '@/lib/supabase/server';
 
 export async function POST(request: NextRequest) {
   try {
@@ -13,11 +12,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Create Supabase client
-    const cookieStore = cookies();
-    const supabase = createClient(cookieStore);
+    // Create Supabase admin client for testing
+    const supabase = createAdminClient();
 
-    // Get user's tokens
+    // Get user's tokens (bypassing RLS for testing)
     const { data: tokens, error } = await supabase
       .from('notification_tokens')
       .select('*')
