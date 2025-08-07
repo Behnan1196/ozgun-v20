@@ -45,11 +45,52 @@ async function sendFCMNotification(token: string, title: string, body: string, d
       return await response.json();
     }
 
-    // For FCM tokens (web/native), use FCM API
-    // You'll need to implement FCM v1 API call here
-    // This requires service account credentials
-    console.log('FCM notification not implemented yet for token:', token);
-    return { success: false, error: 'FCM not implemented' };
+    // For FCM tokens (web/native), use FCM HTTP v1 API
+    const fcmServerKey = process.env.FCM_SERVER_KEY;
+    if (!fcmServerKey) {
+      console.error('FCM_SERVER_KEY not configured');
+      return { success: false, error: 'FCM not configured' };
+    }
+
+    const fcmMessage = {
+      to: token,
+      notification: {
+        title,
+        body,
+        icon: '/favicon.ico',
+        click_action: 'FCM_PLUGIN_ACTIVITY',
+      },
+      data: {
+        ...data,
+        type: 'chat_message',
+      },
+      android: {
+        notification: {
+          channel_id: 'chat',
+          sound: 'default',
+        },
+      },
+      apns: {
+        payload: {
+          aps: {
+            sound: 'default',
+          },
+        },
+      },
+    };
+
+    const response = await fetch('https://fcm.googleapis.com/fcm/send', {
+      method: 'POST',
+      headers: {
+        'Authorization': `key=${fcmServerKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(fcmMessage),
+    });
+
+    const result = await response.json();
+    console.log('FCM response:', result);
+    return result;
     
   } catch (error) {
     console.error('Error sending FCM notification:', error);
