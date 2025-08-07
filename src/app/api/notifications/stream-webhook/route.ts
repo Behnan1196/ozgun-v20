@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/server';
 import crypto from 'crypto';
+import admin from 'firebase-admin';
 
 // Stream Chat webhook signature verification
 function verifyWebhookSignature(body: string, signature: string, secret: string): boolean {
@@ -13,6 +14,29 @@ function verifyWebhookSignature(body: string, signature: string, secret: string)
     Buffer.from(signature, 'hex'),
     Buffer.from(expectedSignature, 'hex')
   );
+}
+
+// Initialize Firebase Admin SDK
+function initializeFirebaseAdmin() {
+  if (admin.apps.length === 0) {
+    const serviceAccount = process.env.GOOGLE_SERVICES_JSON;
+    if (!serviceAccount) {
+      console.error('GOOGLE_SERVICES_JSON not configured');
+      return null;
+    }
+
+    try {
+      const serviceAccountKey = JSON.parse(serviceAccount);
+      admin.initializeApp({
+        credential: admin.credential.cert(serviceAccountKey),
+      });
+      console.log('✅ Firebase Admin initialized');
+    } catch (error) {
+      console.error('❌ Error initializing Firebase Admin:', error);
+      return null;
+    }
+  }
+  return admin;
 }
 
 // Send push notification via FCM
@@ -46,54 +70,70 @@ async function sendFCMNotification(token: string, title: string, body: string, d
     }
 
     // For FCM tokens (web/native), use FCM HTTP v1 API
-    const fcmServerKey = process.env.FCM_SERVER_KEY;
-    if (!fcmServerKey) {
-      console.error('FCM_SERVER_KEY not configured');
-      return { success: false, error: 'FCM not configured' };
+    const firebaseAdmin = initializeFirebaseAdmin();
+    if (!firebaseAdmin) {
+      return { success: false, error: 'Firebase Admin not configured' };
     }
 
-    const fcmMessage = {
-      to: token,
+    const message = {
+      token,
       notification: {
         title,
         body,
-        icon: '/favicon.ico',
-        click_action: 'FCM_PLUGIN_ACTIVITY',
       },
       data: {
         ...data,
         type: 'chat_message',
+        title, // Include title in data for custom handling
+        body,  // Include body in data for custom handling
       },
       android: {
         notification: {
-          channel_id: 'chat',
+          channelId: 'chat',
           sound: 'default',
+          priority: 'high',
+        },
+        data: {
+          ...data,
+          type: 'chat_message',
         },
       },
       apns: {
         payload: {
           aps: {
+            alert: {
+              title,
+              body,
+            },
             sound: 'default',
+            badge: 1,
           },
+        },
+        fcmOptions: {
+          imageUrl: '/favicon.ico',
+        },
+      },
+      webpush: {
+        notification: {
+          title,
+          body,
+          icon: '/favicon.ico',
+          badge: '/favicon.ico',
+          tag: 'chat_message',
+          requireInteraction: true,
+        },
+        fcmOptions: {
+          link: '/',
         },
       },
     };
 
-    const response = await fetch('https://fcm.googleapis.com/fcm/send', {
-      method: 'POST',
-      headers: {
-        'Authorization': `key=${fcmServerKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(fcmMessage),
-    });
-
-    const result = await response.json();
-    console.log('FCM response:', result);
-    return result;
+    const result = await admin.messaging().send(message);
+    console.log('✅ FCM v1 notification sent successfully:', result);
+    return { success: true, messageId: result };
     
   } catch (error) {
-    console.error('Error sending FCM notification:', error);
+    console.error('❌ Error sending FCM notification:', error);
     return { success: false, error: error instanceof Error ? error.message : String(error) };
   }
 }
