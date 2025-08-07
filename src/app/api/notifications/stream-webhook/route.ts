@@ -127,14 +127,16 @@ export async function POST(request: NextRequest) {
 
     console.log(`💬 New message from ${sender.name} in channel ${channel.id}`);
 
-    // Get channel members
-    const memberIds = Object.keys(channel.members || {});
+    // Get channel members (members is an array in webhooks)
+    const members = channel.members || [];
     
     // Find offline members (everyone except the sender)
-    const offlineMembers = memberIds.filter(memberId => 
-      memberId !== sender.id && 
-      !channel.members[memberId]?.online
-    );
+    const offlineMembers = members
+      .filter(member => 
+        member.user_id !== sender.id && 
+        !member.user?.online
+      )
+      .map(member => member.user_id);
 
     if (offlineMembers.length === 0) {
       console.log('✅ All members are online, no notifications needed');
