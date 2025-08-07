@@ -13,7 +13,8 @@ const firebaseConfig = {
 };
 
 // VAPID key for web push (you'll need to generate this in Firebase Console)
-const VAPID_KEY = "BL8J8vL8vL8vL8vL8vL8vL8vL8vL8vL8vL8vL8vL8vL8vL8vL8vL8vL8vL8vL8vL8vL8vL8vL8vL8vL8vL8vL8vL8vL8vL8vL8vL8vL8vL8vL8";
+const VAPID_KEY = "BBnDh-7ZlWago-BJU08P6HHEDgs0Phs9p4drSS0EOOmTewCTuy6qFTWTt0bXwP0JWyTXA9OEYEKdohc3x0qOeRex5CfprosQW96TA";
+               
 
 // Initialize Firebase
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApps()[0];
