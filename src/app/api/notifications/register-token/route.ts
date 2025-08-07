@@ -53,13 +53,7 @@ export async function POST(request: NextRequest) {
         token_type: tokenType,
         platform,
         is_active: true,
-        updated_at: new Date().toISOString(),
-        // Add browser info for web tokens
-        ...(platform === 'web' && browser && { 
-          metadata: { browser } 
-        })
-      }, {
-        onConflict: 'user_id,platform,token_type'
+        updated_at: new Date().toISOString()
       })
       .select()
       .single();
