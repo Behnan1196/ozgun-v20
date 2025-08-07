@@ -44,21 +44,47 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Forbidden: Can only register tokens for yourself' }, { status: 403 });
     }
 
-    // Upsert the notification token
-    const { data, error } = await supabase
+    // First, try to update existing token
+    const { data: existingToken } = await supabase
       .from('notification_tokens')
-      .upsert({
-        user_id: userId,
-        token,
-        token_type: tokenType,
-        platform,
-        is_active: true,
-        updated_at: new Date().toISOString()
-      }, {
-        onConflict: 'user_id,platform,token_type'
-      })
-      .select()
+      .select('id')
+      .eq('user_id', userId)
+      .eq('platform', platform)
+      .eq('token_type', tokenType)
       .single();
+
+    let data, error;
+    
+    if (existingToken) {
+      // Update existing token
+      const result = await supabase
+        .from('notification_tokens')
+        .update({
+          token,
+          is_active: true,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', existingToken.id)
+        .select()
+        .single();
+      data = result.data;
+      error = result.error;
+    } else {
+      // Insert new token
+      const result = await supabase
+        .from('notification_tokens')
+        .insert({
+          user_id: userId,
+          token,
+          token_type: tokenType,
+          platform,
+          is_active: true
+        })
+        .select()
+        .single();
+      data = result.data;
+      error = result.error;
+    }
 
     if (error) {
       console.error('Error saving notification token:', error);
