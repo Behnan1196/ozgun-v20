@@ -130,26 +130,31 @@ export async function POST(request: NextRequest) {
     // Get channel members (members is an array in webhooks)
     const members = channel.members || [];
     
-    // Find offline members (everyone except the sender)
-    const offlineMembers = members
-      .filter((member: any) => // eslint-disable-line @typescript-eslint/no-explicit-any
-        member.user_id !== sender.id && 
-        !member.user?.online
-      )
+    console.log(`👥 Channel has ${members.length} members:`, members.map((m: any) => ({ // eslint-disable-line @typescript-eslint/no-explicit-any
+      user_id: m.user_id, 
+      online: m.user?.online,
+      user: m.user
+    })));
+    
+    // Send notifications to all members except the sender
+    // Note: Stream's online status in webhooks may not be reliable, 
+    // so we'll send to all non-sender members and let the client handle duplicates
+    const recipientMembers = members
+      .filter((member: any) => member.user_id !== sender.id) // eslint-disable-line @typescript-eslint/no-explicit-any
       .map((member: any) => member.user_id); // eslint-disable-line @typescript-eslint/no-explicit-any
 
-    if (offlineMembers.length === 0) {
-      console.log('✅ All members are online, no notifications needed');
-      return NextResponse.json({ success: true, message: 'All members online' });
+    if (recipientMembers.length === 0) {
+      console.log('✅ No other members in channel, no notifications needed');
+      return NextResponse.json({ success: true, message: 'No recipients' });
     }
 
-    console.log(`📤 Sending notifications to ${offlineMembers.length} offline members`);
+    console.log(`📤 Sending notifications to ${recipientMembers.length} recipient members`);
 
     // Get admin supabase client
     const supabase = createAdminClient();
 
-    // Send notifications to offline members
-    for (const memberId of offlineMembers) {
+    // Send notifications to recipient members
+    for (const memberId of recipientMembers) {
       try {
         // Get user's notification tokens
         const { data: tokens, error: tokensError } = await supabase
@@ -237,7 +242,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ 
       success: true, 
-      message: `Notifications sent to ${offlineMembers.length} offline members` 
+      message: `Notifications sent to ${recipientMembers.length} recipient members` 
     });
 
   } catch (error) {
