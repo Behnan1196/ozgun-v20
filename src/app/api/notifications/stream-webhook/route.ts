@@ -277,11 +277,37 @@ export async function POST(request: NextRequest) {
           url: `/chat/${channel.id}`
         };
 
-        // Send notification to each token
-        for (const tokenRecord of tokens) {
+        // Group tokens by platform and prioritize the best token for each platform
+        const tokensByPlatform = tokens.reduce((acc: any, token: any) => {
+          if (!acc[token.platform]) acc[token.platform] = [];
+          acc[token.platform].push(token);
+          return acc;
+        }, {});
+
+        // Send notification to the best token for each platform
+        for (const [platform, platformTokens] of Object.entries(tokensByPlatform)) {
+          // For iOS: prefer Expo tokens over FCM
+          // For Android: prefer FCM tokens over Expo  
+          // For Web: use FCM tokens only
+          let bestToken;
+          if (platform === 'ios') {
+            bestToken = (platformTokens as any[]).find(t => t.token_type === 'expo') || 
+                       (platformTokens as any[])[0];
+          } else if (platform === 'android') {
+            bestToken = (platformTokens as any[]).find(t => t.token_type === 'fcm') || 
+                       (platformTokens as any[]).find(t => t.token_type === 'expo') ||
+                       (platformTokens as any[])[0];
+          } else if (platform === 'web') {
+            bestToken = (platformTokens as any[]).find(t => t.token_type === 'fcm');
+          } else {
+            bestToken = (platformTokens as any[])[0];
+          }
+
+          if (!bestToken) continue;
+
           try {
             const result = await sendFCMNotification(
-              tokenRecord.token,
+              bestToken.token,
               title,
               body,
               notificationData
@@ -301,9 +327,9 @@ export async function POST(request: NextRequest) {
               errorMessage
             );
 
-            console.log(`📱 Notification ${status} to ${memberId} (${tokenRecord.platform})`);
+            console.log(`📱 Notification ${status} to ${memberId} (${platform}/${bestToken.token_type})`);
           } catch (error) {
-            console.error(`Error sending notification to token ${tokenRecord.id}:`, error);
+            console.error(`Error sending notification to ${memberId} (${platform}):`, error);
             await logNotification(
               supabase,
               memberId,
