@@ -54,6 +54,8 @@ export async function POST(request: NextRequest) {
         platform,
         is_active: true,
         updated_at: new Date().toISOString()
+      }, {
+        onConflict: 'user_id,platform,token_type'
       })
       .select()
       .single();
