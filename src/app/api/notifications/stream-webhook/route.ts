@@ -94,7 +94,7 @@ export async function POST(request: NextRequest) {
     // Verify webhook signature (temporarily disabled for testing)
     const webhookSecret = process.env.STREAM_WEBHOOK_SECRET;
     if (false && webhookSecret && signature) { // Temporarily disabled
-      if (!verifyWebhookSignature(body, signature as string, webhookSecret)) {
+      if (!verifyWebhookSignature(body, signature as string, webhookSecret as string)) {
         console.error('Invalid webhook signature');
         return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
       }
