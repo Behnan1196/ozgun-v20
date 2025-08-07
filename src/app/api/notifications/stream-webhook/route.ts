@@ -104,15 +104,21 @@ export async function POST(request: NextRequest) {
 
     const event = JSON.parse(body);
     console.log('📨 Stream webhook received:', event.type);
+    console.log('📋 Full event data:', JSON.stringify(event, null, 2));
 
     // Only handle message.new events
     if (event.type !== 'message.new') {
+      console.log('⏭️ Ignoring event type:', event.type);
       return NextResponse.json({ success: true, message: 'Event ignored' });
     }
 
     const message = event.message;
     const channel = event.channel;
     const sender = event.user;
+    
+    console.log('👤 Sender:', sender);
+    console.log('💬 Message:', message);
+    console.log('📺 Channel:', channel);
 
     // Don't send notifications for system messages or messages from bots
     if (!message || !sender || sender.id === 'system' || sender.role === 'admin') {
