@@ -237,6 +237,34 @@ export async function POST(request: NextRequest) {
     // Send notifications to recipient members
     for (const memberId of recipientMembers) {
       try {
+        // Check if user is actively viewing this channel
+        const { data: userActivity, error: activityError } = await supabase
+          .from('user_activity')
+          .select('*')
+          .eq('user_id', memberId)
+          .eq('channel_id', channel.id)
+          .eq('is_active', true);
+
+        if (activityError) {
+          console.error(`Error checking user activity for ${memberId}:`, activityError);
+        }
+
+        // Skip notification if user is actively viewing this channel
+        if (userActivity && userActivity.length > 0) {
+          console.log(`🚫 Skipping notification for ${memberId} - user is actively viewing channel ${channel.id}`);
+          await logNotification(
+            supabase,
+            memberId,
+            'chat_message',
+            `💬 ${sender.name || 'Someone'}`,
+            message.text || 'Sent you a message',
+            { channelId: channel.id, messageId: message.id },
+            'skipped',
+            'User is actively viewing channel'
+          );
+          continue;
+        }
+        
         // Get user's notification tokens
         const { data: tokens, error: tokensError } = await supabase
           .from('notification_tokens')

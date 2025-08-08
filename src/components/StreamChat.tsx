@@ -12,6 +12,7 @@ import {
   LoadingIndicator
 } from 'stream-chat-react'
 import { useStream } from '@/contexts/StreamContext'
+import { useActivityTracking } from '@/hooks/useActivityTracking'
 
 interface StreamChatProps {
   partnerId: string
@@ -31,6 +32,12 @@ export function StreamChat({ partnerId, partnerName, className = '' }: StreamCha
   } = useStream()
   
   const [initialized, setInitialized] = useState(false)
+
+  // Track user activity in this chat channel
+  useActivityTracking({
+    channelId: chatChannel?.id || null,
+    isEnabled: !!chatChannel && !isDemoMode
+  });
 
   // Initialize chat when component mounts
   useEffect(() => {
