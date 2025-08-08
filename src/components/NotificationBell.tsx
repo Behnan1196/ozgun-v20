@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Bell, BellRing } from 'lucide-react';
-import { useAuth } from '@/contexts/AuthContext';
+import { createClient } from '@/lib/supabase/client';
 
 interface NotificationBellProps {
   className?: string;
@@ -10,9 +10,19 @@ interface NotificationBellProps {
 }
 
 export function NotificationBell({ className = '', size = 20 }: NotificationBellProps) {
-  const { user } = useAuth();
+  const [user, setUser] = useState<any>(null);
   const [unreadCount, setUnreadCount] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
+
+  // Get current user
+  useEffect(() => {
+    const getUser = async () => {
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      setUser(user);
+    };
+    getUser();
+  }, []);
 
   // Fetch unread notification count
   const fetchUnreadCount = async () => {
