@@ -207,6 +207,68 @@ export async function initializeWebPushNotifications(userId: string): Promise<vo
 }
 
 /**
+ * Clear Chrome notification registration and force re-registration
+ */
+export async function clearChromeNotificationCache(): Promise<void> {
+  try {
+    // Unregister service worker
+    if ('serviceWorker' in navigator) {
+      const registrations = await navigator.serviceWorker.getRegistrations();
+      for (const registration of registrations) {
+        if (registration.scope.includes('firebase-messaging')) {
+          await registration.unregister();
+          console.log('🧹 Firebase service worker unregistered');
+        }
+      }
+    }
+
+    // Clear notification permission (user will need to re-grant)
+    if ('permissions' in navigator) {
+      // Note: Cannot programmatically revoke permission, user must do this manually
+      console.log('⚠️ User needs to manually reset notification permissions in Chrome settings');
+    }
+
+    // Clear any cached tokens
+    localStorage.removeItem('fcm_token');
+    sessionStorage.removeItem('fcm_token');
+    
+    console.log('✅ Chrome notification cache cleared');
+  } catch (error) {
+    console.error('❌ Error clearing Chrome notification cache:', error);
+  }
+}
+
+/**
+ * Debug Chrome notification status
+ */
+export async function debugChromeNotifications(): Promise<any> {
+  const debugInfo = {
+    permission: Notification.permission,
+    serviceWorkerSupport: 'serviceWorker' in navigator,
+    notificationSupport: 'Notification' in window,
+    userAgent: navigator.userAgent,
+    isChrome: navigator.userAgent.includes('Chrome'),
+    timestamp: new Date().toISOString()
+  };
+
+  if ('serviceWorker' in navigator) {
+    try {
+      const registrations = await navigator.serviceWorker.getRegistrations();
+      debugInfo.serviceWorkers = registrations.map(reg => ({
+        scope: reg.scope,
+        state: reg.active?.state,
+        scriptURL: reg.active?.scriptURL
+      }));
+    } catch (error) {
+      debugInfo.serviceWorkerError = error.message;
+    }
+  }
+
+  console.log('🔍 Chrome notification debug info:', debugInfo);
+  return debugInfo;
+}
+
+/**
  * Send a test web notification
  */
 export async function sendTestWebNotification(): Promise<void> {
