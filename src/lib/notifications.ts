@@ -124,16 +124,11 @@ export function setupMessageListener(onMessageReceived?: (payload: MessagePayloa
   const unsubscribe = onMessage(messaging, (payload) => {
     console.log('📨 Message received in foreground:', payload);
     
-    // Show custom notification or handle as needed
-    if (payload.notification) {
-      showNotification(
-        payload.notification.title || 'New Message',
-        payload.notification.body || '',
-        payload.data
-      );
-    }
+    // DON'T show notification in foreground - let service worker handle it
+    // This prevents duplicate notifications when tab is active
+    console.log('📱 Foreground message received - service worker will handle notification');
 
-    // Call custom handler if provided
+    // Call custom handler if provided (for in-app updates, etc.)
     if (onMessageReceived) {
       onMessageReceived(payload);
     }
