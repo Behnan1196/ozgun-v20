@@ -147,13 +147,17 @@ export function setupMessageListener(onMessageReceived?: (payload: MessagePayloa
  */
 export function showNotification(title: string, body: string, data?: any) { // eslint-disable-line @typescript-eslint/no-explicit-any
   if ('Notification' in window && Notification.permission === 'granted') {
+    // Create unique tag to prevent Chrome from grouping notifications
+    const uniqueTag = `${data?.type || 'message'}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    
     const notification = new Notification(title, {
       body,
       icon: '/favicon.ico', // Update with your app icon
       badge: '/badge-icon.png', // Optional badge icon
-      tag: data?.type || 'default',
+      tag: uniqueTag, // Unique tag prevents Chrome notification grouping
       data: data,
       requireInteraction: true, // Keep notification visible until user interacts
+      renotify: true, // Force notification even if tag exists
     });
 
     // Handle notification click

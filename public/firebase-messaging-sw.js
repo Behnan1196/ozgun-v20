@@ -26,13 +26,18 @@ messaging.onBackgroundMessage(function(payload) {
   
   // Extract notification data
   const notificationTitle = payload.notification?.title || 'Özgün Koçluk';
+  
+  // Create unique tag to prevent Chrome from grouping notifications
+  const uniqueTag = `${payload.data?.type || 'message'}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  
   const notificationOptions = {
     body: payload.notification?.body || 'Yeni mesajınız var',
     icon: '/favicon.ico', // Your app icon
     badge: '/badge-icon.png', // Optional badge icon
-    tag: payload.data?.type || 'default',
+    tag: uniqueTag, // Unique tag prevents Chrome notification grouping
     data: payload.data,
     requireInteraction: true,
+    renotify: true, // Force notification even if tag exists
     actions: [
       {
         action: 'open_chat',
