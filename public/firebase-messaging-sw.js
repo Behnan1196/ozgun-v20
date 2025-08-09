@@ -25,9 +25,9 @@ messaging.onBackgroundMessage(function(payload) {
   console.log('[firebase-messaging-sw.js] Received background message:', payload);
   
   // Extract notification data
-  const notificationTitle = payload.notification?.title || 'New Message';
+  const notificationTitle = payload.notification?.title || 'Özgün Koçluk';
   const notificationOptions = {
-    body: payload.notification?.body || 'You have a new message',
+    body: payload.notification?.body || 'Yeni mesajınız var',
     icon: '/favicon.ico', // Your app icon
     badge: '/badge-icon.png', // Optional badge icon
     tag: payload.data?.type || 'default',
