@@ -34,12 +34,11 @@ export async function sendVideoInviteMessage(
 ): Promise<void> {
   const message = createVideoInviteMessage(customMessage);
   
+  // Use the correct Stream Chat sendMessage format
   await chatChannel.sendMessage({
     text: message,
-    type: 'video_invite',
-    user_id: userId,
-    // Add metadata to identify this as a video invite
-    metadata: {
+    // Add custom data to identify this as a video invite
+    custom: {
       invite_type: 'video_call',
       timestamp: new Date().toISOString()
     }
