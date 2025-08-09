@@ -242,7 +242,7 @@ export async function clearChromeNotificationCache(): Promise<void> {
  * Debug Chrome notification status
  */
 export async function debugChromeNotifications(): Promise<any> {
-  const debugInfo = {
+  const debugInfo: any = {
     permission: Notification.permission,
     serviceWorkerSupport: 'serviceWorker' in navigator,
     notificationSupport: 'Notification' in window,
@@ -260,7 +260,7 @@ export async function debugChromeNotifications(): Promise<any> {
         scriptURL: reg.active?.scriptURL
       }));
     } catch (error) {
-      debugInfo.serviceWorkerError = error.message;
+      debugInfo.serviceWorkerError = error instanceof Error ? error.message : String(error);
     }
   }
 
