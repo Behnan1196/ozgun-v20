@@ -157,7 +157,6 @@ export function showNotification(title: string, body: string, data?: any) { // e
       tag: uniqueTag, // Unique tag prevents Chrome notification grouping
       data: data,
       requireInteraction: true, // Keep notification visible until user interacts
-      renotify: true, // Force notification even if tag exists
     });
 
     // Handle notification click
