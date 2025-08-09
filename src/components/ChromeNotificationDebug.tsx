@@ -8,8 +8,24 @@ interface ChromeNotificationDebugProps {
   className?: string;
 }
 
+interface DebugInfo {
+  permission?: string;
+  serviceWorkerSupport?: boolean;
+  notificationSupport?: boolean;
+  userAgent?: string;
+  isChrome?: boolean;
+  timestamp?: string;
+  serviceWorkers?: Array<{
+    scope: string;
+    state?: string;
+    scriptURL?: string;
+  }>;
+  serviceWorkerError?: string;
+  serverInfo?: any;
+}
+
 export function ChromeNotificationDebug({ userId, className = '' }: ChromeNotificationDebugProps) {
-  const [debugInfo, setDebugInfo] = useState<any>(null);
+  const [debugInfo, setDebugInfo] = useState<DebugInfo | null>(null);
   const [loading, setLoading] = useState(false);
 
   const handleDebug = async () => {
@@ -22,7 +38,7 @@ export function ChromeNotificationDebug({ userId, className = '' }: ChromeNotifi
       const response = await fetch('/api/notifications/debug-chrome');
       const serverInfo = await response.json();
       
-      setDebugInfo(prev => ({
+      setDebugInfo((prev: DebugInfo | null) => ({
         ...prev,
         serverInfo: serverInfo.data
       }));
