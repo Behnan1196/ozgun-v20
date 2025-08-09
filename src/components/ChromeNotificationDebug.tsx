@@ -64,7 +64,7 @@ export function ChromeNotificationDebug({ userId, className = '' }: ChromeNotifi
       alert('Cache cleared! Please refresh the page and re-grant notification permissions.');
     } catch (error) {
       console.error('Clear cache error:', error);
-      alert('Error clearing cache: ' + error.message);
+      alert('Error clearing cache: ' + (error instanceof Error ? error.message : String(error)));
     } finally {
       setLoading(false);
     }
@@ -77,7 +77,7 @@ export function ChromeNotificationDebug({ userId, className = '' }: ChromeNotifi
       alert('Notifications re-initialized successfully!');
     } catch (error) {
       console.error('Re-initialize error:', error);
-      alert('Error re-initializing: ' + error.message);
+      alert('Error re-initializing: ' + (error instanceof Error ? error.message : String(error)));
     } finally {
       setLoading(false);
     }
