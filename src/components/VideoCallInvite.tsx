@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Video, User, CheckCircle } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
+import { useStream } from '@/contexts/StreamContext';
+import { sendVideoInviteMessage, getVideoInviteSuccessMessage } from '@/lib/video-invite';
 
 interface VideoCallInviteProps {
   userRole: 'coach' | 'student';
@@ -25,6 +27,7 @@ export function VideoCallInvite({
   const [justSentInvite, setJustSentInvite] = useState(false);
 
   const supabase = createClient();
+  const { chatChannel, initializeChat } = useStream();
 
   useEffect(() => {
     // Get current user
@@ -38,9 +41,36 @@ export function VideoCallInvite({
   const sendInvitation = async () => {
     if (!user?.id || !partnerId) return;
 
-    // Video invite system is temporarily disabled during notification cleanup
-    alert('Video daveti gönderme özelliği şu anda mevcut değil. Bildirim sistemi güncelleniyor.');
-    return;
+    setIsInviting(true);
+    
+    try {
+      // Initialize chat if not already done
+      if (!chatChannel) {
+        await initializeChat(partnerId);
+        // Wait a moment for chat channel to be ready
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      }
+      
+      if (chatChannel) {
+        // Send video invite message using helper function
+        await sendVideoInviteMessage(chatChannel, user.id, inviteMessage);
+
+        setJustSentInvite(true);
+        setInviteMessage('');
+        
+        // Reset the success state after 5 seconds
+        setTimeout(() => {
+          setJustSentInvite(false);
+        }, 5000);
+      } else {
+        throw new Error('Chat channel not available');
+      }
+    } catch (error) {
+      console.error('❌ Failed to send video invite:', error);
+      alert('Video daveti gönderilemedi. Lütfen tekrar deneyin.');
+    } finally {
+      setIsInviting(false);
+    }
   };
 
     // Show confirmation message if just sent an invite
@@ -56,10 +86,10 @@ export function VideoCallInvite({
               ✅ Davet Gönderildi!
             </h3>
             <p className="text-green-700 mt-1">
-              <strong>{partnerName}</strong> adlı kişiye video görüşme daveti gönderildi
+              {getVideoInviteSuccessMessage(partnerName)}
             </p>
             <p className="text-green-600 text-sm mt-1">
-              Bildirim gönderildi. Başka bir davet göndermek isterseniz aşağıdaki formu kullanabilirsiniz.
+              Chat sekmesinden mesajlaşmaya devam edebilirsiniz.
             </p>
           </div>
         </div>
