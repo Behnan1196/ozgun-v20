@@ -108,6 +108,14 @@ export function CommunicationTab({
         {/* Video Tab - Always mounted, but hidden when not active */}
         <div className={`h-full ${activeSubTab === 'video' ? 'block' : 'hidden'}`}>
           <div className="h-full flex flex-col space-y-4 p-4">
+            {/* Video Call Interface */}
+            <div className="flex-1">
+              <StreamVideo 
+                partnerId={partner.id}
+                partnerName={partner.full_name}
+              />
+            </div>
+            
             {/* Video Call Invite System */}
             <VideoCallInvite
               userRole={userRole}
@@ -117,14 +125,6 @@ export function CommunicationTab({
                 console.log('Starting video call with:', partner.full_name);
               }}
             />
-            
-            {/* Video Call Interface */}
-            <div className="flex-1">
-              <StreamVideo 
-                partnerId={partner.id}
-                partnerName={partner.full_name}
-              />
-            </div>
           </div>
         </div>
       </div>
