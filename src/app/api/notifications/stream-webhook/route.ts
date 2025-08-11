@@ -246,23 +246,10 @@ export async function POST(request: NextRequest) {
     // Send notifications to recipient members
     for (const memberId of recipientMembers) {
       try {
-        // Check if user is actively viewing this channel (for web tokens only)
-        const { data: userActivity, error: activityError } = await supabase
-          .from('user_activity')
-          .select('*')
-          .eq('user_id', memberId)
-          .eq('channel_id', channel.id)
-          .eq('is_active', true);
-
-        if (activityError) {
-          console.error(`Error checking user activity for ${memberId}:`, activityError);
-        }
-
-        // User is actively viewing channel on web - we'll filter web tokens later
-        const isActivelyViewing = userActivity && userActivity.length > 0;
-        if (isActivelyViewing) {
-          console.log(`👀 User ${memberId} is actively viewing channel ${channel.id} on web`);
-        }
+        // MOBILE-ONLY NOTIFICATIONS: Skip user activity check completely
+        // This was causing issues where old activity records blocked mobile notifications
+        console.log(`📱 Mobile-only notifications: ignoring user activity for ${memberId}`);
+        const isActivelyViewing = false; // Always false for mobile-only notifications
         
         // Get user's notification tokens
         const { data: tokens, error: tokensError } = await supabase
