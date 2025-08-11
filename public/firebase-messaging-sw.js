@@ -20,39 +20,14 @@ firebase.initializeApp(firebaseConfig);
 // Initialize Firebase Cloud Messaging
 const messaging = firebase.messaging();
 
-// Handle background messages
+// Handle background messages - DISABLED for mobile-only notifications
 messaging.onBackgroundMessage(function(payload) {
   console.log('[firebase-messaging-sw.js] Received background message:', payload);
+  console.log('[firebase-messaging-sw.js] Web notifications disabled - mobile-only notification system active');
   
-  // Extract notification data
-  const notificationTitle = payload.notification?.title || 'Özgün Koçluk';
-  
-  // Create unique tag to prevent Chrome from grouping notifications
-  const uniqueTag = `${payload.data?.type || 'message'}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-  
-  const notificationOptions = {
-    body: payload.notification?.body || 'Yeni mesajınız var',
-    icon: '/favicon.ico', // Your app icon
-    badge: '/badge-icon.png', // Optional badge icon
-    tag: uniqueTag, // Unique tag prevents Chrome notification grouping
-    data: payload.data,
-    requireInteraction: true,
-    renotify: true, // Force notification even if tag exists
-    actions: [
-      {
-        action: 'open_chat',
-        title: 'Open Chat',
-        icon: '/chat-icon.png' // Optional action icon
-      },
-      {
-        action: 'dismiss',
-        title: 'Dismiss'
-      }
-    ]
-  };
-
-  // Show the notification
-  return self.registration.showNotification(notificationTitle, notificationOptions);
+  // Don't show web notifications - mobile notifications only
+  // This prevents double notifications and conflicts
+  return Promise.resolve();
 });
 
 // Handle notification clicks

@@ -2570,8 +2570,8 @@ export default function CoachPage() {
                 </div>
               )}
               
-              {/* Notification Bell */}
-              <NotificationBell className="text-gray-300 hover:text-white" size={20} />
+              {/* Notification Bell - Disabled for mobile-only notifications */}
+              {/* <NotificationBell className="text-gray-300 hover:text-white" size={20} /> */}
               
               {/* User Avatar with Dropdown */}
               <div className="relative" ref={dropdownRef}>

@@ -237,7 +237,7 @@ export async function POST(request: NextRequest) {
     // Send notifications to recipient members
     for (const memberId of recipientMembers) {
       try {
-        // Check if user is actively viewing this channel
+        // Check if user is actively viewing this channel (for web tokens only)
         const { data: userActivity, error: activityError } = await supabase
           .from('user_activity')
           .select('*')
@@ -249,20 +249,10 @@ export async function POST(request: NextRequest) {
           console.error(`Error checking user activity for ${memberId}:`, activityError);
         }
 
-        // Skip notification if user is actively viewing this channel
-        if (userActivity && userActivity.length > 0) {
-          console.log(`🚫 Skipping notification for ${memberId} - user is actively viewing channel ${channel.id}`);
-          await logNotification(
-            supabase,
-            memberId,
-            'chat_message',
-            `💬 ${sender.name || 'Someone'}`,
-            message.text || 'Sent you a message',
-            { channelId: channel.id, messageId: message.id },
-            'skipped',
-            'User is actively viewing channel'
-          );
-          continue;
+        // User is actively viewing channel on web - we'll filter web tokens later
+        const isActivelyViewing = userActivity && userActivity.length > 0;
+        if (isActivelyViewing) {
+          console.log(`👀 User ${memberId} is actively viewing channel ${channel.id} on web`);
         }
         
         // Get user's notification tokens
@@ -292,6 +282,35 @@ export async function POST(request: NextRequest) {
           continue;
         }
 
+        // Filter tokens based on activity and platform
+        // Mobile notifications: Always send (expo, fcm for Android, apns for iOS)
+        // Web notifications: Skip if user is actively viewing (disabled anyway)
+        const filteredTokens = tokens.filter(token => {
+          if (token.platform === 'web') {
+            // Skip web tokens entirely (web notifications disabled)
+            console.log(`🚫 Skipping web token for ${memberId} - web notifications disabled`);
+            return false;
+          }
+          
+          // Always send mobile notifications regardless of web activity
+          return true;
+        });
+
+        if (filteredTokens.length === 0) {
+          console.log(`⚠️ No valid mobile tokens found for user ${memberId} (web tokens filtered out)`);
+          await logNotification(
+            supabase,
+            memberId,
+            'chat_message',
+            'New Message',
+            message.text || 'You have a new message',
+            { channelId: channel.id, messageId: message.id },
+            'skipped',
+            isActivelyViewing ? 'User actively viewing on web, no mobile tokens' : 'No mobile tokens available'
+          );
+          continue;
+        }
+
         // Prepare notification content
         const title = `💬 ${sender.name || 'Someone'}`;
         const body = message.text || 'Sent you a message';
@@ -305,8 +324,8 @@ export async function POST(request: NextRequest) {
           url: `/chat/${channel.id}`
         };
 
-        // Group tokens by platform and prioritize the best token for each platform
-        const tokensByPlatform = tokens.reduce((acc: any, token: any) => {
+        // Group filtered tokens by platform and prioritize the best token for each platform
+        const tokensByPlatform = filteredTokens.reduce((acc: any, token: any) => {
           if (!acc[token.platform]) acc[token.platform] = [];
           acc[token.platform].push(token);
           return acc;

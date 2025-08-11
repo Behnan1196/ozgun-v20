@@ -124,9 +124,9 @@ export function setupMessageListener(onMessageReceived?: (payload: MessagePayloa
   const unsubscribe = onMessage(messaging, (payload) => {
     console.log('📨 Message received in foreground:', payload);
     
-    // DON'T show notification in foreground - let service worker handle it
-    // This prevents duplicate notifications when tab is active
-    console.log('📱 Foreground message received - service worker will handle notification');
+    // WEB NOTIFICATIONS DISABLED - Mobile-only notification system
+    // Don't show any notifications on web to prevent conflicts
+    console.log('📱 Web notifications disabled - mobile-only notifications active');
 
     // Call custom handler if provided (for in-app updates, etc.)
     if (onMessageReceived) {
