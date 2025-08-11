@@ -169,19 +169,28 @@ async function logNotification(
 
 export async function POST(request: NextRequest) {
   try {
+    console.log('🔔 WEBHOOK CALLED:', new Date().toISOString());
+    console.log('🌐 Request URL:', request.url);
+    console.log('📋 Request headers:', Object.fromEntries(request.headers.entries()));
+    
     const body = await request.text();
     const signature = request.headers.get('x-signature');
     
-    // Verify webhook signature (temporarily disabled for testing)
+    console.log('📝 Request body length:', body.length);
+    console.log('🔑 Signature present:', !!signature);
+    
+    // Verify webhook signature if secret is configured
     const webhookSecret = process.env.STREAM_WEBHOOK_SECRET;
-    if (false && webhookSecret && signature) { // Temporarily disabled
+    if (webhookSecret && signature) {
+      console.log('🔐 Verifying webhook signature...');
       if (!verifyWebhookSignature(body, signature as string, webhookSecret as string)) {
-        console.error('Invalid webhook signature');
+        console.error('❌ Invalid webhook signature');
         return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
       }
+      console.log('✅ Webhook signature verified');
+    } else {
+      console.log('⚠️ Webhook signature verification skipped (no secret configured)');
     }
-    
-    console.log('🔓 Webhook signature verification disabled for testing');
 
     const event = JSON.parse(body);
     console.log('📨 Stream webhook received:', event.type);
@@ -406,4 +415,15 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
+}
+
+// Add GET endpoint for webhook testing
+export async function GET() {
+  console.log('🔔 Webhook GET endpoint called:', new Date().toISOString());
+  return NextResponse.json({ 
+    success: true, 
+    message: 'Stream webhook endpoint is accessible',
+    timestamp: new Date().toISOString(),
+    url: '/api/notifications/stream-webhook'
+  });
 }
