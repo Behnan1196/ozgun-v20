@@ -4,7 +4,9 @@ import { cookies } from 'next/headers';
 
 export async function POST(request: NextRequest) {
   try {
+    console.log('📱 Mobile token registration attempt:', new Date().toISOString());
     const { userId, token, tokenType, platform, browser } = await request.json();
+    console.log('📋 Registration data:', { userId, tokenType, platform, tokenLength: token?.length });
 
     // Validate required fields
     if (!userId || !token || !tokenType || !platform) {
@@ -77,14 +79,16 @@ export async function POST(request: NextRequest) {
     }
 
     if (error) {
-      console.error('Error saving notification token:', error);
+      console.error('❌ Error saving notification token:', error);
+      console.error('❌ Full error details:', JSON.stringify(error, null, 2));
       return NextResponse.json(
         { error: 'Failed to save notification token', details: error },
         { status: 500 }
       );
     }
 
-    console.log(`✅ Notification token registered for user ${userId} on ${platform} (${tokenType})`);
+    console.log(`✅ Notification token registered successfully for user ${userId} on ${platform} (${tokenType})`);
+    console.log(`✅ Token ID: ${data?.id}, Token preview: ${token.substring(0, 20)}...`);
 
     return NextResponse.json({
       success: true,
