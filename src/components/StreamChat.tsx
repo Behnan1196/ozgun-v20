@@ -33,10 +33,10 @@ export function StreamChat({ partnerId, partnerName, className = '' }: StreamCha
   
   const [initialized, setInitialized] = useState(false)
 
-  // Track user activity in this chat channel - DISABLED for mobile-only notifications
+  // Track user activity in this chat channel - SMART FILTERING
   useActivityTracking({
     channelId: chatChannel?.id || null,
-    isEnabled: false // Disabled: causing interference with mobile notifications
+    isEnabled: !!chatChannel && !isDemoMode // Re-enabled with smart filtering
   });
 
   // Initialize chat when component mounts

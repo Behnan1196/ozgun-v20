@@ -248,10 +248,22 @@ export async function POST(request: NextRequest) {
     // Send notifications to recipient members
     for (const memberId of recipientMembers) {
       try {
-        // MOBILE-ONLY NOTIFICATIONS: Skip user activity check completely
-        // This was causing issues where old activity records blocked mobile notifications
-        console.log(`📱 Mobile-only notifications: ignoring user activity for ${memberId}`);
-        const isActivelyViewing = false; // Always false for mobile-only notifications
+        // SMART FILTERING: Check if user is actively viewing THIS SPECIFIC CHANNEL
+        const { data: userActivity, error: activityError } = await supabase
+          .from('user_activity')
+          .select('*')
+          .eq('user_id', memberId)
+          .eq('channel_id', channel.id) // Only check activity for THIS channel
+          .eq('is_active', true);
+
+        if (activityError) {
+          console.error(`Error checking user activity for ${memberId}:`, activityError);
+        }
+
+        const isActivelyViewingThisChannel = userActivity && userActivity.length > 0;
+        if (isActivelyViewingThisChannel) {
+          console.log(`👀 User ${memberId} is actively viewing THIS channel ${channel.id}`);
+        }
         
         // Get user's notification tokens
         const { data: tokens, error: tokensError } = await supabase
@@ -280,9 +292,7 @@ export async function POST(request: NextRequest) {
           continue;
         }
 
-        // Filter tokens based on activity and platform
-        // Mobile notifications: Always send (expo, fcm for Android, apns for iOS)
-        // Web notifications: Skip if user is actively viewing (disabled anyway)
+        // SMART FILTERING: Filter tokens based on activity and platform
         const filteredTokens = tokens.filter(token => {
           if (token.platform === 'web') {
             // Skip web tokens entirely (web notifications disabled)
@@ -290,7 +300,13 @@ export async function POST(request: NextRequest) {
             return false;
           }
           
-          // Always send mobile notifications regardless of web activity
+          // SMART MOBILE FILTERING: Skip mobile notifications if user is actively viewing THIS channel
+          if (isActivelyViewingThisChannel && ['ios', 'android'].includes(token.platform)) {
+            console.log(`🔕 Skipping mobile notification for ${memberId} - actively viewing channel ${channel.id}`);
+            return false;
+          }
+          
+          // Send mobile notifications if user is not actively viewing this channel
           return true;
         });
 
@@ -304,7 +320,7 @@ export async function POST(request: NextRequest) {
             message.text || 'You have a new message',
             { channelId: channel.id, messageId: message.id },
             'skipped',
-            isActivelyViewing ? 'User actively viewing on web, no mobile tokens' : 'No mobile tokens available'
+            isActivelyViewingThisChannel ? `User actively viewing channel ${channel.id}, mobile notifications filtered` : 'No mobile tokens available'
           );
           continue;
         }
