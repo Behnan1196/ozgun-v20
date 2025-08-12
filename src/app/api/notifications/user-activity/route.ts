@@ -4,12 +4,18 @@ import { cookies } from 'next/headers';
 
 export async function POST(request: NextRequest) {
   try {
+    console.log('🔔 User Activity API called:', new Date().toISOString());
+    console.log('📋 Request headers:', Object.fromEntries(request.headers.entries()));
+    
     const cookieStore = cookies();
     const supabase = createClient(cookieStore);
 
     // Get current user
     const { data: { user }, error: userError } = await supabase.auth.getUser();
+    console.log('👤 Auth check result:', { hasUser: !!user, error: userError?.message });
+    
     if (userError || !user) {
+      console.log('❌ Authentication failed for user activity API');
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -56,6 +62,7 @@ export async function POST(request: NextRequest) {
     }
 
     console.log(`👤 User ${user.id} is ${isActive ? 'active' : 'inactive'} in channel ${channelId} (${platform})`);
+    console.log(`📊 Activity data:`, { user_id: user.id, channel_id: channelId, is_active: isActive, platform, timestamp: new Date().toISOString() });
 
     return NextResponse.json({ 
       success: true, 
