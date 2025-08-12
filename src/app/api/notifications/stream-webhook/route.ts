@@ -300,13 +300,15 @@ export async function POST(request: NextRequest) {
             return false;
           }
           
-          // SMART MOBILE FILTERING: Skip mobile notifications if user is actively viewing THIS channel
-          if (isActivelyViewingThisChannel && ['ios', 'android'].includes(token.platform)) {
-            console.log(`🔕 Skipping mobile notification for ${memberId} - actively viewing channel ${channel.id}`);
-            return false;
-          }
+          // TEMPORARILY DISABLED: Smart mobile filtering for debugging
+          // if (isActivelyViewingThisChannel && ['ios', 'android'].includes(token.platform)) {
+          //   console.log(`🔕 Skipping mobile notification for ${memberId} - actively viewing channel ${channel.id}`);
+          //   return false;
+          // }
           
-          // Send mobile notifications if user is not actively viewing this channel
+          console.log(`🔔 SENDING mobile notification for ${memberId} - smart filtering temporarily disabled`);
+          
+          // Send mobile notifications (smart filtering disabled for testing)
           return true;
         });
 
