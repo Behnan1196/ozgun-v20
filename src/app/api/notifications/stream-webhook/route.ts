@@ -248,25 +248,31 @@ export async function POST(request: NextRequest) {
     // Send notifications to recipient members
     for (const memberId of recipientMembers) {
       try {
-        // SMART FILTERING: Check if user is actively viewing THIS SPECIFIC CHANNEL
+        // SMART FILTERING: Check if user was recently active in THIS SPECIFIC CHANNEL (last 2 minutes)
+        const twoMinutesAgo = new Date(Date.now() - 2 * 60 * 1000).toISOString();
         const { data: userActivity, error: activityError } = await supabase
           .from('user_activity')
           .select('*')
           .eq('user_id', memberId)
           .eq('channel_id', channel.id) // Only check activity for THIS channel
-          .eq('is_active', true);
+          .gte('updated_at', twoMinutesAgo) // Check recent activity within 2 minutes
+          .order('updated_at', { ascending: false })
+          .limit(1);
 
         if (activityError) {
           console.error(`❌ Error checking user activity for ${memberId}:`, activityError);
         }
 
-        const isActivelyViewingThisChannel = userActivity && userActivity.length > 0;
-        console.log(`🔍 ACTIVITY CHECK: User ${memberId} in channel ${channel.id} - Found ${userActivity?.length || 0} active records - isActive: ${isActivelyViewingThisChannel}`);
+        // Check if the most recent activity was active and recent enough to consider user still viewing
+        const recentActivity = userActivity && userActivity.length > 0 ? userActivity[0] : null;
+        const isRecentlyActive = recentActivity && recentActivity.is_active;
         
-        if (isActivelyViewingThisChannel) {
-          console.log(`👀 FILTERING: User ${memberId} is actively viewing channel ${channel.id}`);
+        console.log(`🔍 ACTIVITY CHECK: User ${memberId} in channel ${channel.id} - Recent activity: ${recentActivity ? `${recentActivity.is_active ? 'ACTIVE' : 'INACTIVE'} at ${recentActivity.updated_at}` : 'NONE'}`);
+        
+        if (isRecentlyActive) {
+          console.log(`👀 FILTERING: User ${memberId} was recently active in channel ${channel.id} - blocking notification`);
         } else {
-          console.log(`💤 SENDING: User ${memberId} is NOT active in channel ${channel.id}`);
+          console.log(`💤 SENDING: User ${memberId} not recently active in channel ${channel.id} - sending notification`);
         }
         
         // Get user's notification tokens
@@ -304,9 +310,9 @@ export async function POST(request: NextRequest) {
             return false;
           }
           
-          // SMART MOBILE FILTERING: Skip mobile notifications if user is actively viewing THIS channel
-          if (isActivelyViewingThisChannel && ['ios', 'android'].includes(token.platform)) {
-            console.log(`🔕 Skipping mobile notification for ${memberId} - actively viewing channel ${channel.id}`);
+          // SMART MOBILE FILTERING: Skip mobile notifications if user was recently active in THIS channel
+          if (isRecentlyActive && ['ios', 'android'].includes(token.platform)) {
+            console.log(`🔕 Skipping mobile notification for ${memberId} - recently active in channel ${channel.id}`);
             return false;
           }
           
@@ -324,7 +330,7 @@ export async function POST(request: NextRequest) {
             message.text || 'You have a new message',
             { channelId: channel.id, messageId: message.id },
             'skipped',
-            isActivelyViewingThisChannel ? `User actively viewing channel ${channel.id}, mobile notifications filtered` : 'No mobile tokens available'
+            isRecentlyActive ? `User recently active in channel ${channel.id}, mobile notifications filtered` : 'No mobile tokens available'
           );
           continue;
         }
