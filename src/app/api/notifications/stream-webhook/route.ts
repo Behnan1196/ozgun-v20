@@ -169,7 +169,7 @@ async function logNotification(
 
 export async function POST(request: NextRequest) {
   try {
-    console.log('🔔 WEBHOOK CALLED:', new Date().toISOString());
+    console.log('🔔 WEBHOOK CALLED (v2):', new Date().toISOString());
     console.log('🌐 Request URL:', request.url);
     console.log('📋 Request headers:', Object.fromEntries(request.headers.entries()));
     
