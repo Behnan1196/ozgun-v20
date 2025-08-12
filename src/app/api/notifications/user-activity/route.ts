@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin';
 import { cookies } from 'next/headers';
 
 export async function POST(request: NextRequest) {
@@ -7,16 +8,45 @@ export async function POST(request: NextRequest) {
     console.log('🔔 User Activity API called:', new Date().toISOString());
     console.log('📋 Request headers:', Object.fromEntries(request.headers.entries()));
     
-    const cookieStore = cookies();
-    const supabase = createClient(cookieStore);
-
-    // Get current user
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
-    console.log('👤 Auth check result:', { hasUser: !!user, error: userError?.message });
+    // Check for Authorization header from mobile apps
+    const authHeader = request.headers.get('authorization');
+    let supabase;
+    let user;
     
-    if (userError || !user) {
-      console.log('❌ Authentication failed for user activity API');
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      // Mobile app authentication with JWT token
+      const token = authHeader.replace('Bearer ', '');
+      console.log('📱 Mobile auth detected, using JWT token');
+      
+      // Use admin client to verify JWT token
+      supabase = createAdminClient();
+      
+      // Verify the JWT token
+      const { data: { user: jwtUser }, error: jwtError } = await supabase.auth.getUser(token);
+      console.log('👤 JWT Auth check result:', { hasUser: !!jwtUser, error: jwtError?.message });
+      
+      if (jwtError || !jwtUser) {
+        console.log('❌ JWT Authentication failed for user activity API');
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      }
+      
+      user = jwtUser;
+    } else {
+      // Web app authentication with cookies
+      console.log('🌐 Web auth detected, using cookies');
+      const cookieStore = cookies();
+      supabase = createClient(cookieStore);
+
+      // Get current user
+      const { data: { user: cookieUser }, error: userError } = await supabase.auth.getUser();
+      console.log('👤 Cookie Auth check result:', { hasUser: !!cookieUser, error: userError?.message });
+      
+      if (userError || !cookieUser) {
+        console.log('❌ Cookie Authentication failed for user activity API');
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      }
+      
+      user = cookieUser;
     }
 
     const body = await request.json();
@@ -35,9 +65,12 @@ export async function POST(request: NextRequest) {
       last_activity: new Date().toISOString()
     };
 
+    // Use admin client for database operations to bypass RLS
+    const dbClient = authHeader ? createAdminClient() : supabase;
+
     if (isActive) {
       // User is now active in this channel
-      const { error } = await supabase
+      const { error } = await dbClient
         .from('user_activity')
         .upsert(activityData, {
           onConflict: 'user_id,channel_id'
@@ -49,7 +82,7 @@ export async function POST(request: NextRequest) {
       }
     } else {
       // User is no longer active in this channel
-      const { error } = await supabase
+      const { error } = await dbClient
         .from('user_activity')
         .delete()
         .eq('user_id', user.id)
