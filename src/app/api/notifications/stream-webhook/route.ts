@@ -249,7 +249,6 @@ export async function POST(request: NextRequest) {
     for (const memberId of recipientMembers) {
       try {
         // SMART FILTERING: Check if user is actively viewing THIS SPECIFIC CHANNEL
-        console.log(`🔍 Checking activity for user ${memberId} in channel ${channel.id}`);
         const { data: userActivity, error: activityError } = await supabase
           .from('user_activity')
           .select('*')
@@ -261,12 +260,13 @@ export async function POST(request: NextRequest) {
           console.error(`❌ Error checking user activity for ${memberId}:`, activityError);
         }
 
-        console.log(`📊 Activity query result for ${memberId}:`, userActivity);
         const isActivelyViewingThisChannel = userActivity && userActivity.length > 0;
+        console.log(`🔍 ACTIVITY CHECK: User ${memberId} in channel ${channel.id} - Found ${userActivity?.length || 0} active records - isActive: ${isActivelyViewingThisChannel}`);
+        
         if (isActivelyViewingThisChannel) {
-          console.log(`👀 User ${memberId} is actively viewing THIS channel ${channel.id} - FILTERING notifications`);
+          console.log(`👀 FILTERING: User ${memberId} is actively viewing channel ${channel.id}`);
         } else {
-          console.log(`💤 User ${memberId} is NOT actively viewing channel ${channel.id} - notifications will be sent`);
+          console.log(`💤 SENDING: User ${memberId} is NOT active in channel ${channel.id}`);
         }
         
         // Get user's notification tokens
