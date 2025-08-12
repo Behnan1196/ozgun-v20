@@ -249,6 +249,7 @@ export async function POST(request: NextRequest) {
     for (const memberId of recipientMembers) {
       try {
         // SMART FILTERING: Check if user is actively viewing THIS SPECIFIC CHANNEL
+        console.log(`🔍 Checking activity for user ${memberId} in channel ${channel.id}`);
         const { data: userActivity, error: activityError } = await supabase
           .from('user_activity')
           .select('*')
@@ -257,12 +258,15 @@ export async function POST(request: NextRequest) {
           .eq('is_active', true);
 
         if (activityError) {
-          console.error(`Error checking user activity for ${memberId}:`, activityError);
+          console.error(`❌ Error checking user activity for ${memberId}:`, activityError);
         }
 
+        console.log(`📊 Activity query result for ${memberId}:`, userActivity);
         const isActivelyViewingThisChannel = userActivity && userActivity.length > 0;
         if (isActivelyViewingThisChannel) {
-          console.log(`👀 User ${memberId} is actively viewing THIS channel ${channel.id}`);
+          console.log(`👀 User ${memberId} is actively viewing THIS channel ${channel.id} - FILTERING notifications`);
+        } else {
+          console.log(`💤 User ${memberId} is NOT actively viewing channel ${channel.id} - notifications will be sent`);
         }
         
         // Get user's notification tokens
@@ -300,15 +304,13 @@ export async function POST(request: NextRequest) {
             return false;
           }
           
-          // TEMPORARILY DISABLED: Smart mobile filtering for debugging
-          // if (isActivelyViewingThisChannel && ['ios', 'android'].includes(token.platform)) {
-          //   console.log(`🔕 Skipping mobile notification for ${memberId} - actively viewing channel ${channel.id}`);
-          //   return false;
-          // }
+          // SMART MOBILE FILTERING: Skip mobile notifications if user is actively viewing THIS channel
+          if (isActivelyViewingThisChannel && ['ios', 'android'].includes(token.platform)) {
+            console.log(`🔕 Skipping mobile notification for ${memberId} - actively viewing channel ${channel.id}`);
+            return false;
+          }
           
-          console.log(`🔔 SENDING mobile notification for ${memberId} - smart filtering temporarily disabled`);
-          
-          // Send mobile notifications (smart filtering disabled for testing)
+          // Send mobile notifications if user is not actively viewing this channel
           return true;
         });
 
