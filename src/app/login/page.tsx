@@ -97,13 +97,24 @@ export default function LoginPage() {
             maxWidth: 400,
           }}
         >
-          <Box sx={{ textAlign: 'center', mb: 3 }}>
+          <Box sx={{ 
+            textAlign: 'center', 
+            mb: 3,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center'
+          }}>
             <Image
               src="/login.png"
               alt="ÖZGÜN Koçluk Logo"
-              width={120}
-              height={120}
-              style={{ marginBottom: '16px' }}
+              width={180}
+              height={180}
+              style={{ 
+                marginBottom: '24px',
+                display: 'block',
+                margin: '0 auto 24px auto'
+              }}
             />
           </Box>
 
