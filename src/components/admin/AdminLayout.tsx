@@ -90,8 +90,6 @@ export default function AdminLayout({ children, currentPage }: AdminLayoutProps)
     avatar_url: '',
     theme: 'system', // light, dark, system
     language: 'tr',
-    notifications_enabled: true,
-    email_notifications: true,
     current_password: '',
     new_password: '',
     confirm_password: ''
@@ -177,8 +175,6 @@ export default function AdminLayout({ children, currentPage }: AdminLayoutProps)
       avatar_url: profile?.avatar_url || '',
       theme: profile?.theme || 'system',
       language: profile?.language || 'tr',
-      notifications_enabled: profile?.notifications_enabled !== false,
-      email_notifications: profile?.email_notifications !== false,
       current_password: '',
       new_password: '',
       confirm_password: ''
@@ -202,8 +198,6 @@ export default function AdminLayout({ children, currentPage }: AdminLayoutProps)
       avatar_url: '',
       theme: 'system',
       language: 'tr',
-      notifications_enabled: true,
-      email_notifications: true,
       current_password: '',
       new_password: '',
       confirm_password: ''
@@ -250,8 +244,6 @@ export default function AdminLayout({ children, currentPage }: AdminLayoutProps)
         avatar_url: settingsForm.avatar_url,
         theme: settingsForm.theme,
         language: settingsForm.language,
-        notifications_enabled: settingsForm.notifications_enabled,
-        email_notifications: settingsForm.email_notifications,
         updated_at: new Date().toISOString()
       }
 
@@ -602,31 +594,7 @@ export default function AdminLayout({ children, currentPage }: AdminLayoutProps)
                     <Palette style={{ height: '16px', width: '16px', marginRight: '12px' }} />
                     Görünüm
                   </button>
-                  <button
-                    onClick={() => setSettingsTab('notifications')}
-                    style={{
-                      width: '100%',
-                      textAlign: 'left',
-                      padding: '12px 16px',
-                      borderRadius: '8px',
-                      transition: 'all 0.2s',
-                      display: 'flex',
-                      alignItems: 'center',
-                      border: settingsTab === 'notifications' ? '1px solid #dbeafe' : 'none',
-                      backgroundColor: settingsTab === 'notifications' ? '#dbeafe' : 'transparent',
-                      color: settingsTab === 'notifications' ? '#1d4ed8' : '#4b5563',
-                      cursor: 'pointer'
-                    }}
-                    onMouseEnter={(e) => {
-                      if (settingsTab !== 'notifications') e.currentTarget.style.backgroundColor = '#f3f4f6'
-                    }}
-                    onMouseLeave={(e) => {
-                      if (settingsTab !== 'notifications') e.currentTarget.style.backgroundColor = 'transparent'
-                    }}
-                  >
-                    <Notifications style={{ height: '16px', width: '16px', marginRight: '12px' }} />
-                    Bildirimler
-                  </button>
+
                 </nav>
               </div>
 
@@ -1158,123 +1126,7 @@ export default function AdminLayout({ children, currentPage }: AdminLayoutProps)
                   </div>
                 )}
 
-                {/* Notification Settings */}
-                {settingsTab === 'notifications' && (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-                    <div>
-                      <h3 style={{
-                        fontSize: '18px',
-                        fontWeight: '500',
-                        color: '#1f2937',
-                        marginBottom: '16px'
-                      }}>Bildirim Ayarları</h3>
-                      
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                        <div style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'space-between',
-                          padding: '16px',
-                          backgroundColor: '#f9fafb',
-                          borderRadius: '8px'
-                        }}>
-                          <div>
-                            <h4 style={{ fontWeight: '500', color: '#1f2937', margin: '0 0 4px 0' }}>Genel Bildirimler</h4>
-                            <p style={{ fontSize: '14px', color: '#6b7280', margin: 0 }}>Sistem bildirimleri ve güncellemeler</p>
-                          </div>
-                          <label style={{ position: 'relative', display: 'inline-flex', alignItems: 'center', cursor: 'pointer' }}>
-                            <input
-                              type="checkbox"
-                              checked={settingsForm.notifications_enabled}
-                              onChange={(e) => setSettingsForm((prev: any) => ({ ...prev, notifications_enabled: e.target.checked }))}
-                              style={{ display: 'none' }}
-                            />
-                            <div style={{
-                              width: '44px',
-                              height: '24px',
-                              backgroundColor: settingsForm.notifications_enabled ? '#2563eb' : '#d1d5db',
-                              borderRadius: '12px',
-                              position: 'relative',
-                              transition: 'background-color 0.2s'
-                            }}>
-                              <div style={{
-                                position: 'absolute',
-                                top: '2px',
-                                left: settingsForm.notifications_enabled ? '22px' : '2px',
-                                width: '20px',
-                                height: '20px',
-                                backgroundColor: 'white',
-                                borderRadius: '50%',
-                                transition: 'left 0.2s'
-                              }} />
-                            </div>
-                          </label>
-                        </div>
-                        
-                        <div style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'space-between',
-                          padding: '16px',
-                          backgroundColor: '#f9fafb',
-                          borderRadius: '8px'
-                        }}>
-                          <div>
-                            <h4 style={{ fontWeight: '500', color: '#1f2937', margin: '0 0 4px 0' }}>E-posta Bildirimleri</h4>
-                            <p style={{ fontSize: '14px', color: '#6b7280', margin: 0 }}>Önemli güncellemeler e-posta ile gönderilsin</p>
-                          </div>
-                          <label style={{ position: 'relative', display: 'inline-flex', alignItems: 'center', cursor: 'pointer' }}>
-                            <input
-                              type="checkbox"
-                              checked={settingsForm.email_notifications}
-                              onChange={(e) => setSettingsForm((prev: any) => ({ ...prev, email_notifications: e.target.checked }))}
-                              style={{ display: 'none' }}
-                            />
-                            <div style={{
-                              width: '44px',
-                              height: '24px',
-                              backgroundColor: settingsForm.email_notifications ? '#2563eb' : '#d1d5db',
-                              borderRadius: '12px',
-                              position: 'relative',
-                              transition: 'background-color 0.2s'
-                            }}>
-                              <div style={{
-                                position: 'absolute',
-                                top: '2px',
-                                left: settingsForm.email_notifications ? '22px' : '2px',
-                                width: '20px',
-                                height: '20px',
-                                backgroundColor: 'white',
-                                borderRadius: '50%',
-                                transition: 'left 0.2s'
-                              }} />
-                            </div>
-                          </label>
-                        </div>
-                      </div>
 
-                      <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '24px' }}>
-                        <button
-                          onClick={updateProfile}
-                          style={{
-                            padding: '8px 24px',
-                            backgroundColor: '#2563eb',
-                            color: 'white',
-                            borderRadius: '6px',
-                            border: 'none',
-                            cursor: 'pointer',
-                            fontSize: '14px',
-                            transition: 'background-color 0.2s'
-                          }}
-                          onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#1d4ed8'}
-                          onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#2563eb'}
-                        >
-                          Bildirim Ayarlarını Kaydet
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                )}
               </div>
             </div>
           </div>

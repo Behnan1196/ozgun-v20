@@ -450,9 +450,6 @@ export default function CoachPage() {
     avatar_url: '' as string | null,
     theme: 'system', // light, dark, system
     language: 'tr',
-    notifications_enabled: true,
-    email_notifications: true,
-    web_push_enabled: false,
     current_password: '',
     new_password: '',
     confirm_password: ''
@@ -492,9 +489,6 @@ export default function CoachPage() {
       avatar_url: profile?.avatar_url || '',
       theme: profile?.theme || 'system',
       language: profile?.language || 'tr',
-      notifications_enabled: profile?.notifications_enabled !== false,
-      email_notifications: profile?.email_notifications !== false,
-      web_push_enabled: false,
       current_password: '',
       new_password: '',
       confirm_password: ''
@@ -518,9 +512,6 @@ export default function CoachPage() {
       avatar_url: '',
       theme: 'system',
       language: 'tr',
-      notifications_enabled: true,
-      email_notifications: true,
-      web_push_enabled: false,
       current_password: '',
       new_password: '',
       confirm_password: ''
@@ -593,8 +584,6 @@ export default function CoachPage() {
         avatar_url: settingsForm.avatar_url,
         theme: settingsForm.theme,
         language: settingsForm.language,
-        notifications_enabled: settingsForm.notifications_enabled,
-        email_notifications: settingsForm.email_notifications,
         updated_at: new Date().toISOString()
       }
 
@@ -3920,17 +3909,7 @@ export default function CoachPage() {
                     <Palette className="h-4 w-4 mr-3" />
                     Görünüm
                   </button>
-                  <button
-                    onClick={() => setSettingsTab('notifications')}
-                    className={`w-full text-left px-4 py-3 rounded-lg transition-colors flex items-center ${
-                      settingsTab === 'notifications'
-                        ? 'bg-blue-100 text-blue-700 border border-blue-200'
-                        : 'text-gray-600 hover:bg-gray-100'
-                    }`}
-                  >
-                    <Bell className="h-4 w-4 mr-3" />
-                    Bildirimler
-                  </button>
+
                 </nav>
               </div>
 
@@ -4191,85 +4170,7 @@ export default function CoachPage() {
                   </div>
                 )}
 
-                {/* Notification Settings */}
-                {settingsTab === 'notifications' && (
-                  <div className="space-y-6">
-                    <div>
-                      <h3 className="text-lg font-medium text-gray-800 mb-4">Bildirim Ayarları</h3>
-                      
-                      <div className="space-y-4">
-                        <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                          <div>
-                            <h4 className="font-medium text-gray-800">Genel Bildirimler</h4>
-                            <p className="text-sm text-gray-600">Sistem bildirimleri ve güncellemeler</p>
-                          </div>
-                          <label className="relative inline-flex items-center cursor-pointer">
-                            <input
-                              type="checkbox"
-                              checked={settingsForm.notifications_enabled}
-                              onChange={(e) => setSettingsForm((prev: any) => ({ ...prev, notifications_enabled: e.target.checked }))}
-                              className="sr-only peer"
-                            />
-                            <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                          </label>
-                        </div>
-                        
-                        <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                          <div>
-                            <h4 className="font-medium text-gray-800">E-posta Bildirimleri</h4>
-                            <p className="text-sm text-gray-600">Önemli güncellemeler e-posta ile gönderilsin</p>
-                          </div>
-                          <label className="relative inline-flex items-center cursor-pointer">
-                            <input
-                              type="checkbox"
-                              checked={settingsForm.email_notifications}
-                              onChange={(e) => setSettingsForm((prev: any) => ({ ...prev, email_notifications: e.target.checked }))}
-                              className="sr-only peer"
-                            />
-                            <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                          </label>
-                        </div>
-                        
-                        <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                          <div>
-                            <h4 className="font-medium text-gray-800 flex items-center">
-                              <Bell className="h-4 w-4 mr-2 text-blue-600" />
-                              Tarayıcı Bildirimleri
-                            </h4>
-                            <p className="text-sm text-gray-600">
-                              Görev bildirimleri ve güncelemeleri alın
-                            </p>
-                            <p className="text-xs text-gray-500 mt-1">
-                              Durum: {Notification.permission === 'granted' ? '✅ İzin verildi' : 
-                                     Notification.permission === 'denied' ? '❌ İzin reddedildi' : 
-                                     '⚠️ İzin bekleniyor'}
-                            </p>
-                          </div>
-                          <div className="flex flex-col space-y-2">
-                            {Notification.permission !== 'granted' && (
-                              <button
-                                onClick={handleNotificationPermissionRequest}
-                                className="px-4 py-2 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700 transition-colors"
-                              >
-                                İzin Ver
-                              </button>
-                            )}
 
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="flex justify-end mt-6">
-                        <button
-                          onClick={updateProfile}
-                          className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
-                        >
-                          Bildirim Ayarlarını Kaydet
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                )}
               </div>
             </div>
           </div>
