@@ -10,7 +10,7 @@ import {
   Alert,
   Container,
 } from '@mui/material'
-import { School } from '@mui/icons-material'
+import Image from 'next/image'
 import { createClient } from '@/lib/supabase/client'
 
 export default function LoginPage() {
@@ -98,13 +98,13 @@ export default function LoginPage() {
           }}
         >
           <Box sx={{ textAlign: 'center', mb: 3 }}>
-            <School sx={{ fontSize: 48, color: 'primary.main', mb: 2 }} />
-            <Typography variant="h4" component="h1" gutterBottom>
-              ÖZGÜN Koçluk
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              Sistemi V1.4
-            </Typography>
+            <Image
+              src="/login.png"
+              alt="ÖZGÜN Koçluk Logo"
+              width={120}
+              height={120}
+              style={{ marginBottom: '16px' }}
+            />
           </Box>
 
           {error && (
@@ -147,7 +147,14 @@ export default function LoginPage() {
               type="submit"
               fullWidth
               variant="contained"
-              sx={{ mt: 3, mb: 2 }}
+              sx={{ 
+                mt: 3, 
+                mb: 2,
+                backgroundColor: '#01adb8',
+                '&:hover': {
+                  backgroundColor: '#0199a3'
+                }
+              }}
               disabled={loading}
             >
               {loading ? 'Giriş Yapılıyor...' : 'Giriş Yap'}
