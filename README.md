@@ -1,4 +1,6 @@
-# TYT-AYT Coaching Platform (Web App)
+# Özgün V15 Coaching Web App
+
+<!-- Last updated: 2024-12-19 - Final commit before App Store submission -->
 
 A comprehensive Next.js coaching platform for TYT-AYT exam preparation with admin, coach, and student interfaces.
 
