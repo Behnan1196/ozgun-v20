@@ -457,12 +457,13 @@ export async function POST(request: NextRequest) {
 
         // Send notification to the best token for each platform
         for (const [platform, platformTokens] of Object.entries(tokensByPlatform)) {
-          // For iOS: prefer Expo tokens over FCM
+          // For iOS: prefer APNs tokens for legacy certificate support, then Expo as fallback
           // For Android: prefer FCM tokens over Expo  
           // For Web: use FCM tokens only
           let bestToken;
           if (platform === 'ios') {
-            bestToken = (platformTokens as any[]).find(t => t.token_type === 'expo') || 
+            bestToken = (platformTokens as any[]).find(t => t.token_type === 'apns') ||
+                       (platformTokens as any[]).find(t => t.token_type === 'expo') || 
                        (platformTokens as any[])[0];
           } else if (platform === 'android') {
             bestToken = (platformTokens as any[]).find(t => t.token_type === 'fcm') || 
