@@ -124,11 +124,11 @@ async function sendAPNSNotification(deviceToken: string, title: string, body: st
     
     if (result.sent.length > 0) {
       console.log('✅ APNs notification sent successfully:', result.sent[0].device);
-      return { success: true, messageId: result.sent[0].response?.notificationId };
+      return { success: true, messageId: result.sent[0].device };
     } else if (result.failed.length > 0) {
       const failure = result.failed[0];
       console.error('❌ APNs notification failed:', failure.error);
-      return { success: false, error: failure.error?.message || 'APNs delivery failed' };
+      return { success: false, error: failure.error || 'APNs delivery failed' };
     } else {
       console.error('❌ APNs notification: No sent or failed results');
       return { success: false, error: 'No delivery result from APNs' };

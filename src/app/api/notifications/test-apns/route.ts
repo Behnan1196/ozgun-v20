@@ -97,7 +97,7 @@ export async function POST(request: NextRequest) {
           sent: result.sent.length,
           failed: result.failed.length,
           device: result.sent[0].device,
-          messageId: result.sent[0].response?.notificationId
+          messageId: result.sent[0].device
         }
       });
     } else if (result.failed.length > 0) {
@@ -109,7 +109,7 @@ export async function POST(request: NextRequest) {
         error: 'APNs notification failed',
         details: {
           device: failure.device,
-          error: failure.error?.message || 'Unknown error',
+          error: failure.error || 'Unknown error',
           status: failure.status
         }
       }, { status: 400 });
