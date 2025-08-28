@@ -21,6 +21,7 @@
     "@types/react": "^18.2.0",
     "@types/react-dom": "^18.2.0",
     "@types/web-push": "^3.6.4",
+    "apn": "^2.2.0",
     "autoprefixer": "^10.4.0",
     "clsx": "^2.1.1",
     "firebase": "^12.0.0",

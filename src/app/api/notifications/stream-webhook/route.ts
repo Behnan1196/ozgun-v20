@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/server';
 import crypto from 'crypto';
 import admin from 'firebase-admin';
+import apn from 'apn';
 
 // Stream Chat webhook signature verification
 function verifyWebhookSignature(body: string, signature: string, secret: string): boolean {
@@ -37,6 +38,105 @@ function initializeFirebaseAdmin() {
     }
   }
   return admin;
+}
+
+// Initialize APNs Provider for legacy certificate
+let apnProvider: apn.Provider | null = null;
+
+function initializeAPNProvider() {
+  if (apnProvider) {
+    return apnProvider;
+  }
+
+  const apnsCertPath = process.env.APNS_CERT_PATH;
+  const apnsCertData = process.env.APNS_CERT_DATA; // Base64 encoded .p12 file
+  const apnsPassphrase = process.env.APNS_PASSPHRASE;
+  const isProduction = process.env.NODE_ENV === 'production';
+
+  if (!apnsCertData && !apnsCertPath) {
+    console.error('❌ APNs certificate not configured (APNS_CERT_DATA or APNS_CERT_PATH required)');
+    return null;
+  }
+
+  if (!apnsPassphrase) {
+    console.error('❌ APNs passphrase not configured (APNS_PASSPHRASE required)');
+    return null;
+  }
+
+  try {
+    let options: apn.ProviderOptions;
+
+    if (apnsCertData) {
+      // Use base64 encoded certificate data (recommended for Vercel)
+      const certBuffer = Buffer.from(apnsCertData, 'base64');
+      options = {
+        pfx: certBuffer,
+        passphrase: apnsPassphrase,
+        production: isProduction
+      };
+    } else if (apnsCertPath) {
+      // Use certificate file path (for local development)
+      options = {
+        pfx: apnsCertPath,
+        passphrase: apnsPassphrase,
+        production: isProduction
+      };
+    } else {
+      throw new Error('No valid certificate configuration found');
+    }
+
+    apnProvider = new apn.Provider(options);
+    console.log(`✅ APNs Provider initialized (${isProduction ? 'production' : 'sandbox'})`);
+    return apnProvider;
+  } catch (error) {
+    console.error('❌ Error initializing APNs Provider:', error);
+    return null;
+  }
+}
+
+// Send push notification via APNs (legacy certificate)
+async function sendAPNSNotification(deviceToken: string, title: string, body: string, data: any) { // eslint-disable-line @typescript-eslint/no-explicit-any
+  try {
+    const provider = initializeAPNProvider();
+    if (!provider) {
+      return { success: false, error: 'APNs provider not configured' };
+    }
+
+    // Create notification
+    const notification = new apn.Notification({
+      alert: {
+        title,
+        body
+      },
+      sound: 'default',
+      badge: 1,
+      topic: 'com.behnan.coachingmobile', // Your app's bundle identifier
+      payload: {
+        ...data,
+        type: 'chat_message'
+      },
+      pushType: 'alert',
+      priority: 10 // High priority for immediate delivery
+    });
+
+    // Send notification
+    const result = await provider.send(notification, deviceToken);
+    
+    if (result.sent.length > 0) {
+      console.log('✅ APNs notification sent successfully:', result.sent[0].device);
+      return { success: true, messageId: result.sent[0].response?.notificationId };
+    } else if (result.failed.length > 0) {
+      const failure = result.failed[0];
+      console.error('❌ APNs notification failed:', failure.error);
+      return { success: false, error: failure.error?.message || 'APNs delivery failed' };
+    } else {
+      console.error('❌ APNs notification: No sent or failed results');
+      return { success: false, error: 'No delivery result from APNs' };
+    }
+  } catch (error) {
+    console.error('❌ Error sending APNs notification:', error);
+    return { success: false, error: error instanceof Error ? error.message : String(error) };
+  }
 }
 
 // Send push notification via FCM
@@ -377,12 +477,26 @@ export async function POST(request: NextRequest) {
           if (!bestToken) continue;
 
           try {
-            const result = await sendFCMNotification(
-              bestToken.token,
-              title,
-              body,
-              notificationData
-            );
+            let result;
+            
+            // Use appropriate notification method based on platform and token type
+            if (platform === 'ios' && bestToken.token_type === 'apns') {
+              // Use legacy APNs for iOS devices with native tokens
+              result = await sendAPNSNotification(
+                bestToken.token,
+                title,
+                body,
+                notificationData
+              );
+            } else {
+              // Use FCM for all other cases (Android, web, Expo tokens)
+              result = await sendFCMNotification(
+                bestToken.token,
+                title,
+                body,
+                notificationData
+              );
+            }
 
             const status = result.success !== false ? 'sent' : 'failed';
             const errorMessage = result.error || null;
@@ -398,7 +512,7 @@ export async function POST(request: NextRequest) {
               errorMessage
             );
 
-            console.log(`📱 Notification ${status} to ${memberId} (${platform}/${bestToken.token_type})`);
+            console.log(`📱 Notification ${status} to ${memberId} (${platform}/${bestToken.token_type}) via ${platform === 'ios' && bestToken.token_type === 'apns' ? 'APNs' : 'FCM'}`);
           } catch (error) {
             console.error(`Error sending notification to ${memberId} (${platform}):`, error);
             await logNotification(
