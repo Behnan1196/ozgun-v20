@@ -68,12 +68,19 @@ function initializeAPNProvider() {
 
     if (apnsCertData) {
       // Use base64 encoded certificate data (recommended for Vercel)
-      const certBuffer = Buffer.from(apnsCertData, 'base64');
-      options = {
-        pfx: certBuffer,
-        passphrase: apnsPassphrase,
-        production: isProduction
-      };
+      try {
+        const certBuffer = Buffer.from(apnsCertData, 'base64');
+        console.log(`🔐 Certificate buffer length: ${certBuffer.length} bytes`);
+        
+        options = {
+          pfx: certBuffer,
+          passphrase: apnsPassphrase,
+          production: isProduction
+        };
+      } catch (bufferError) {
+        console.error('❌ Error creating certificate buffer:', bufferError);
+        throw new Error(`Failed to process certificate data: ${bufferError instanceof Error ? bufferError.message : String(bufferError)}`);
+      }
     } else if (apnsCertPath) {
       // Use certificate file path (for local development)
       options = {
