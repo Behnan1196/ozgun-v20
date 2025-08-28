@@ -3,6 +3,7 @@ import { createAdminClient } from '@/lib/supabase/server';
 import crypto from 'crypto';
 import admin from 'firebase-admin';
 import apn from 'apn';
+import forge from 'node-forge';
 
 // Stream Chat webhook signature verification
 function verifyWebhookSignature(body: string, signature: string, secret: string): boolean {
@@ -72,11 +73,42 @@ function initializeAPNProvider() {
         const certBuffer = Buffer.from(apnsCertData, 'base64');
         console.log(`🔐 Certificate buffer length: ${certBuffer.length} bytes`);
         
-        options = {
-          pfx: certBuffer,
-          passphrase: apnsPassphrase,
-          production: isProduction
-        };
+        // Convert PKCS#12 to PEM using node-forge for better compatibility
+        try {
+          const p12Asn1 = forge.asn1.fromDer(certBuffer.toString('binary'));
+          const p12 = forge.pkcs12.pkcs12FromAsn1(p12Asn1, apnsPassphrase);
+          
+          // Extract certificate and private key
+          const bags = p12.getBags({ bagType: forge.pki.oids.certBag });
+          const certBag = bags[forge.pki.oids.certBag]?.[0];
+          
+          const keyBags = p12.getBags({ bagType: forge.pki.oids.pkcs8ShroudedKeyBag });
+          const keyBag = keyBags[forge.pki.oids.pkcs8ShroudedKeyBag]?.[0];
+          
+          if (!certBag || !keyBag) {
+            throw new Error('Could not extract certificate or private key from PKCS#12');
+          }
+          
+          const cert = forge.pki.certificateToPem(certBag.cert as forge.pki.Certificate);
+          const key = forge.pki.privateKeyToPem(keyBag.key as forge.pki.PrivateKey);
+          
+          console.log('✅ Successfully converted PKCS#12 to PEM format');
+          
+          options = {
+            cert,
+            key,
+            production: isProduction
+          };
+        } catch (forgeError) {
+          console.error('❌ Error converting PKCS#12 to PEM:', forgeError);
+          // Fallback to original pfx method
+          console.log('🔄 Falling back to direct PKCS#12 method');
+          options = {
+            pfx: certBuffer,
+            passphrase: apnsPassphrase,
+            production: isProduction
+          };
+        }
       } catch (bufferError) {
         console.error('❌ Error creating certificate buffer:', bufferError);
         throw new Error(`Failed to process certificate data: ${bufferError instanceof Error ? bufferError.message : String(bufferError)}`);

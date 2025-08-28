@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import apn from 'apn';
+import forge from 'node-forge';
 
 // Initialize APNs Provider for testing
 function initializeAPNProvider() {
@@ -20,12 +21,50 @@ function initializeAPNProvider() {
 
   if (apnsCertData) {
     // Use base64 encoded certificate data (recommended for Vercel)
-    const certBuffer = Buffer.from(apnsCertData, 'base64');
-    options = {
-      pfx: certBuffer,
-      passphrase: apnsPassphrase,
-      production: isProduction
-    };
+    try {
+      const certBuffer = Buffer.from(apnsCertData, 'base64');
+      console.log(`🔐 Test: Certificate buffer length: ${certBuffer.length} bytes`);
+      
+      // Convert PKCS#12 to PEM using node-forge for better compatibility
+      try {
+        const p12Asn1 = forge.asn1.fromDer(certBuffer.toString('binary'));
+        const p12 = forge.pkcs12.pkcs12FromAsn1(p12Asn1, apnsPassphrase);
+        
+        // Extract certificate and private key
+        const bags = p12.getBags({ bagType: forge.pki.oids.certBag });
+        const certBag = bags[forge.pki.oids.certBag]?.[0];
+        
+        const keyBags = p12.getBags({ bagType: forge.pki.oids.pkcs8ShroudedKeyBag });
+        const keyBag = keyBags[forge.pki.oids.pkcs8ShroudedKeyBag]?.[0];
+        
+        if (!certBag || !keyBag) {
+          throw new Error('Could not extract certificate or private key from PKCS#12');
+        }
+        
+        const cert = forge.pki.certificateToPem(certBag.cert as forge.pki.Certificate);
+        const key = forge.pki.privateKeyToPem(keyBag.key as forge.pki.PrivateKey);
+        
+        console.log('✅ Test: Successfully converted PKCS#12 to PEM format');
+        
+        options = {
+          cert,
+          key,
+          production: isProduction
+        };
+      } catch (forgeError) {
+        console.error('❌ Test: Error converting PKCS#12 to PEM:', forgeError);
+        // Fallback to original pfx method
+        console.log('🔄 Test: Falling back to direct PKCS#12 method');
+        options = {
+          pfx: certBuffer,
+          passphrase: apnsPassphrase,
+          production: isProduction
+        };
+      }
+    } catch (bufferError) {
+      console.error('❌ Test: Error creating certificate buffer:', bufferError);
+      throw new Error(`Failed to process certificate data: ${bufferError instanceof Error ? bufferError.message : String(bufferError)}`);
+    }
   } else if (apnsCertPath) {
     // Use certificate file path (for local development)
     options = {
