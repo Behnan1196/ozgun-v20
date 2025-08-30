@@ -2491,7 +2491,11 @@ export default function CoachPage() {
           <div className="flex justify-between items-center h-14">
             {/* Logo - Dark Theme */}
             <div className="flex items-center">
-              <GraduationCap className="h-7 w-7 text-blue-400 mr-2.5" />
+              <img 
+                src="/ozgunlogo.png" 
+                alt="ÖZGÜN Logo" 
+                className="h-7 w-7 mr-2.5 object-contain"
+              />
               <h1 className="text-lg font-medium text-white">
                 ÖZGÜN Koçluk Sistemi - {userRole === 'coach' ? 'Koç' : userRole === 'coordinator' ? 'Koordinatör' : 'Öğrenci'} Paneli
               </h1>

@@ -93,7 +93,11 @@ export default async function CoachStudentsPage() {
               <a href="/coach" className="mr-4 p-2 hover:bg-gray-100 rounded-lg">
                 <ArrowLeft className="h-5 w-5 text-gray-600" />
               </a>
-              <GraduationCap className="h-8 w-8 text-blue-600 mr-3" />
+              <img 
+                src="/ozgunlogo.png" 
+                alt="ÖZGÜN Logo" 
+                className="h-8 w-8 mr-3 object-contain"
+              />
               <div>
                 <h1 className="text-xl font-semibold text-gray-900">Öğrencilerim</h1>
                 <p className="text-sm text-gray-500">Atanmış öğrencileri yönet</p>
