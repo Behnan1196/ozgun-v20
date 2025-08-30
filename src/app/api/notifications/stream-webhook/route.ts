@@ -249,20 +249,20 @@ async function sendFCMNotification(token: string, title: string, body: string, d
           },
         },
         fcmOptions: {
-          imageUrl: 'https://ozgun-v15.vercel.app/favicon.ico',
+          imageUrl: 'https://ozgun-v20.vercel.app/favicon.ico',
         },
       },
       webpush: {
         notification: {
           title,
           body,
-          icon: 'https://ozgun-v15.vercel.app/favicon.ico',
-          badge: 'https://ozgun-v15.vercel.app/favicon.ico',
+                  icon: 'https://ozgun-v20.vercel.app/favicon.ico',
+        badge: 'https://ozgun-v20.vercel.app/favicon.ico',
           tag: `chat_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`, // Unique tag prevents grouping
           requireInteraction: true,
         },
         fcmOptions: {
-          link: 'https://ozgun-v15.vercel.app/',
+          link: 'https://ozgun-v20.vercel.app/',
         },
       },
     };

@@ -29,7 +29,7 @@ A comprehensive Next.js coaching platform for TYT-AYT exam preparation with admi
 
 ## 🚀 Live Deployment
 
-**Production URL**: https://ozgun-v14.vercel.app/coach
+**Production URL**: https://ozgun-v20.vercel.app/coach
 
 - Auto-deploys from `main` branch of this repository
 - PWA features fully functional
