@@ -122,8 +122,14 @@ async function sendFCMNotification(
   data: Record<string, any>
 ): Promise<{ success: boolean; error?: string; messageId?: string }> {
   try {
-    // For Expo tokens, use Expo Push API
+    // Skip Expo tokens to avoid FCM server key issues
     if (token.startsWith('ExponentPushToken')) {
+      console.log('⚠️ Skipping Expo token - using direct FCM/APNs only');
+      return { success: false, error: 'Expo tokens disabled - using direct push only' };
+    }
+
+    // For Expo tokens (legacy handling - should not reach here)
+    if (false && token.startsWith('ExponentPushToken')) {
       const message = {
         to: token,
         sound: 'default',
