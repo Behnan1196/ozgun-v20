@@ -202,6 +202,10 @@ async function sendFCMNotification(
         type: 'video_invite',
         title,
         body,
+        // Add notification data for background handling
+        notificationTitle: title,
+        notificationBody: body,
+        showNotification: 'true',
       },
       android: {
         notification: {
@@ -211,12 +215,17 @@ async function sendFCMNotification(
           visibility: 'public' as const, // Show on locked screen
           sticky: false,
           localOnly: false,
+          defaultSound: true,
+          defaultVibrateTimings: true,
+          defaultLightSettings: true,
         },
         data: {
           ...Object.fromEntries(Object.entries(data).map(([k, v]) => [k, String(v)])),
           type: 'video_invite',
+          click_action: 'FLUTTER_NOTIFICATION_CLICK', // For proper handling
         },
         priority: 'high' as const, // High priority for immediate delivery
+        ttl: 3600, // 1 hour TTL
       },
       apns: {
         payload: {
