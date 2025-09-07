@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Video, User, CheckCircle } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
-import { useStream } from '@/contexts/StreamContext';
-import { sendVideoInviteMessage, getVideoInviteSuccessMessage } from '@/lib/video-invite';
+import { sendVideoInvite } from '@/lib/notifications';
 
 interface VideoCallInviteProps {
   userRole: 'coach' | 'student';
@@ -27,7 +26,6 @@ export function VideoCallInvite({
   const [justSentInvite, setJustSentInvite] = useState(false);
 
   const supabase = createClient();
-  const { chatChannel, initializeChat } = useStream();
 
   useEffect(() => {
     // Get current user
@@ -44,17 +42,10 @@ export function VideoCallInvite({
     setIsInviting(true);
     
     try {
-      // Initialize chat if not already done
-      if (!chatChannel) {
-        await initializeChat(partnerId);
-        // Wait a moment for chat channel to be ready
-        await new Promise(resolve => setTimeout(resolve, 1000));
-      }
-      
-      if (chatChannel) {
-        // Send video invite message using helper function
-        await sendVideoInviteMessage(chatChannel, user.id, inviteMessage);
+      // Use the new robust notification system
+      const result = await sendVideoInvite(partnerId, inviteMessage.trim() || undefined);
 
+      if (result.success) {
         setJustSentInvite(true);
         setInviteMessage('');
         
@@ -63,7 +54,7 @@ export function VideoCallInvite({
           setJustSentInvite(false);
         }, 5000);
       } else {
-        throw new Error('Chat channel not available');
+        throw new Error(result.error || 'Failed to send video invite');
       }
     } catch (error) {
       console.error('❌ Failed to send video invite:', error);
@@ -86,7 +77,7 @@ export function VideoCallInvite({
               ✅ Davet Gönderildi!
             </h3>
             <p className="text-green-700 mt-1">
-              {getVideoInviteSuccessMessage(partnerName)}
+              {partnerName} adlı kişiye video görüşme daveti push bildirim olarak gönderildi!
             </p>
             <p className="text-green-600 text-sm mt-1">
               Chat sekmesinden mesajlaşmaya devam edebilirsiniz.
