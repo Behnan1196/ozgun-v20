@@ -213,11 +213,6 @@ async function sendFCMNotification(
         priority: 'high',
         category: 'video_invite',
         channelId: 'video_invites',
-        // Add extra fields for Android system
-        'gcm.notification.title': title,
-        'gcm.notification.body': body,
-        'gcm.notification.sound': 'default',
-        'gcm.notification.android_channel_id': 'video_invites',
       },
       android: {
         priority: 'high' as const, // High priority for immediate delivery
