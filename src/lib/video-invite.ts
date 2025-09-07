@@ -28,14 +28,14 @@ export function createVideoInviteMessage(customMessage?: string): string {
  * @returns Promise that resolves when message is sent
  */
 export async function sendVideoInviteMessage(
-  chatChannel: any, // Stream Chat Channel type
+  chatChannel: unknown, // Stream Chat Channel type
   userId: string,
   customMessage?: string
 ): Promise<void> {
   const message = createVideoInviteMessage(customMessage);
   
   // Use the correct Stream Chat sendMessage format
-  await chatChannel.sendMessage({
+  await (chatChannel as any).sendMessage({
     text: message,
     // Add custom data to identify this as a video invite
     custom: {

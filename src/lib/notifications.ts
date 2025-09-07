@@ -182,3 +182,25 @@ export function isNotificationSupported(): boolean {
 export function getNotificationPermission(): NotificationPermission {
   return 'denied'; // Web notifications disabled
 }
+
+/**
+ * Debug Chrome notifications - DISABLED
+ */
+export async function debugChromeNotifications(): Promise<any> {
+  console.log('🚫 Chrome notification debugging disabled - Mobile-only system');
+  return { disabled: true, reason: 'Mobile-only notification system' };
+}
+
+/**
+ * Clear Chrome notification cache - DISABLED
+ */
+export async function clearChromeNotificationCache(): Promise<void> {
+  console.log('🚫 Chrome notification cache clearing disabled - Mobile-only system');
+}
+
+/**
+ * Send test web notification - DISABLED
+ */
+export async function sendTestWebNotification(): Promise<void> {
+  console.log('🚫 Test web notification disabled - Mobile-only system');
+}

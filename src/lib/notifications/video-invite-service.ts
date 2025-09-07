@@ -104,7 +104,7 @@ async function sendAPNSNotification(
     } else if (result.failed.length > 0) {
       const failure = result.failed[0];
       console.error('❌ APNs video invite notification failed:', failure.error);
-      return { success: false, error: failure.error || 'APNs delivery failed' };
+      return { success: false, error: failure.error?.toString() || 'APNs delivery failed' };
     } else {
       return { success: false, error: 'No delivery result from APNs' };
     }
