@@ -198,11 +198,7 @@ async function sendFCMNotification(
       token,
       notification: { 
         title, 
-        body,
-        // Add Android-specific notification properties
-        android_channel_id: 'video_invites',
-        sound: 'default',
-        tag: 'video_invite',
+        body
       },
       data: {
         ...Object.fromEntries(Object.entries(data).map(([k, v]) => [k, String(v)])),
