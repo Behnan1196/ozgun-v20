@@ -211,34 +211,20 @@ async function sendFCMNotification(
         showNotification: 'true',
         sound: 'default',
         vibrate: 'true',
-        priority: 'max',
+        priority: 'high',
         category: 'video_invite',
       },
       android: {
         notification: {
-          channelId: 'video_invites',
+          channel_id: 'video_invites', // Use underscore format for FCM
           sound: 'default',
-          priority: 'max' as const, // Use MAX priority for urgent notifications
+          priority: 'high' as const,
           visibility: 'public' as const, // Show on locked screen
-          sticky: false,
-          localOnly: false,
-          defaultSound: true,
-          defaultVibrateTimings: true,
-          defaultLightSettings: true,
-          notificationCount: 1, // Badge count
+          default_sound: true,
+          default_vibrate_timings: true,
+          default_light_settings: true,
+          notification_count: 1, // Badge count
           tag: 'video_invite', // Replace existing notifications of same type
-        },
-        data: {
-          ...Object.fromEntries(Object.entries(data).map(([k, v]) => [k, String(v)])),
-          type: 'video_invite',
-          click_action: 'FLUTTER_NOTIFICATION_CLICK', // For proper handling
-          // Add these for background/closed app handling
-          title: title,
-          body: body,
-          sound: 'default',
-          vibrate: 'true',
-          priority: 'max',
-          category: 'video_invite',
         },
         priority: 'high' as const, // High priority for immediate delivery
         ttl: 3600, // 1 hour TTL
