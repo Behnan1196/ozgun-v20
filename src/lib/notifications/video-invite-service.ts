@@ -184,7 +184,7 @@ async function sendFCMNotification(
           channelId: 'video_invites',
           sound: 'default',
           priority: 'high' as const,
-          visibility: 'public', // Show on locked screen
+          visibility: 'public' as const, // Show on locked screen
           sticky: false,
           localOnly: false,
         },
