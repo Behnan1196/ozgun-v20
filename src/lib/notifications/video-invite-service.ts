@@ -194,17 +194,20 @@ async function sendFCMNotification(
       return { success: false, error: 'Firebase Admin not configured' };
     }
 
-    // Use data-only message for Android to ensure proper background notification display
-    // This forces the app to handle notification display, giving us full control
+    // Use notification+data approach for better Android compatibility
+    // This ensures the notification shows properly in all states
     const message = {
       token,
-      // Remove notification object completely for Android - use data-only approach
+      notification: {
+        title,
+        body
+      },
       data: {
         ...Object.fromEntries(Object.entries(data).map(([k, v]) => [k, String(v)])),
         type: 'video_invite',
         title,
         body,
-        // These fields will be used by the app to create the notification
+        // These fields will be used by the app for additional processing
         notificationTitle: title,
         notificationBody: body,
         showNotification: 'true',
@@ -215,6 +218,15 @@ async function sendFCMNotification(
         channelId: 'video_invites',
       },
       android: {
+        notification: {
+          channel_id: 'video_invites',
+          sound: 'default',
+          priority: 'high' as const,
+          visibility: 'public' as const,
+          default_sound: true,
+          default_vibrate_timings: true,
+          default_light_settings: true,
+        },
         priority: 'high' as const, // High priority for immediate delivery
         ttl: 3600, // 1 hour TTL
       },
