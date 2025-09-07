@@ -184,11 +184,15 @@ async function sendFCMNotification(
           channelId: 'video_invites',
           sound: 'default',
           priority: 'high' as const,
+          visibility: 'public', // Show on locked screen
+          sticky: false,
+          localOnly: false,
         },
         data: {
           ...Object.fromEntries(Object.entries(data).map(([k, v]) => [k, String(v)])),
           type: 'video_invite',
         },
+        priority: 'high' as const, // High priority for immediate delivery
       },
       apns: {
         payload: {
