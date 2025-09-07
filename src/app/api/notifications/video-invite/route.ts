@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import { createClient, createAdminClient } from '@/lib/supabase/server';
 import { cookies } from 'next/headers';
 import { sendVideoInviteNotification } from '@/lib/notifications/video-invite-service';
 
@@ -9,7 +9,7 @@ import { sendVideoInviteNotification } from '@/lib/notifications/video-invite-se
  */
 export async function POST(request: NextRequest) {
   try {
-    const { toUserId, message, expiresInMinutes = 5 } = await request.json();
+    const { toUserId, message, expiresInMinutes = 5, fromUserId } = await request.json();
 
     // Validate required fields
     if (!toUserId) {
@@ -19,34 +19,44 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const supabase = createClient(cookies());
+    let actualFromUserId: string;
+    let supabase;
 
-    // Verify user authentication
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user) {
-      return NextResponse.json(
-        { error: 'Authentication required' },
-        { status: 401 }
-      );
+    // Handle both web (authenticated) and mobile (fromUserId in body) requests
+    if (fromUserId) {
+      // Mobile request - use fromUserId from body and admin client
+      actualFromUserId = fromUserId;
+      supabase = createAdminClient();
+      console.log('📱 Mobile video invite request');
+    } else {
+      // Web request - use authenticated user
+      supabase = createClient(cookies());
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      if (authError || !user) {
+        return NextResponse.json(
+          { error: 'Authentication required' },
+          { status: 401 }
+        );
+      }
+      actualFromUserId = user.id;
+      console.log('🌐 Web video invite request');
     }
 
-    const fromUserId = user.id;
-
     // Don't allow sending invite to yourself
-    if (fromUserId === toUserId) {
+    if (actualFromUserId === toUserId) {
       return NextResponse.json(
         { error: 'Cannot send video invite to yourself' },
         { status: 400 }
       );
     }
 
-    console.log(`📹 Creating video invite from ${fromUserId} to ${toUserId}`);
+    console.log(`📹 Creating video invite from ${actualFromUserId} to ${toUserId}`);
 
     // Get user names for the invite
     const { data: fromUserData } = await supabase
       .from('user_profiles')
       .select('full_name')
-      .eq('id', fromUserId)
+      .eq('id', actualFromUserId)
       .single();
 
     const { data: toUserData } = await supabase
@@ -65,7 +75,7 @@ export async function POST(request: NextRequest) {
     const { data: invite, error: inviteError } = await supabase
       .from('video_call_invites')
       .insert({
-        from_user_id: fromUserId,
+        from_user_id: actualFromUserId,
         to_user_id: toUserId,
         from_user_name: fromUserName,
         to_user_name: toUserName,
@@ -90,7 +100,7 @@ export async function POST(request: NextRequest) {
     try {
       const notificationResult = await sendVideoInviteNotification({
         inviteId: invite.id,
-        fromUserId,
+        fromUserId: actualFromUserId,
         toUserId,
         fromUserName,
         toUserName,
