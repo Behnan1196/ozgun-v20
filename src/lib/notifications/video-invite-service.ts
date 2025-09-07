@@ -204,7 +204,7 @@ async function sendFCMNotification(
         title,
         body,
         // Critical: These fields must be used by the app to create proper notifications
-        notificationTitle: title,
+        notificationTitle: `${title} - ${data.fromUserName || 'Bilinmeyen'}`,
         notificationBody: body,
         showNotification: 'true',
         sound: 'default',
