@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
-import { cookies } from 'next/headers';
+import { createAdminClient } from '@/lib/supabase/server';
 
+/**
+ * Public endpoint for mobile apps to register notification tokens
+ * This endpoint uses admin client to bypass RLS for mobile app registration
+ */
 export async function POST(request: NextRequest) {
   try {
-    console.log('📱 Mobile token registration attempt:', new Date().toISOString());
-    const { userId, token, tokenType, platform, browser } = await request.json();
-    console.log('📋 Registration data:', { userId, tokenType, platform, tokenLength: token?.length });
+    const { userId, token, tokenType, platform, deviceInfo } = await request.json();
 
     // Validate required fields
     if (!userId || !token || !tokenType || !platform) {
@@ -19,85 +20,84 @@ export async function POST(request: NextRequest) {
     // Validate token type
     if (!['expo', 'fcm', 'apns'].includes(tokenType)) {
       return NextResponse.json(
-        { error: 'Invalid token type. Must be expo, fcm, or apns' },
+        { error: 'Invalid token type. Must be: expo, fcm, or apns' },
         { status: 400 }
       );
     }
 
     // Validate platform
-    if (!['ios', 'android', 'web'].includes(platform)) {
+    if (!['ios', 'android'].includes(platform)) {
       return NextResponse.json(
-        { error: 'Invalid platform. Must be ios, android, or web' },
+        { error: 'Invalid platform. Must be: ios or android (mobile-only)' },
         { status: 400 }
       );
     }
 
-    // Create Supabase client for public access
-    const cookieStore = cookies();
-    const supabase = createClient(cookieStore);
+    console.log(`📱 Public registration: ${platform} ${tokenType} token for user ${userId}`);
 
-    // First, try to update existing token
-    const { data: existingToken } = await supabase
+    const supabase = createAdminClient();
+
+    // Verify user exists
+    const { data: user, error: userError } = await supabase.auth.admin.getUserById(userId);
+    if (userError || !user) {
+      console.error('❌ User verification failed:', userError);
+      return NextResponse.json(
+        { error: 'Invalid user ID' },
+        { status: 400 }
+      );
+    }
+
+    // First, deactivate any existing tokens for this user/platform combination
+    const { error: deactivateError } = await supabase
       .from('notification_tokens')
-      .select('id')
+      .update({ is_active: false })
       .eq('user_id', userId)
-      .eq('platform', platform)
-      .eq('token_type', tokenType)
-      .single();
+      .eq('platform', platform);
 
-    let data, error;
-    
-    if (existingToken) {
-      // Update existing token
-      const result = await supabase
-        .from('notification_tokens')
-        .update({
-          token,
-          is_active: true,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', existingToken.id)
-        .select()
-        .single();
-      data = result.data;
-      error = result.error;
-    } else {
-      // Insert new token
-      const result = await supabase
-        .from('notification_tokens')
-        .insert({
+    if (deactivateError) {
+      console.error('❌ Error deactivating old tokens:', deactivateError);
+      // Continue anyway - this is not critical
+    }
+
+    // Insert or update the new token
+    const { data, error } = await supabase
+      .from('notification_tokens')
+      .upsert(
+        {
           user_id: userId,
           token,
           token_type: tokenType,
           platform,
-          is_active: true
-        })
-        .select()
-        .single();
-      data = result.data;
-      error = result.error;
-    }
+          device_info: deviceInfo || {},
+          is_active: true,
+          last_used_at: new Date().toISOString(),
+        },
+        {
+          onConflict: 'user_id,token,platform',
+          ignoreDuplicates: false
+        }
+      )
+      .select()
+      .single();
 
     if (error) {
       console.error('❌ Error saving notification token:', error);
-      console.error('❌ Full error details:', JSON.stringify(error, null, 2));
       return NextResponse.json(
-        { error: 'Failed to save notification token', details: error },
+        { error: 'Failed to save notification token' },
         { status: 500 }
       );
     }
 
-    console.log(`✅ Notification token registered successfully for user ${userId} on ${platform} (${tokenType})`);
-    console.log(`✅ Token ID: ${data?.id}, Token preview: ${token.substring(0, 20)}...`);
+    console.log(`✅ Public registration successful: ${platform} ${tokenType} token for user ${userId}`);
 
     return NextResponse.json({
       success: true,
-      message: 'Notification token registered successfully',
+      message: `${platform} ${tokenType} token registered successfully`,
       tokenId: data.id
     });
 
   } catch (error) {
-    console.error('API error in register-token-public:', error);
+    console.error('❌ Error in public token registration:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

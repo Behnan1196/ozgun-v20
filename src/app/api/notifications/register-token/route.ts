@@ -1,10 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
-import { cookies } from 'next/headers';
 
 export async function POST(request: NextRequest) {
   try {
-    const { userId, token, tokenType, platform, browser } = await request.json();
+    const { userId, token, tokenType, platform, deviceInfo } = await request.json();
 
     // Validate required fields
     if (!userId || !token || !tokenType || !platform) {
@@ -17,7 +16,7 @@ export async function POST(request: NextRequest) {
     // Validate token type
     if (!['expo', 'fcm', 'apns'].includes(tokenType)) {
       return NextResponse.json(
-        { error: 'Invalid token type. Must be expo, fcm, or apns' },
+        { error: 'Invalid token type. Must be: expo, fcm, or apns' },
         { status: 400 }
       );
     }
@@ -25,85 +24,87 @@ export async function POST(request: NextRequest) {
     // Validate platform
     if (!['ios', 'android', 'web'].includes(platform)) {
       return NextResponse.json(
-        { error: 'Invalid platform. Must be ios, android, or web' },
+        { error: 'Invalid platform. Must be: ios, android, or web' },
         { status: 400 }
       );
     }
 
-    // Get authenticated user
-    const cookieStore = cookies();
-    const supabase = createClient(cookieStore);
+    const supabase = createClient();
+
+    // Verify user authentication
     const { data: { user }, error: authError } = await supabase.auth.getUser();
-
     if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json(
+        { error: 'Authentication required' },
+        { status: 401 }
+      );
     }
 
-    // Verify the user can only register tokens for themselves
+    // Verify the userId matches the authenticated user
     if (user.id !== userId) {
-      return NextResponse.json({ error: 'Forbidden: Can only register tokens for yourself' }, { status: 403 });
+      return NextResponse.json(
+        { error: 'User ID mismatch' },
+        { status: 403 }
+      );
     }
 
-    // First, try to update existing token
-    const { data: existingToken } = await supabase
-      .from('notification_tokens')
-      .select('id')
-      .eq('user_id', userId)
-      .eq('platform', platform)
-      .eq('token_type', tokenType)
-      .single();
+    // Disable web notifications - only allow mobile platforms
+    if (platform === 'web') {
+      console.log('⚠️ Web notification registration blocked - mobile-only system');
+      return NextResponse.json(
+        { error: 'Web notifications are disabled. Mobile-only notification system.' },
+        { status: 400 }
+      );
+    }
 
-    let data, error;
-    
-    if (existingToken) {
-      // Update existing token
-      const result = await supabase
-        .from('notification_tokens')
-        .update({
-          token,
-          is_active: true,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', existingToken.id)
-        .select()
-        .single();
-      data = result.data;
-      error = result.error;
-    } else {
-      // Insert new token
-      const result = await supabase
-        .from('notification_tokens')
-        .insert({
+    console.log(`📱 Registering ${platform} ${tokenType} token for user ${userId}`);
+
+    // First, deactivate any existing tokens for this user/platform combination
+    await supabase
+      .from('notification_tokens')
+      .update({ is_active: false })
+      .eq('user_id', userId)
+      .eq('platform', platform);
+
+    // Insert or update the new token
+    const { data, error } = await supabase
+      .from('notification_tokens')
+      .upsert(
+        {
           user_id: userId,
           token,
           token_type: tokenType,
           platform,
-          is_active: true
-        })
-        .select()
-        .single();
-      data = result.data;
-      error = result.error;
-    }
+          device_info: deviceInfo || {},
+          is_active: true,
+          last_used_at: new Date().toISOString(),
+        },
+        {
+          onConflict: 'user_id,token,platform',
+          ignoreDuplicates: false
+        }
+      )
+      .select()
+      .single();
 
     if (error) {
-      console.error('Error saving notification token:', error);
+      console.error('❌ Error saving notification token:', error);
       return NextResponse.json(
         { error: 'Failed to save notification token' },
         { status: 500 }
       );
     }
 
-    console.log(`✅ Notification token registered for user ${userId} on ${platform} (${tokenType})`);
+    console.log(`✅ ${platform} ${tokenType} token registered successfully for user ${userId}`);
 
     return NextResponse.json({
       success: true,
-      message: 'Notification token registered successfully',
+      message: `${platform} ${tokenType} token registered successfully`,
       tokenId: data.id
     });
 
   } catch (error) {
-    console.error('API error in register-token:', error);
+    console.error('❌ Error in token registration:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
@@ -111,94 +112,58 @@ export async function POST(request: NextRequest) {
   }
 }
 
-export async function GET() {
+// GET endpoint to check token status
+export async function GET(request: NextRequest) {
   try {
-    // Get authenticated user
-    const cookieStore = cookies();
-    const supabase = createClient(cookieStore);
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    const supabase = createClient();
 
+    // Verify user authentication
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json(
+        { error: 'Authentication required' },
+        { status: 401 }
+      );
     }
 
-    // Get user's notification tokens
+    // Get user's active tokens
     const { data: tokens, error } = await supabase
       .from('notification_tokens')
       .select('*')
       .eq('user_id', user.id)
       .eq('is_active', true)
-      .order('updated_at', { ascending: false });
+      .order('created_at', { ascending: false });
 
     if (error) {
-      console.error('Error fetching notification tokens:', error);
+      console.error('❌ Error fetching tokens:', error);
       return NextResponse.json(
-        { error: 'Failed to fetch notification tokens' },
+        { error: 'Failed to fetch tokens' },
         { status: 500 }
       );
     }
 
-    return NextResponse.json({
-      success: true,
-      tokens: tokens || []
-    });
-
-  } catch (error) {
-    console.error('API error in get tokens:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
-  }
-}
-
-export async function DELETE(request: NextRequest) {
-  try {
-    const { searchParams } = new URL(request.url);
-    const tokenId = searchParams.get('tokenId');
-    const platform = searchParams.get('platform');
-
-    // Get authenticated user
-    const cookieStore = cookies();
-    const supabase = createClient(cookieStore);
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    let query = supabase
-      .from('notification_tokens')
-      .update({ is_active: false, updated_at: new Date().toISOString() })
-      .eq('user_id', user.id);
-
-    if (tokenId) {
-      query = query.eq('id', tokenId);
-    } else if (platform) {
-      query = query.eq('platform', platform);
-    } else {
-      // Deactivate all tokens for the user
-    }
-
-    const { error } = await query;
-
-    if (error) {
-      console.error('Error deactivating notification token:', error);
-      return NextResponse.json(
-        { error: 'Failed to deactivate notification token' },
-        { status: 500 }
-      );
-    }
-
-    console.log(`✅ Notification token(s) deactivated for user ${user.id}`);
+    const summary = {
+      totalTokens: tokens?.length || 0,
+      platforms: {
+        ios: tokens?.filter(t => t.platform === 'ios').length || 0,
+        android: tokens?.filter(t => t.platform === 'android').length || 0,
+      },
+      tokenTypes: {
+        expo: tokens?.filter(t => t.token_type === 'expo').length || 0,
+        fcm: tokens?.filter(t => t.token_type === 'fcm').length || 0,
+        apns: tokens?.filter(t => t.token_type === 'apns').length || 0,
+      }
+    };
 
     return NextResponse.json({
       success: true,
-      message: 'Notification token(s) deactivated successfully'
+      userId: user.id,
+      tokens: tokens || [],
+      summary
     });
 
   } catch (error) {
-    console.error('API error in delete token:', error);
+    console.error('❌ Error checking token status:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

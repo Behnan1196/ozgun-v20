@@ -1,8 +1,18 @@
-// Web Push Notifications using Firebase Cloud Messaging (FCM)
+/**
+ * Web Notification System - DISABLED
+ * 
+ * This module is intentionally disabled to prevent conflicts with the mobile-first
+ * notification system. All web push functionality is commented out to ensure
+ * notifications only work on mobile platforms (iOS/Android).
+ */
+
+console.log('⚠️ Web notifications are disabled - Mobile-only notification system active');
+
+// Disabled Firebase configuration
+/*
 import { getMessaging, getToken, onMessage, MessagePayload } from 'firebase/messaging';
 import { initializeApp, getApps } from 'firebase/app';
 
-// Firebase configuration (should match your mobile app's config)
 const firebaseConfig = {
   apiKey: "AIzaSyA1QKxp-zDa8S2OOsnptmiJRC-wCKRkZp8",
   authDomain: "coaching-mobile-7e0c3.firebaseapp.com",
@@ -12,15 +22,11 @@ const firebaseConfig = {
   appId: "1:563892471445:web:57e247e17023557635fd9c"
 };
 
-// VAPID key for web push (you'll need to generate this in Firebase Console)
 const VAPID_KEY = "BJU08P6HHEDgs0Phs9p4drSS0EOOmTewCTuy6qFTWTt0bXwP0JWyTXA9OEYEKdohc3x0qOeRex5CfprosQW96TA";
-               
 
-// Initialize Firebase
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApps()[0];
-let messaging: any = null; // eslint-disable-line @typescript-eslint/no-explicit-any
+let messaging: any = null;
 
-// Initialize messaging only in browser environment
 if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
   try {
     messaging = getMessaging(app);
@@ -28,6 +34,7 @@ if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
     console.error('Error initializing Firebase messaging:', error);
   }
 }
+*/
 
 export interface WebPushToken {
   token: string;
@@ -37,275 +44,141 @@ export interface WebPushToken {
 }
 
 /**
- * Request notification permission and get FCM token
+ * Request notification permission - DISABLED
  */
 export async function requestNotificationPermission(): Promise<string | null> {
-  try {
-    // Check if browser supports notifications
-    if (!('Notification' in window)) {
-      console.log('This browser does not support notifications');
-      return null;
-    }
-
-    // Check if messaging is available
-    if (!messaging) {
-      console.log('Firebase messaging not available');
-      return null;
-    }
-
-    // Request permission
-    const permission = await Notification.requestPermission();
-    
-    if (permission !== 'granted') {
-      console.log('Notification permission denied');
-      return null;
-    }
-
-    // Get FCM token
-    const token = await getToken(messaging, {
-      vapidKey: VAPID_KEY
-    });
-
-    if (token) {
-      console.log('✅ FCM token obtained:', token);
-      return token;
-    } else {
-      console.log('No registration token available');
-      return null;
-    }
-  } catch (error) {
-    console.error('❌ Error getting notification permission:', error);
-    return null;
-  }
+  console.log('🚫 Web notification permission request blocked - Mobile-only system');
+  return null;
 }
 
 /**
- * Save web push token to database
+ * Save web push token - DISABLED
  */
 export async function saveWebPushToken(userId: string, token: string): Promise<boolean> {
+  console.log('🚫 Web push token registration blocked - Mobile-only system');
+  return false;
+}
+
+/**
+ * Setup message listener - DISABLED
+ */
+export function setupMessageListener(onMessageReceived?: (payload: any) => void) {
+  console.log('🚫 Web message listener blocked - Mobile-only system');
+  return null;
+}
+
+/**
+ * Show browser notification - DISABLED
+ */
+export function showNotification(title: string, body: string, data?: any) {
+  console.log('🚫 Web notification display blocked - Mobile-only system');
+  console.log('📱 Use mobile app to receive notifications:', { title, body, data });
+  return null;
+}
+
+/**
+ * Initialize web push notifications - DISABLED
+ */
+export async function initializeWebPushNotifications(userId: string): Promise<void> {
+  console.log('🚫 Web push notifications disabled - Mobile-only system');
+  console.log('📱 Please use the mobile app to receive video call invites and chat notifications');
+}
+
+/**
+ * Video invite functions for web interface
+ */
+export async function sendVideoInvite(
+  toUserId: string, 
+  message?: string
+): Promise<{ success: boolean; error?: string; inviteId?: string }> {
   try {
-    const response = await fetch('/api/notifications/register-token', {
+    const response = await fetch('/api/notifications/video-invite', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        userId,
-        token,
-        tokenType: 'fcm',
-        platform: 'web',
-        browser: navigator.userAgent.includes('Chrome') ? 'chrome' : 
-                navigator.userAgent.includes('Firefox') ? 'firefox' : 
-                navigator.userAgent.includes('Safari') ? 'safari' : 'unknown'
+        toUserId,
+        message,
       }),
     });
 
+    const result = await response.json();
+
     if (!response.ok) {
-      throw new Error(`Failed to save token: ${response.statusText}`);
+      console.error('❌ Error sending video invite:', result);
+      return { success: false, error: result.error || 'Failed to send video invite' };
     }
 
-    console.log('✅ Web push token saved successfully');
-    return true;
-  } catch (error) {
-    console.error('❌ Error saving web push token:', error);
-    return false;
-  }
-}
-
-/**
- * Setup foreground message listener
- */
-export function setupMessageListener(onMessageReceived?: (payload: MessagePayload) => void) {
-  if (!messaging) {
-    console.log('Firebase messaging not available for message listener');
-    return null;
-  }
-
-  const unsubscribe = onMessage(messaging, (payload) => {
-    console.log('📨 Message received in foreground:', payload);
-    
-    // WEB NOTIFICATIONS DISABLED - Mobile-only notification system
-    // Don't show any notifications on web to prevent conflicts
-    console.log('📱 Web notifications disabled - mobile-only notifications active');
-
-    // Call custom handler if provided (for in-app updates, etc.)
-    if (onMessageReceived) {
-      onMessageReceived(payload);
-    }
-  });
-
-  return unsubscribe;
-}
-
-/**
- * Show browser notification
- */
-export function showNotification(title: string, body: string, data?: any) { // eslint-disable-line @typescript-eslint/no-explicit-any
-  if ('Notification' in window && Notification.permission === 'granted') {
-    // Create unique tag to prevent Chrome from grouping notifications
-    const uniqueTag = `${data?.type || 'message'}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    
-    const notification = new Notification(title, {
-      body,
-      icon: '/favicon.ico', // Update with your app icon
-      badge: '/badge-icon.png', // Optional badge icon
-      tag: uniqueTag, // Unique tag prevents Chrome notification grouping
-      data: data,
-      requireInteraction: true, // Keep notification visible until user interacts
-    });
-
-    // Handle notification click
-    notification.onclick = function(event) {
-      event.preventDefault();
-      
-      // Focus the window
-      window.focus();
-      
-      // Handle different notification types
-      if (data?.type === 'chat_message' && data?.chatChannel) {
-        // Navigate to chat (you'll need to implement this based on your routing)
-        window.location.hash = `#/chat/${data.chatChannel}`;
-      }
-      
-      // Close the notification
-      notification.close();
+    console.log('✅ Video invite sent successfully (notification sent to mobile):', result);
+    return { 
+      success: true, 
+      inviteId: result.inviteId,
     };
-
-    return notification;
-  }
-}
-
-/**
- * Initialize web push notifications for current user
- */
-export async function initializeWebPushNotifications(userId: string): Promise<void> {
-  try {
-    console.log('🔔 Initializing web push notifications for user:', userId);
-
-    // Request permission and get token
-    const token = await requestNotificationPermission();
-    if (!token) {
-      console.log('⚠️ Failed to get web push token');
-      return;
-    }
-
-    // Save token to database
-    await saveWebPushToken(userId, token);
-
-    // Setup message listener
-    setupMessageListener((payload) => {
-      console.log('📱 Custom message handler:', payload);
-      // Add any custom logic for handling foreground messages
-    });
-
-    console.log('✅ Web push notifications initialized successfully');
   } catch (error) {
-    console.error('❌ Error initializing web push notifications:', error);
+    console.error('❌ Error sending video invite:', error);
+    return { 
+      success: false, 
+      error: error instanceof Error ? error.message : String(error)
+    };
   }
 }
 
 /**
- * Clear Chrome notification registration and force re-registration
+ * Get pending video invites
  */
-export async function clearChromeNotificationCache(): Promise<void> {
+export async function getPendingVideoInvites(): Promise<{
+  success: boolean;
+  receivedInvites: any[];
+  sentInvites: any[];
+  error?: string;
+}> {
   try {
-    // Unregister service worker
-    if ('serviceWorker' in navigator) {
-      const registrations = await navigator.serviceWorker.getRegistrations();
-      for (const registration of registrations) {
-        if (registration.scope.includes('firebase-messaging')) {
-          await registration.unregister();
-          console.log('🧹 Firebase service worker unregistered');
-        }
-      }
-    }
-
-    // Clear notification permission (user will need to re-grant)
-    if ('permissions' in navigator) {
-      // Note: Cannot programmatically revoke permission, user must do this manually
-      console.log('⚠️ User needs to manually reset notification permissions in Chrome settings');
-    }
-
-    // Clear any cached tokens
-    localStorage.removeItem('fcm_token');
-    sessionStorage.removeItem('fcm_token');
-    
-    console.log('✅ Chrome notification cache cleared');
-  } catch (error) {
-    console.error('❌ Error clearing Chrome notification cache:', error);
-  }
-}
-
-/**
- * Debug Chrome notification status
- */
-export async function debugChromeNotifications(): Promise<any> {
-  const debugInfo: any = {
-    permission: Notification.permission,
-    serviceWorkerSupport: 'serviceWorker' in navigator,
-    notificationSupport: 'Notification' in window,
-    userAgent: navigator.userAgent,
-    isChrome: navigator.userAgent.includes('Chrome'),
-    timestamp: new Date().toISOString()
-  };
-
-  if ('serviceWorker' in navigator) {
-    try {
-      const registrations = await navigator.serviceWorker.getRegistrations();
-      debugInfo.serviceWorkers = registrations.map(reg => ({
-        scope: reg.scope,
-        state: reg.active?.state,
-        scriptURL: reg.active?.scriptURL
-      }));
-    } catch (error) {
-      debugInfo.serviceWorkerError = error instanceof Error ? error.message : String(error);
-    }
-  }
-
-  console.log('🔍 Chrome notification debug info:', debugInfo);
-  return debugInfo;
-}
-
-/**
- * Send a test web notification
- */
-export async function sendTestWebNotification(): Promise<void> {
-  try {
-    const response = await fetch('/api/notifications/test-web', {
-      method: 'POST',
+    const response = await fetch('/api/notifications/video-invite', {
+      method: 'GET',
       headers: {
         'Content-Type': 'application/json',
       },
     });
 
+    const result = await response.json();
+
     if (!response.ok) {
-      throw new Error(`Failed to send test notification: ${response.statusText}`);
+      console.error('❌ Error fetching video invites:', result);
+      return { 
+        success: false, 
+        receivedInvites: [], 
+        sentInvites: [], 
+        error: result.error || 'Failed to fetch video invites' 
+      };
     }
 
-    const result = await response.json();
-    console.log('📤 Test web notification sent:', result);
+    return {
+      success: true,
+      receivedInvites: result.receivedInvites || [],
+      sentInvites: result.sentInvites || [],
+    };
   } catch (error) {
-    console.error('❌ Error sending test web notification:', error);
+    console.error('❌ Error fetching video invites:', error);
+    return {
+      success: false,
+      receivedInvites: [],
+      sentInvites: [],
+      error: error instanceof Error ? error.message : String(error)
+    };
   }
 }
 
 /**
- * Check if notifications are supported and enabled
+ * Check if notifications are supported - ALWAYS FALSE for web
  */
 export function isNotificationSupported(): boolean {
-  return (
-    'Notification' in window &&
-    'serviceWorker' in navigator &&
-    messaging !== null
-  );
+  return false; // Web notifications disabled
 }
 
 /**
- * Get current notification permission status
+ * Get current notification permission status - ALWAYS DENIED for web
  */
 export function getNotificationPermission(): NotificationPermission {
-  if ('Notification' in window) {
-    return Notification.permission;
-  }
-  return 'default';
+  return 'denied'; // Web notifications disabled
 }
