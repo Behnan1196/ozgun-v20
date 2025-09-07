@@ -7,6 +7,7 @@
 import { createAdminClient } from '@/lib/supabase/server';
 import admin from 'firebase-admin';
 import apn from 'apn';
+import forge from 'node-forge';
 
 // Initialize Firebase Admin SDK
 let firebaseAdmin: typeof admin | null = null;
@@ -53,11 +54,33 @@ function initializeAPNProvider() {
   }
 
   try {
+    // Decode the base64 certificate data
     const certBuffer = Buffer.from(apnsCertData, 'base64');
     
+    // Convert PKCS#12 to PEM format using node-forge
+    const p12Asn1 = forge.asn1.fromDer(certBuffer.toString('binary'));
+    const p12 = forge.pkcs12.pkcs12FromAsn1(p12Asn1, apnsPassphrase);
+    
+    // Extract certificate and private key
+    const bags = p12.getBags({ bagType: forge.pki.oids.certBag });
+    const certBag = bags[forge.pki.oids.certBag]?.[0];
+    
+    const keyBags = p12.getBags({ bagType: forge.pki.oids.pkcs8ShroudedKeyBag });
+    const keyBag = keyBags[forge.pki.oids.pkcs8ShroudedKeyBag]?.[0];
+    
+    if (!certBag?.cert || !keyBag?.key) {
+      throw new Error('Could not extract certificate or key from PKCS#12');
+    }
+    
+    // Convert to PEM format
+    const certPem = forge.pki.certificateToPem(certBag.cert);
+    const keyPem = forge.pki.privateKeyToPem(keyBag.key);
+    
+    console.log('✅ Successfully converted PKCS#12 to PEM format');
+    
     const options: apn.ProviderOptions = {
-      pfx: certBuffer,
-      passphrase: apnsPassphrase,
+      cert: certPem,
+      key: keyPem,
       production: isProduction
     };
 
@@ -66,6 +89,7 @@ function initializeAPNProvider() {
     return apnProvider;
   } catch (error) {
     console.error('❌ Error initializing APNs Provider:', error);
+    console.error('❌ Certificate conversion failed - check APNS_CERT_DATA format and passphrase');
     return null;
   }
 }
