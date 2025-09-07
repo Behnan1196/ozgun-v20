@@ -201,7 +201,7 @@ async function sendFCMNotification(
       data: {
         ...Object.fromEntries(Object.entries(data).map(([k, v]) => [k, String(v)])),
         type: 'video_invite',
-        title,
+        title: `Özgün Koçluk - Video Görüşme Daveti - ${data.fromUserName || 'Bilinmeyen'}`,
         body,
         // Critical: These fields must be used by the app to create proper notifications
         notificationTitle: `Özgün Koçluk - Video Görüşme Daveti - ${data.fromUserName || 'Bilinmeyen'}`,
