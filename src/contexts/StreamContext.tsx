@@ -571,7 +571,8 @@ export function StreamProvider({ children }: StreamProviderProps) {
             id: partnerProfile.id,
             email: partnerProfile.email,
             full_name: partnerProfile.full_name,
-            username: partnerProfile.email?.split('@')[0] || 'user'
+            username: partnerProfile.email?.split('@')[0] || 'user',
+            role: partnerProfile.role, // Added role from partnerProfile
           })
           
           console.log('👤 Partner user formatted:', partnerStreamUser)
