@@ -291,7 +291,7 @@ export function StreamProvider({ children }: StreamProviderProps) {
           console.log('👤 Stream user formatted:', streamUser)
           
           // Generate token
-          console.log('🔑 Generating token...')
+          console.log('🔑 Generating token for currentUser.id:', currentUser.id)
           const token = await generateUserToken(currentUser.id)
                      if (!isSubscribed || !isMounted.current) {
              console.warn('⚠️ Component unmounted during token generation - continuing in background')
@@ -311,7 +311,7 @@ export function StreamProvider({ children }: StreamProviderProps) {
           
           // Initialize Chat Client
           const chat = createStreamChatClient()
-          console.log('💬 Connecting to Stream Chat with user:', streamUser.id)
+          console.log('💬 Connecting to Stream Chat with user:', streamUser.id, 'and token (partial):', token.substring(0, 10) + '...')
           
                      await chat.connectUser(streamUser as StreamUser, token)
            if (!isSubscribed || !isMounted.current) {
@@ -550,7 +550,7 @@ export function StreamProvider({ children }: StreamProviderProps) {
     setChatError(null)
 
     try {
-      console.log('💬 Initializing chat channel with partner:', partnerId)
+      console.log('💬 Initializing chat channel with partner:', partnerId, 'for user:', user.id)
       
       // First, ensure the partner user exists in Stream.io
       try {
@@ -583,6 +583,7 @@ export function StreamProvider({ children }: StreamProviderProps) {
         console.warn('⚠️ Could not create partner user, continuing anyway:', userError)
       }
       
+      console.log('Creating coach student channel with coachId:', user.id, 'studentId:', partnerId);
       const channel = createCoachStudentChannel(chatClient, user.id, partnerId)
       await channel.create()
       await channel.watch()
@@ -614,7 +615,7 @@ export function StreamProvider({ children }: StreamProviderProps) {
     setVideoError(null)
 
     try {
-      console.log('📹 Initializing video call with partner:', partnerId)
+      console.log('📹 Initializing video call with partner:', partnerId, 'for user:', user.id)
       
       // Ensure partner exists
       console.log('👤 Ensuring partner user exists for video call:', partnerId)
@@ -629,6 +630,7 @@ export function StreamProvider({ children }: StreamProviderProps) {
       }
       console.log('✅ Partner profile found for video call')
       
+      console.log('Creating video call with coachId:', user.id, 'studentId:', partnerId);
       const call = await createVideoCall(videoClient, user.id, partnerId)
       setVideoCall(call)
       
