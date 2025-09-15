@@ -151,12 +151,18 @@ export const createVideoCall = async (videoClient: StreamVideoClient, coachId: s
 // Stream.io utility functions
 export const StreamUtils = {
   // Format user for Stream.io
-  formatStreamUser: (user: { id: string; username: string; full_name?: string; email: string }) => ({
+  formatStreamUser: (user: {
+    id: string;
+    username: string;
+    full_name?: string;
+    email: string;
+    role: UserRole; // Added role to the user type
+  }) => ({
     id: user.id,
     name: user.full_name || user.username,
     username: user.username,
     email: user.email,
-    role: 'user',
+    role: user.role, // Use the dynamic role
   }),
   
   // Check if Stream.io is properly configured (client-side)

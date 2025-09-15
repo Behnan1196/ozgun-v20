@@ -272,7 +272,8 @@ export function StreamProvider({ children }: StreamProviderProps) {
             id: authUser.id,
             email: authUser.email,
             username: profile.email?.split('@')[0] || 'user',
-            full_name: profile.full_name
+            full_name: profile.full_name,
+            role: profile.role, // Added role from profile
           }
           console.log('👤 Current user:', currentUser)
           
