@@ -5,6 +5,7 @@
 
 import { StreamChat } from 'stream-chat'
 import { StreamVideoClient } from '@stream-io/video-react-sdk'
+import { UserRole } from '@/types/database' // Added import for UserRole
 
 // Declare global property for config check
 declare global {
