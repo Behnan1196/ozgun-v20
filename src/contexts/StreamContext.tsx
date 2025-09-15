@@ -577,9 +577,19 @@ export function StreamProvider({ children }: StreamProviderProps) {
           
           console.log('👤 Partner user formatted:', partnerStreamUser)
           
-          // Upsert partner user in Stream.io
-          await chatClient.upsertUser(partnerStreamUser as StreamUser)
-          console.log('✅ Partner user created/updated in Stream.io')
+          // Upsert partner user in Stream.io via backend
+          console.log('⚙️ Calling backend to upsert partner Stream.io user...');
+          const upsertResponse = await fetch('/api/stream/upsert-partner', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(partnerStreamUser)
+          });
+
+          if (!upsertResponse.ok) {
+            const errorData = await upsertResponse.json();
+            throw new Error(`Failed to upsert partner user via backend: ${errorData.error || upsertResponse.statusText}`);
+          }
+          console.log('✅ Partner user upserted successfully in Stream.io via backend');
         }
       } catch (userError) {
         console.warn('⚠️ Could not create partner user, continuing anyway:', userError)
