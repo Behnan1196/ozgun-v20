@@ -157,13 +157,13 @@ export const StreamUtils = {
     username: string;
     full_name?: string;
     email: string;
-    role: UserRole; // Added role to the user type
+    role?: UserRole; // Made role optional since Stream.io doesn't need it
   }) => ({
     id: user.id,
     name: user.full_name || user.username,
     username: user.username,
     email: user.email,
-    role: user.role, // Use the dynamic role
+    // Removed role field since Stream.io doesn't have these roles defined
   }),
   
   // Check if Stream.io is properly configured (client-side)

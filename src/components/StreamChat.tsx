@@ -32,6 +32,7 @@ export function StreamChat({ partnerId, partnerName, className = '' }: StreamCha
   } = useStream()
   
   const [initialized, setInitialized] = useState(false)
+  const [currentPartnerId, setCurrentPartnerId] = useState<string | null>(null)
 
   // Track user activity in this chat channel - SMART FILTERING
   useActivityTracking({
@@ -39,7 +40,16 @@ export function StreamChat({ partnerId, partnerName, className = '' }: StreamCha
     isEnabled: !!chatChannel && !isDemoMode // Re-enabled with smart filtering
   });
 
-  // Initialize chat when component mounts
+  // Reset initialization when partner changes
+  useEffect(() => {
+    if (currentPartnerId !== partnerId) {
+      console.log('🔄 StreamChat: Partner changed from', currentPartnerId, 'to', partnerId)
+      setInitialized(false)
+      setCurrentPartnerId(partnerId)
+    }
+  }, [partnerId, currentPartnerId])
+
+  // Initialize chat when component mounts or partner changes
   useEffect(() => {
     const init = async () => {
       if (isStreamReady && !initialized && partnerId) {

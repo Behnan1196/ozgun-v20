@@ -9,7 +9,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { id, name, username, email, role } = body;
 
-    if (!id || !name || !email || !role) {
+    if (!id || !name || !email) {
       console.log('❌ Missing required fields for partner upsert');
       return NextResponse.json({ error: 'Missing required user fields' }, { status: 400 });
     }
@@ -22,17 +22,24 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Stream.io not configured' }, { status: 500 });
     }
 
-    console.log('🔧 Upserting partner user in Stream.io:', id, 'with role:', role);
+    console.log('🔧 Upserting partner user in Stream.io:', id);
 
     const serverClient = StreamChat.getInstance(apiKey, apiSecret);
 
-    await serverClient.upsertUser({
+    // Create user object without role since Stream.io doesn't have custom roles defined
+    const userObject: any = {
       id,
       name,
       username,
       email,
-      role,
-    });
+    };
+
+    // Only add role if it's provided and not a custom role
+    if (role && ['admin', 'user', 'guest'].includes(role)) {
+      userObject.role = role;
+    }
+
+    await serverClient.upsertUser(userObject);
 
     console.log('✅ Partner user upserted successfully in Stream.io');
     return NextResponse.json({ success: true });

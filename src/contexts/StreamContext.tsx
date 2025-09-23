@@ -553,6 +553,17 @@ export function StreamProvider({ children }: StreamProviderProps) {
     try {
       console.log('💬 Initializing chat channel with partner:', partnerId, 'for user:', user.id)
       
+      // Clean up existing channel if switching partners
+      if (chatChannel) {
+        console.log('🧹 Cleaning up existing chat channel before switching partners')
+        try {
+          await chatChannel.stopWatching()
+        } catch (cleanupError) {
+          console.warn('⚠️ Error stopping previous channel watch:', cleanupError)
+        }
+        setChatChannel(null)
+      }
+      
       // First, ensure the partner user exists in Stream.io
       try {
         console.log('👤 Creating/updating partner user in Stream.io:', partnerId)

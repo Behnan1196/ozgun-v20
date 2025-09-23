@@ -100,6 +100,7 @@ export function CommunicationTab({
         {/* Chat Tab - Always mounted, but hidden when not active */}
         <div className={`h-full ${activeSubTab === 'chat' ? 'block' : 'hidden'}`}>
           <StreamChat 
+            key={`chat-${partner.id}`} // Force remount when partner changes
             partnerId={partner.id}
             partnerName={partner.full_name}
           />
@@ -111,6 +112,7 @@ export function CommunicationTab({
             {/* Video Call Interface */}
             <div className="flex-1">
               <StreamVideo 
+                key={`video-${partner.id}`} // Force remount when partner changes
                 partnerId={partner.id}
                 partnerName={partner.full_name}
               />
@@ -118,6 +120,7 @@ export function CommunicationTab({
             
             {/* Video Call Invite System */}
             <VideoCallInvite
+              key={`invite-${partner.id}`} // Force remount when partner changes
               userRole={userRole}
               partnerId={partner.id}
               partnerName={partner.full_name}

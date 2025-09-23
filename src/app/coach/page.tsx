@@ -1569,7 +1569,7 @@ export default function CoachPage() {
           scheduled_start_time: taskForm.scheduled_start_time || null,
           scheduled_end_time: taskForm.scheduled_end_time || null,
           estimated_duration: taskForm.estimated_duration,
-          problem_count: taskForm.task_type === 'practice' ? taskForm.problem_count : null,
+          problem_count: (taskForm.task_type === 'practice' || taskForm.task_type === 'study' || taskForm.task_type === 'review') ? taskForm.problem_count : null,
           status: 'pending',
           priority: 'medium',
           assigned_to: selectedStudent.id,
@@ -1755,7 +1755,7 @@ export default function CoachPage() {
           scheduled_start_time: taskForm.scheduled_start_time || null,
           scheduled_end_time: taskForm.scheduled_end_time || null,
           estimated_duration: taskForm.estimated_duration,
-          problem_count: taskForm.task_type === 'practice' ? taskForm.problem_count : null,
+          problem_count: (taskForm.task_type === 'practice' || taskForm.task_type === 'study' || taskForm.task_type === 'review') ? taskForm.problem_count : null,
           updated_at: new Date().toISOString()
         })
         .eq('id', editingTask.id)
@@ -2788,8 +2788,8 @@ export default function CoachPage() {
                 />
               </div>
 
-              {/* Problem Count - Only for practice tasks */}
-              {taskForm.task_type === 'practice' && (
+              {/* Problem Count - Only for practice, study, and review tasks */}
+              {(taskForm.task_type === 'practice' || taskForm.task_type === 'study' || taskForm.task_type === 'review') && (
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Soru Sayısı
@@ -4391,7 +4391,9 @@ export default function CoachPage() {
                                   <span className="text-gray-600 ml-1">({resource.category.toUpperCase()})</span>
                                 </div>
                               ) : (subject || topic || mockExam) ? (
-                                <div className="text-xs text-gray-700 mb-1 font-medium">
+                                <div className={`text-sm font-bold ${
+                                  task.status === 'completed' ? 'text-gray-500' : 'text-gray-800'
+                                }`}>
                                   {/* Show subject and topic */}
                                   {subject && topic ? `${subject.name} - ${topic.name}` :
                                    subject ? subject.name :
@@ -4421,7 +4423,7 @@ export default function CoachPage() {
                               )}
                               
                               {/* Problem count on separate line if exists */}
-                              {task.task_type === 'practice' && task.problem_count && (
+                              {(task.task_type === 'practice' || task.task_type === 'study' || task.task_type === 'review') && task.problem_count && (
                                 <div className="flex items-center space-x-1 text-xs text-orange-700 mb-1 font-medium">
                                   <Calculator className="h-3 w-3" />
                                   <span>{task.problem_count} soru</span>
