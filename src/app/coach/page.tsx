@@ -350,7 +350,7 @@ export default function CoachPage() {
     scheduled_start_time: '',
     scheduled_end_time: '',
     estimated_duration: 60,
-    problem_count: 10
+    problem_count: 0
   })
 
   // Goal management states
@@ -1500,7 +1500,7 @@ export default function CoachPage() {
       scheduled_start_time: '',
       scheduled_end_time: '',
       estimated_duration: 60,
-      problem_count: 10
+      problem_count: 0
     })
     setShowTaskModal(true)
   }
@@ -1520,7 +1520,7 @@ export default function CoachPage() {
       scheduled_start_time: '',
       scheduled_end_time: '',
       estimated_duration: 60,
-      problem_count: 10
+      problem_count: 0
     })
   }
 
@@ -1569,7 +1569,7 @@ export default function CoachPage() {
           scheduled_start_time: taskForm.scheduled_start_time || null,
           scheduled_end_time: taskForm.scheduled_end_time || null,
           estimated_duration: taskForm.estimated_duration,
-          problem_count: (taskForm.task_type === 'practice' || taskForm.task_type === 'study' || taskForm.task_type === 'review') ? taskForm.problem_count : null,
+          problem_count: (taskForm.task_type === 'practice' || taskForm.task_type === 'study' || taskForm.task_type === 'review') && taskForm.problem_count > 0 ? taskForm.problem_count : null,
           status: 'pending',
           priority: 'medium',
           assigned_to: selectedStudent.id,
@@ -1698,7 +1698,7 @@ export default function CoachPage() {
       scheduled_start_time: task.scheduled_start_time || '',
       scheduled_end_time: task.scheduled_end_time || '',
       estimated_duration: task.estimated_duration,
-      problem_count: task.problem_count || 10
+      problem_count: task.problem_count || 0
     })
     setShowTaskModal(true)
   }
@@ -1755,7 +1755,7 @@ export default function CoachPage() {
           scheduled_start_time: taskForm.scheduled_start_time || null,
           scheduled_end_time: taskForm.scheduled_end_time || null,
           estimated_duration: taskForm.estimated_duration,
-          problem_count: (taskForm.task_type === 'practice' || taskForm.task_type === 'study' || taskForm.task_type === 'review') ? taskForm.problem_count : null,
+          problem_count: (taskForm.task_type === 'practice' || taskForm.task_type === 'study' || taskForm.task_type === 'review') && taskForm.problem_count > 0 ? taskForm.problem_count : null,
           updated_at: new Date().toISOString()
         })
         .eq('id', editingTask.id)
@@ -2796,10 +2796,16 @@ export default function CoachPage() {
                   </label>
                   <input
                     type="number"
-                    min="1"
+                    min="0"
                     max="100"
-                    value={taskForm.problem_count}
-                    onChange={(e) => setTaskForm(prev => ({ ...prev, problem_count: parseInt(e.target.value) || 10 }))}
+                    value={taskForm.problem_count === 0 ? '' : taskForm.problem_count}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      setTaskForm(prev => ({
+                        ...prev,
+                        problem_count: value === '' ? 0 : parseInt(value) || 0
+                      }));
+                    }}
                     className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     placeholder="Çözülecek soru sayısı"
                   />
