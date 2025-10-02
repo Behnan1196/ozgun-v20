@@ -4534,7 +4534,7 @@ export default function CoachPage() {
                               )}
                               
                               {/* Problem count on separate line if exists */}
-                      {(task.task_type === 'practice' || task.task_type === 'study' || task.task_type === 'review') && task.problem_count && task.problem_count > 0 && (
+                      {(task.task_type === 'practice' || task.task_type === 'study' || task.task_type === 'review') && (
                         <div className="mb-1">
                           {editingProblemCount[task.id] ? (
                             <div className="flex items-center space-x-2">
@@ -4580,7 +4580,7 @@ export default function CoachPage() {
                               title={userRole === 'student' && task.assigned_to === user?.id ? 'Dokunarak düzenle' : undefined}
                             >
                               <Calculator className="h-3 w-3" />
-                              <span className="font-bold">{task.problem_count} soru</span>
+                              <span className="font-bold">{task.problem_count ? `${task.problem_count} soru` : 'Soru sayısı belirtilmemiş'}</span>
                               {userRole === 'student' && task.assigned_to === user?.id && (
                                 <span className="text-gray-500 text-xs ml-1">(düzenle)</span>
                               )}
