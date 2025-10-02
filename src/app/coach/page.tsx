@@ -4534,60 +4534,60 @@ export default function CoachPage() {
                               )}
                               
                               {/* Problem count on separate line if exists */}
-                              {(task.task_type === 'practice' || task.task_type === 'study' || task.task_type === 'review') && (
-                                <div className="mb-1">
-                                  {editingProblemCount[task.id] ? (
-                                    <div className="flex items-center space-x-2">
-                                      <input
-                                        type="number"
-                                        min="0"
-                                        value={problemCountValues[task.id] || ''}
-                                        onChange={(e) => setProblemCountValues(prev => ({ ...prev, [task.id]: e.target.value }))}
-                                        className="w-16 px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
-                                        placeholder="Soru sayısı"
-                                        autoFocus
-                                      />
-                                      <button
-                                        onClick={(e) => {
-                                          e.stopPropagation()
-                                          handleProblemCountUpdate(task)
-                                        }}
-                                        className="p-1 text-green-600 hover:bg-green-50 rounded"
-                                        title="Kaydet"
-                                      >
-                                        ✓
-                                      </button>
-                                      <button
-                                        onClick={(e) => {
-                                          e.stopPropagation()
-                                          handleProblemCountCancel(task.id)
-                                        }}
-                                        className="p-1 text-red-600 hover:bg-red-50 rounded"
-                                        title="İptal"
-                                      >
-                                        ✕
-                                      </button>
-                                    </div>
-                                  ) : (
-                                    <div 
-                                      className={`flex items-center space-x-1 text-xs text-orange-700 font-medium ${
-                                        userRole === 'student' && task.assigned_to === user?.id ? 'cursor-pointer hover:bg-orange-50 px-2 py-1 rounded' : ''
-                                      }`}
-                                      onClick={userRole === 'student' && task.assigned_to === user?.id ? (e) => {
-                                        e.stopPropagation()
-                                        handleProblemCountEdit(task)
-                                      } : undefined}
-                                      title={userRole === 'student' && task.assigned_to === user?.id ? 'Dokunarak düzenle' : undefined}
-                                    >
-                                      <Calculator className="h-3 w-3" />
-                                      <span className="font-bold">{task.problem_count ? `${task.problem_count} soru` : 'Soru sayısı yok'}</span>
-                                      {userRole === 'student' && task.assigned_to === user?.id && (
-                                        <span className="text-gray-500 text-xs ml-1">(düzenle)</span>
-                                      )}
-                                    </div>
-                                  )}
-                                </div>
+                      {(task.task_type === 'practice' || task.task_type === 'study' || task.task_type === 'review') && task.problem_count && task.problem_count > 0 && (
+                        <div className="mb-1">
+                          {editingProblemCount[task.id] ? (
+                            <div className="flex items-center space-x-2">
+                              <input
+                                type="number"
+                                min="0"
+                                value={problemCountValues[task.id] || ''}
+                                onChange={(e) => setProblemCountValues(prev => ({ ...prev, [task.id]: e.target.value }))}
+                                className="w-16 px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                placeholder="Soru sayısı"
+                                autoFocus
+                              />
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  handleProblemCountUpdate(task)
+                                }}
+                                className="p-1 text-green-600 hover:bg-green-50 rounded"
+                                title="Kaydet"
+                              >
+                                ✓
+                              </button>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  handleProblemCountCancel(task.id)
+                                }}
+                                className="p-1 text-red-600 hover:bg-red-50 rounded"
+                                title="İptal"
+                              >
+                                ✕
+                              </button>
+                            </div>
+                          ) : (
+                            <div 
+                              className={`flex items-center space-x-1 text-xs text-orange-700 font-medium ${
+                                userRole === 'student' && task.assigned_to === user?.id ? 'cursor-pointer hover:bg-orange-50 px-2 py-1 rounded' : ''
+                              }`}
+                              onClick={userRole === 'student' && task.assigned_to === user?.id ? (e) => {
+                                e.stopPropagation()
+                                handleProblemCountEdit(task)
+                              } : undefined}
+                              title={userRole === 'student' && task.assigned_to === user?.id ? 'Dokunarak düzenle' : undefined}
+                            >
+                              <Calculator className="h-3 w-3" />
+                              <span className="font-bold">{task.problem_count} soru</span>
+                              {userRole === 'student' && task.assigned_to === user?.id && (
+                                <span className="text-gray-500 text-xs ml-1">(düzenle)</span>
                               )}
+                            </div>
+                          )}
+                        </div>
+                      )}
                               
                               {/* Time and duration at the bottom */}
                               <div className="flex items-center justify-between text-xs text-gray-600">
@@ -4834,22 +4834,6 @@ export default function CoachPage() {
                       </div>
 
                       {/* Total Questions Summary */}
-                      <div className="p-4 bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-lg">
-                        <div className="flex items-center justify-between mb-3">
-                          <div className="text-sm font-medium text-green-800">
-                            {showMonthlyStats ? 'Aylık' : 'Haftalık'} Toplam Soru
-                          </div>
-                          <div className="text-green-600">🎯</div>
-                        </div>
-                        <div className="text-center py-4">
-                          <div className="text-4xl font-bold text-green-600 mb-2">
-                            {(showMonthlyStats ? calculateMonthlyStats() : calculateWeeklyStats()).reduce((sum, stat) => sum + stat.totalProblems, 0)}
-                          </div>
-                          <div className="text-lg text-green-700 font-medium">
-                            soru çözüldü
-                          </div>
-                        </div>
-                      </div>
 
                       {/* Monthly/Weekly Question Stats - Full Width */}
                       <div className="p-4 bg-gradient-to-r from-blue-50 to-cyan-50 border border-blue-200 rounded-lg">
@@ -4885,6 +4869,18 @@ export default function CoachPage() {
                               <p>Henüz soru çözülmemiş.</p>
                             </div>
                           )}
+                        </div>
+                        
+                        {/* Total Questions Solved - Added at bottom */}
+                        <div className="mt-4 pt-4 border-t border-blue-200">
+                          <div className="text-center">
+                            <div className="text-2xl font-bold text-green-600 mb-1">
+                              {(showMonthlyStats ? calculateMonthlyStats() : calculateWeeklyStats()).reduce((sum, stat) => sum + stat.totalProblems, 0)}
+                            </div>
+                            <div className="text-sm text-green-700 font-medium">
+                              Toplam Çözülen Soru
+                            </div>
+                          </div>
                         </div>
                       </div>
 
