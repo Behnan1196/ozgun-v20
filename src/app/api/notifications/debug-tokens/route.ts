@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/server';
 
+// Force dynamic rendering
+export const dynamic = 'force-dynamic';
+
 /**
  * Debug endpoint to check notification tokens for a user
  */

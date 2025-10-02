@@ -105,7 +105,7 @@ interface Task {
   estimated_duration: number
   problem_count?: number
   priority: 'low' | 'medium' | 'high'
-  task_type: 'study' | 'practice' | 'exam' | 'review' | 'resource' | 'coaching_session'
+  task_type: 'study' | 'practice' | 'exam' | 'review' | 'resource' | 'coaching_session' | 'deneme_analizi'
   assigned_to: string
   assigned_by: string
   created_at: string
@@ -339,6 +339,10 @@ export default function CoachPage() {
   const [showTaskModal, setShowTaskModal] = useState(false)
   const [taskModalDate, setTaskModalDate] = useState<Date | null>(null)
   const [editingTask, setEditingTask] = useState<Task | null>(null)
+  const [editingProblemCount, setEditingProblemCount] = useState<{ [taskId: string]: boolean }>({})
+  const [problemCountValues, setProblemCountValues] = useState<{ [taskId: string]: string }>({})
+  const [editingDuration, setEditingDuration] = useState<{ [taskId: string]: boolean }>({})
+  const [durationValues, setDurationValues] = useState<{ [taskId: string]: string }>({})
   const [taskForm, setTaskForm] = useState({
     title: '',
     description: '',
@@ -346,7 +350,7 @@ export default function CoachPage() {
     topic_id: '',
     resource_id: '',
     mock_exam_id: '',
-    task_type: 'study' as 'study' | 'practice' | 'exam' | 'review' | 'resource' | 'coaching_session',
+    task_type: 'study' as 'study' | 'practice' | 'exam' | 'review' | 'resource' | 'coaching_session' | 'deneme_analizi',
     scheduled_start_time: '',
     scheduled_end_time: '',
     estimated_duration: 60,
@@ -1542,9 +1546,9 @@ export default function CoachPage() {
       return
     }
 
-    // Validate start time for coaching sessions
-    if (taskForm.task_type === 'coaching_session' && !taskForm.scheduled_start_time) {
-      alert('Koçluk seansları için başlangıç saati belirtmelisiniz')
+    // Validate start time for coaching sessions and deneme analizi
+    if ((taskForm.task_type === 'coaching_session' || taskForm.task_type === 'deneme_analizi') && !taskForm.scheduled_start_time) {
+      alert('Koçluk seansları ve deneme analizi için başlangıç saati belirtmelisiniz')
       return
     }
 
@@ -1721,9 +1725,9 @@ export default function CoachPage() {
       return
     }
 
-    // Validate start time for coaching sessions
-    if (taskForm.task_type === 'coaching_session' && !taskForm.scheduled_start_time) {
-      alert('Koçluk seansları için başlangıç saati belirtmelisiniz')
+    // Validate start time for coaching sessions and deneme analizi
+    if ((taskForm.task_type === 'coaching_session' || taskForm.task_type === 'deneme_analizi') && !taskForm.scheduled_start_time) {
+      alert('Koçluk seansları ve deneme analizi için başlangıç saati belirtmelisiniz')
       return
     }
 
@@ -1791,6 +1795,102 @@ export default function CoachPage() {
     } catch (error) {
       console.error('Error updating task:', error)
       alert('Görev güncellenirken hata oluştu')
+    }
+  }
+
+  const handleProblemCountEdit = (task: Task) => {
+    setEditingProblemCount(prev => ({ ...prev, [task.id]: true }))
+    setProblemCountValues(prev => ({ ...prev, [task.id]: task.problem_count?.toString() || '' }))
+  }
+
+  const handleProblemCountCancel = (taskId: string) => {
+    setEditingProblemCount(prev => ({ ...prev, [taskId]: false }))
+    setProblemCountValues(prev => ({ ...prev, [taskId]: '' }))
+  }
+
+  const handleProblemCountUpdate = async (task: Task) => {
+    const newCount = parseInt(problemCountValues[task.id])
+    
+    if (isNaN(newCount) || newCount < 0) {
+      alert('Geçerli bir sayı girin')
+      setEditingProblemCount(prev => ({ ...prev, [task.id]: false }))
+      return
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from('tasks')
+        .update({ 
+          problem_count: newCount,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', task.id)
+        .select()
+        .single()
+
+      if (error) {
+        throw error
+      }
+
+      if (data) {
+        // Update the task in the local state
+        setWeeklyTasks(prev => prev.map(t => t.id === task.id ? data : t))
+        setMonthlyTasks(prev => prev.map(t => t.id === task.id ? data : t))
+      }
+      
+      setEditingProblemCount(prev => ({ ...prev, [task.id]: false }))
+    } catch (error) {
+      console.error('Error updating problem count:', error)
+      alert('Soru sayısı güncellenirken bir hata oluştu')
+      setEditingProblemCount(prev => ({ ...prev, [task.id]: false }))
+    }
+  }
+
+  const handleDurationEdit = (task: Task) => {
+    setEditingDuration(prev => ({ ...prev, [task.id]: true }))
+    setDurationValues(prev => ({ ...prev, [task.id]: task.estimated_duration?.toString() || '' }))
+  }
+
+  const handleDurationCancel = (taskId: string) => {
+    setEditingDuration(prev => ({ ...prev, [taskId]: false }))
+    setDurationValues(prev => ({ ...prev, [taskId]: '' }))
+  }
+
+  const handleDurationUpdate = async (task: Task) => {
+    const newDuration = parseInt(durationValues[task.id])
+    
+    if (isNaN(newDuration) || newDuration <= 0) {
+      alert('Geçerli bir süre girin (pozitif sayı)')
+      setEditingDuration(prev => ({ ...prev, [task.id]: false }))
+      return
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from('tasks')
+        .update({ 
+          estimated_duration: newDuration,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', task.id)
+        .select()
+        .single()
+
+      if (error) {
+        throw error
+      }
+
+      if (data) {
+        // Update the task in the local state
+        setWeeklyTasks(prev => prev.map(t => t.id === task.id ? data : t))
+        setMonthlyTasks(prev => prev.map(t => t.id === task.id ? data : t))
+      }
+      
+      setEditingDuration(prev => ({ ...prev, [task.id]: false }))
+    } catch (error) {
+      console.error('Error updating duration:', error)
+      alert('Süre güncellenirken bir hata oluştu')
+      setEditingDuration(prev => ({ ...prev, [task.id]: false }))
     }
   }
 
@@ -2654,6 +2754,7 @@ export default function CoachPage() {
                   <option value="review">Tekrar</option>
                   <option value="resource">Kaynak</option>
                   <option value="coaching_session">Koçluk Seansı</option>
+                  <option value="deneme_analizi">Deneme Analizi</option>
                 </select>
               </div>
 
@@ -2816,14 +2917,14 @@ export default function CoachPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Başlangıç {taskForm.task_type === 'coaching_session' ? '*' : ''}
+                    Başlangıç {(taskForm.task_type === 'coaching_session' || taskForm.task_type === 'deneme_analizi') ? '*' : ''}
                   </label>
                   <input
                     type="time"
                     value={taskForm.scheduled_start_time}
                     onChange={(e) => setTaskForm(prev => ({ ...prev, scheduled_start_time: e.target.value }))}
                     className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    required={taskForm.task_type === 'coaching_session'}
+                    required={taskForm.task_type === 'coaching_session' || taskForm.task_type === 'deneme_analizi'}
                   />
                 </div>
                 <div>
@@ -4318,6 +4419,8 @@ export default function CoachPage() {
                                 return `${baseStyle} border-l-indigo-500 bg-indigo-50 hover:bg-indigo-100 hover:border-indigo-300`
                               case 'coaching_session':
                                 return `${baseStyle} border-l-emerald-500 bg-emerald-50 hover:bg-emerald-100 hover:border-emerald-300`
+                              case 'deneme_analizi':
+                                return `${baseStyle} border-l-cyan-500 bg-cyan-50 hover:bg-cyan-100 hover:border-cyan-300`
                               default:
                                 return `${baseStyle} border-l-gray-500 bg-gray-50 hover:bg-gray-100 hover:border-gray-300`
                             }
@@ -4341,12 +4444,14 @@ export default function CoachPage() {
                                   {task.task_type === 'review' && <BarChart3 className="h-3 w-3 text-purple-600" />}
                                   {task.task_type === 'resource' && <Link className="h-3 w-3 text-indigo-600" />}
                                   {task.task_type === 'coaching_session' && <Video className="h-3 w-3 text-emerald-600" />}
+                                  {task.task_type === 'deneme_analizi' && <BarChart3 className="h-3 w-3 text-cyan-600" />}
                                   <span className="text-xs font-semibold text-gray-700">
                                     {task.task_type === 'study' ? 'ÇALIŞMA' :
                                      task.task_type === 'practice' ? 'SORU ÇÖZ' :
                                      task.task_type === 'exam' ? 'SINAV' :
                                      task.task_type === 'resource' ? 'KAYNAK' :
-                                     task.task_type === 'coaching_session' ? 'KOÇLUK SEANSI' : 'TEKRAR'}
+                                     task.task_type === 'coaching_session' ? 'KOÇLUK SEANSI' :
+                                     task.task_type === 'deneme_analizi' ? 'DENEME ANALİZİ' : 'TEKRAR'}
                                   </span>
                                 </div>
                                 <div className="flex items-center space-x-1">
@@ -4429,10 +4534,58 @@ export default function CoachPage() {
                               )}
                               
                               {/* Problem count on separate line if exists */}
-                              {(task.task_type === 'practice' || task.task_type === 'study' || task.task_type === 'review') && task.problem_count && (
-                                <div className="flex items-center space-x-1 text-xs text-orange-700 mb-1 font-medium">
-                                  <Calculator className="h-3 w-3" />
-                                  <span>{task.problem_count} soru</span>
+                              {(task.task_type === 'practice' || task.task_type === 'study' || task.task_type === 'review') && (
+                                <div className="mb-1">
+                                  {editingProblemCount[task.id] ? (
+                                    <div className="flex items-center space-x-2">
+                                      <input
+                                        type="number"
+                                        min="0"
+                                        value={problemCountValues[task.id] || ''}
+                                        onChange={(e) => setProblemCountValues(prev => ({ ...prev, [task.id]: e.target.value }))}
+                                        className="w-16 px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                        placeholder="Soru sayısı"
+                                        autoFocus
+                                      />
+                                      <button
+                                        onClick={(e) => {
+                                          e.stopPropagation()
+                                          handleProblemCountUpdate(task)
+                                        }}
+                                        className="p-1 text-green-600 hover:bg-green-50 rounded"
+                                        title="Kaydet"
+                                      >
+                                        ✓
+                                      </button>
+                                      <button
+                                        onClick={(e) => {
+                                          e.stopPropagation()
+                                          handleProblemCountCancel(task.id)
+                                        }}
+                                        className="p-1 text-red-600 hover:bg-red-50 rounded"
+                                        title="İptal"
+                                      >
+                                        ✕
+                                      </button>
+                                    </div>
+                                  ) : (
+                                    <div 
+                                      className={`flex items-center space-x-1 text-xs text-orange-700 font-medium ${
+                                        userRole === 'student' && task.assigned_to === user?.id ? 'cursor-pointer hover:bg-orange-50 px-2 py-1 rounded' : ''
+                                      }`}
+                                      onClick={userRole === 'student' && task.assigned_to === user?.id ? (e) => {
+                                        e.stopPropagation()
+                                        handleProblemCountEdit(task)
+                                      } : undefined}
+                                      title={userRole === 'student' && task.assigned_to === user?.id ? 'Dokunarak düzenle' : undefined}
+                                    >
+                                      <Calculator className="h-3 w-3" />
+                                      <span className="font-bold">{task.problem_count ? `${task.problem_count} soru` : 'Soru sayısı yok'}</span>
+                                      {userRole === 'student' && task.assigned_to === user?.id && (
+                                        <span className="text-gray-500 text-xs ml-1">(düzenle)</span>
+                                      )}
+                                    </div>
+                                  )}
                                 </div>
                               )}
                               
@@ -4446,7 +4599,55 @@ export default function CoachPage() {
                                 </div>
                                 <div className="flex items-center space-x-1">
                                   <Timer className="h-3 w-3" />
-                                  <span className="font-medium">{task.estimated_duration}dk</span>
+                                  {editingDuration[task.id] ? (
+                                    <div className="flex items-center space-x-2">
+                                      <input
+                                        type="number"
+                                        min="1"
+                                        value={durationValues[task.id] || ''}
+                                        onChange={(e) => setDurationValues(prev => ({ ...prev, [task.id]: e.target.value }))}
+                                        className="w-16 px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                        placeholder="Süre (dk)"
+                                        autoFocus
+                                      />
+                                      <button
+                                        onClick={(e) => {
+                                          e.stopPropagation()
+                                          handleDurationUpdate(task)
+                                        }}
+                                        className="p-1 text-green-600 hover:bg-green-50 rounded"
+                                        title="Kaydet"
+                                      >
+                                        ✓
+                                      </button>
+                                      <button
+                                        onClick={(e) => {
+                                          e.stopPropagation()
+                                          handleDurationCancel(task.id)
+                                        }}
+                                        className="p-1 text-red-600 hover:bg-red-50 rounded"
+                                        title="İptal"
+                                      >
+                                        ✕
+                                      </button>
+                                    </div>
+                                  ) : (
+                                    <div 
+                                      className={`flex items-center space-x-1 text-xs text-gray-700 font-medium ${
+                                        userRole === 'student' && task.assigned_to === user?.id ? 'cursor-pointer hover:bg-gray-50 px-2 py-1 rounded' : ''
+                                      }`}
+                                      onClick={userRole === 'student' && task.assigned_to === user?.id ? (e) => {
+                                        e.stopPropagation()
+                                        handleDurationEdit(task)
+                                      } : undefined}
+                                      title={userRole === 'student' && task.assigned_to === user?.id ? 'Dokunarak düzenle' : undefined}
+                                    >
+                                      <span>{task.estimated_duration}dk</span>
+                                      {userRole === 'student' && task.assigned_to === user?.id && (
+                                        <span className="text-gray-500 text-xs ml-1">(düzenle)</span>
+                                      )}
+                                    </div>
+                                  )}
                                 </div>
                               </div>
                             </div>
@@ -4632,6 +4833,24 @@ export default function CoachPage() {
             </div>
                       </div>
 
+                      {/* Total Questions Summary */}
+                      <div className="p-4 bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-lg">
+                        <div className="flex items-center justify-between mb-3">
+                          <div className="text-sm font-medium text-green-800">
+                            {showMonthlyStats ? 'Aylık' : 'Haftalık'} Toplam Soru
+                          </div>
+                          <div className="text-green-600">🎯</div>
+                        </div>
+                        <div className="text-center py-4">
+                          <div className="text-4xl font-bold text-green-600 mb-2">
+                            {(showMonthlyStats ? calculateMonthlyStats() : calculateWeeklyStats()).reduce((sum, stat) => sum + stat.totalProblems, 0)}
+                          </div>
+                          <div className="text-lg text-green-700 font-medium">
+                            soru çözüldü
+                          </div>
+                        </div>
+                      </div>
+
                       {/* Monthly/Weekly Question Stats - Full Width */}
                       <div className="p-4 bg-gradient-to-r from-blue-50 to-cyan-50 border border-blue-200 rounded-lg">
                         <div className="flex items-center justify-between mb-3">
@@ -4676,14 +4895,15 @@ export default function CoachPage() {
                           </div>
                           <div className="space-y-3">
                             {(() => {
-                              const taskTypes = ['study', 'practice', 'exam', 'review', 'resource', 'coaching_session']
+                              const taskTypes = ['study', 'practice', 'exam', 'review', 'resource', 'coaching_session', 'deneme_analizi']
                               const taskTypeNames: Record<string, string> = {
                                 'study': 'Çalışma',
                                 'practice': 'Soru Çöz',
                                 'exam': 'Sınav',
                                 'review': 'Tekrar',
                                 'resource': 'Kaynak',
-                                'coaching_session': 'Koçluk Seansı'
+                                'coaching_session': 'Koçluk Seansı',
+                                'deneme_analizi': 'Deneme Analizi'
                               }
                               const taskTypeColors: Record<string, string> = {
                                 'study': 'bg-blue-500',
@@ -4691,7 +4911,8 @@ export default function CoachPage() {
                                 'exam': 'bg-red-500',
                                 'review': 'bg-yellow-500',
                                 'resource': 'bg-indigo-500',
-                                'coaching_session': 'bg-purple-500'
+                                'coaching_session': 'bg-purple-500',
+                                'deneme_analizi': 'bg-cyan-500'
                               }
                               
                               const filteredTasks = showMonthlyStats ? monthlyTasks : weeklyTasks;

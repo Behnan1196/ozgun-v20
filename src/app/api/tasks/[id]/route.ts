@@ -8,7 +8,7 @@ export async function PATCH(
   { params }: { params: { id: string } }
 ) {
   try {
-    const { status, completed_at } = await request.json()
+    const { status, completed_at, problem_count, estimated_duration } = await request.json()
     const taskId = params.id
 
     // Get the current user
@@ -31,10 +31,10 @@ export async function PATCH(
       return NextResponse.json({ error: 'User profile not found' }, { status: 404 })
     }
 
-    // Get the task to check permissions
+    // Get the task to check permissions and task type
     const { data: task, error: taskError } = await supabase
       .from('tasks')
-      .select('assigned_to, assigned_by')
+      .select('assigned_to, assigned_by, task_type')
       .eq('id', taskId)
       .single()
 
@@ -65,16 +65,61 @@ export async function PATCH(
       return NextResponse.json({ error: 'Permission denied' }, { status: 403 })
     }
 
+    // Validate problem_count if provided
+    if (problem_count !== undefined) {
+      // Only allow problem_count updates for specific task types
+      const allowedTaskTypes = ['practice', 'study', 'review']
+      if (!allowedTaskTypes.includes(task.task_type)) {
+        return NextResponse.json({ 
+          error: 'Problem count can only be updated for practice, study, and review tasks' 
+        }, { status: 400 })
+      }
+      
+      // Validate problem_count is a non-negative integer
+      if (typeof problem_count !== 'number' || problem_count < 0 || !Number.isInteger(problem_count)) {
+        return NextResponse.json({ 
+          error: 'Problem count must be a non-negative integer' 
+        }, { status: 400 })
+      }
+    }
+
+    // Validate estimated_duration if provided
+    if (estimated_duration !== undefined) {
+      // Validate estimated_duration is a positive integer
+      if (typeof estimated_duration !== 'number' || estimated_duration <= 0 || !Number.isInteger(estimated_duration)) {
+        return NextResponse.json({ 
+          error: 'Duration must be a positive integer' 
+        }, { status: 400 })
+      }
+    }
+
     // Use admin client to bypass RLS for authorized updates
     const adminSupabase = createAdminClient()
     
+    // Build update object with only provided fields
+    const updateData: any = {
+      updated_at: new Date().toISOString()
+    }
+    
+    if (status !== undefined) {
+      updateData.status = status
+    }
+    
+    if (completed_at !== undefined) {
+      updateData.completed_at = completed_at
+    }
+    
+    if (problem_count !== undefined) {
+      updateData.problem_count = problem_count
+    }
+    
+    if (estimated_duration !== undefined) {
+      updateData.estimated_duration = estimated_duration
+    }
+    
     const { data: updatedTask, error: updateError } = await adminSupabase
       .from('tasks')
-      .update({ 
-        status,
-        completed_at,
-        updated_at: new Date().toISOString()
-      })
+      .update(updateData)
       .eq('id', taskId)
       .select()
       .single()
