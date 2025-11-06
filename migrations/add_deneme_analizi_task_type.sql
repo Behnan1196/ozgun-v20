@@ -12,3 +12,4 @@ CHECK (task_type IN ('study', 'practice', 'exam', 'review', 'resource', 'coachin
 SELECT conname, contype 
 FROM pg_constraint 
 WHERE conrelid = 'tasks'::regclass AND conname = 'tasks_task_type_check';
+
