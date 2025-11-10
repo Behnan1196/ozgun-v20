@@ -1519,12 +1519,13 @@ export default function CoachPage() {
       dayNumber: day
     })
     
-    // Alternative approach: Use a more explicit calculation
+    // Correct approach: Sunday should be the LAST day of the week
+    // Week structure: Monday(1) -> Sunday(0) of SAME week
     let daysToSubtract;
-    if (day === 0) { // Sunday
-      daysToSubtract = 6; // Go back 6 days to Monday
-    } else { // Monday = 1, Tuesday = 2, etc.
-      daysToSubtract = day - 1; // Go back to Monday
+    if (day === 0) { // Sunday - go back 6 days to get Monday of SAME week
+      daysToSubtract = 6;
+    } else { // Monday = 1, Tuesday = 2, etc. - go back to Monday
+      daysToSubtract = day - 1;
     }
     
     const result = new Date(d)
@@ -2731,10 +2732,13 @@ export default function CoachPage() {
     // Filter tasks for the current week
     const weekTasks = weeklyTasks.filter(task => {
       const taskDate = new Date(task.scheduled_date)
+      // Normalize times for proper comparison
+      taskDate.setHours(0, 0, 0, 0)
+      
       const isInWeek = taskDate >= weekStart && taskDate <= weekEnd
       const isCompleted = task.status === 'completed'
       
-      // Debug: Log each task's date comparison
+      // Debug: Log each task's date comparison with more detail
       if (task.scheduled_date) {
         console.log('📋 [DEBUG] Görev kontrolü:', {
           title: task.title,
@@ -2742,6 +2746,11 @@ export default function CoachPage() {
           scheduled_date: task.scheduled_date,
           taskDate: taskDate.toLocaleDateString('tr-TR'),
           taskDay: taskDate.toLocaleDateString('tr-TR', { weekday: 'long' }),
+          weekStart: weekStart.toLocaleDateString('tr-TR'),
+          weekEnd: weekEnd.toLocaleDateString('tr-TR'),
+          taskTime: taskDate.getTime(),
+          weekStartTime: weekStart.getTime(),
+          weekEndTime: weekEnd.getTime(),
           isInWeek,
           isCompleted,
           problem_count: task.problem_count,
