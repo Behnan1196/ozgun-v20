@@ -1511,7 +1511,9 @@ export default function CoachPage() {
   const getWeekStart = (date: Date) => {
     const d = new Date(date)
     const day = d.getDay()
-    const diff = d.getDate() - day + (day === 0 ? -6 : 1) // adjust when day is sunday
+    // For Monday-based week: Sunday should be part of current week (as last day)
+    // So we need to go back to Monday of the same week
+    const diff = day === 0 ? d.getDate() - 6 : d.getDate() - day + 1
     d.setDate(diff)
     d.setHours(0, 0, 0, 0) // Ensure consistent time for date comparisons
     return d
@@ -2667,6 +2669,18 @@ export default function CoachPage() {
     // Group by subject and calculate total problems for completed tasks only
     const subjectStats = subjects.map(subject => {
       const subjectTasks = monthlyTasks.filter(task => task.subject_id === subject.id && task.status === 'completed')
+      
+      // Debug: Log review tasks for this subject
+      const reviewTasks = subjectTasks.filter(task => task.task_type === 'review')
+      if (reviewTasks.length > 0) {
+        console.log(`📊 [DEBUG] ${subject.name} - Tekrar görevleri:`, reviewTasks.map(t => ({
+          title: t.title,
+          task_type: t.task_type,
+          problem_count: t.problem_count,
+          status: t.status
+        })))
+      }
+      
       const totalProblems = subjectTasks.reduce((sum, task) => sum + (task.problem_count || 0), 0)
       return {
         subject: subject.name,
@@ -2685,6 +2699,14 @@ export default function CoachPage() {
     const weekEnd = new Date(weekStart)
     weekEnd.setDate(weekStart.getDate() + 6)
 
+    console.log('📅 [DEBUG] Haftalık istatistik aralığı:', {
+      currentWeek: currentWeek.toLocaleDateString('tr-TR'),
+      weekStart: weekStart.toLocaleDateString('tr-TR'),
+      weekEnd: weekEnd.toLocaleDateString('tr-TR'),
+      weekStartDay: weekStart.toLocaleDateString('tr-TR', { weekday: 'long' }),
+      weekEndDay: weekEnd.toLocaleDateString('tr-TR', { weekday: 'long' })
+    })
+
     // Filter tasks for the current week
     const weekTasks = weeklyTasks.filter(task => {
       const taskDate = new Date(task.scheduled_date)
@@ -2694,6 +2716,18 @@ export default function CoachPage() {
     // Group by subject and calculate total problems
     const subjectStats = subjects.map(subject => {
       const subjectTasks = weekTasks.filter(task => task.subject_id === subject.id)
+      
+      // Debug: Log review tasks for this subject
+      const reviewTasks = subjectTasks.filter(task => task.task_type === 'review')
+      if (reviewTasks.length > 0) {
+        console.log(`📊 [DEBUG] ${subject.name} - Haftalık Tekrar görevleri:`, reviewTasks.map(t => ({
+          title: t.title,
+          task_type: t.task_type,
+          problem_count: t.problem_count,
+          status: t.status
+        })))
+      }
+      
       const totalProblems = subjectTasks.reduce((sum, task) => sum + (task.problem_count || 0), 0)
       return {
         subject: subject.name,
@@ -3318,8 +3352,8 @@ export default function CoachPage() {
                       setExamForm(prev => ({ ...prev, exam_type: 'TYT' }))
                     }}
                     className={`px-6 py-3 font-medium border-b-2 transition-colors ${examModalTab === 'TYT'
-                        ? 'border-blue-500 text-blue-600 bg-blue-50'
-                        : 'border-transparent text-gray-500 hover:text-gray-700'
+                      ? 'border-blue-500 text-blue-600 bg-blue-50'
+                      : 'border-transparent text-gray-500 hover:text-gray-700'
                       }`}
                   >
                     TYT Sınavı
@@ -3330,8 +3364,8 @@ export default function CoachPage() {
                       setExamForm(prev => ({ ...prev, exam_type: 'AYT' }))
                     }}
                     className={`px-6 py-3 font-medium border-b-2 transition-colors ${examModalTab === 'AYT'
-                        ? 'border-purple-500 text-purple-600 bg-purple-50'
-                        : 'border-transparent text-gray-500 hover:text-gray-700'
+                      ? 'border-purple-500 text-purple-600 bg-purple-50'
+                      : 'border-transparent text-gray-500 hover:text-gray-700'
                       }`}
                   >
                     AYT Sınavı
@@ -3342,8 +3376,8 @@ export default function CoachPage() {
                       setExamForm(prev => ({ ...prev, exam_type: 'Tarama' }))
                     }}
                     className={`px-6 py-3 font-medium border-b-2 transition-colors ${examModalTab === 'Tarama'
-                        ? 'border-green-500 text-green-600 bg-green-50'
-                        : 'border-transparent text-gray-500 hover:text-gray-700'
+                      ? 'border-green-500 text-green-600 bg-green-50'
+                      : 'border-transparent text-gray-500 hover:text-gray-700'
                       }`}
                   >
                     Tarama Sınavı
@@ -4361,8 +4395,8 @@ export default function CoachPage() {
                   <button
                     onClick={() => setSettingsTab('profile')}
                     className={`w-full text-left px-4 py-3 rounded-lg transition-colors flex items-center ${settingsTab === 'profile'
-                        ? 'bg-blue-100 text-blue-700 border border-blue-200'
-                        : 'text-gray-600 hover:bg-gray-100'
+                      ? 'bg-blue-100 text-blue-700 border border-blue-200'
+                      : 'text-gray-600 hover:bg-gray-100'
                       }`}
                   >
                     <UserCircle className="h-4 w-4 mr-3" />
@@ -4371,8 +4405,8 @@ export default function CoachPage() {
                   <button
                     onClick={() => setSettingsTab('security')}
                     className={`w-full text-left px-4 py-3 rounded-lg transition-colors flex items-center ${settingsTab === 'security'
-                        ? 'bg-blue-100 text-blue-700 border border-blue-200'
-                        : 'text-gray-600 hover:bg-gray-100'
+                      ? 'bg-blue-100 text-blue-700 border border-blue-200'
+                      : 'text-gray-600 hover:bg-gray-100'
                       }`}
                   >
                     <Shield className="h-4 w-4 mr-3" />
@@ -4381,8 +4415,8 @@ export default function CoachPage() {
                   <button
                     onClick={() => setSettingsTab('appearance')}
                     className={`w-full text-left px-4 py-3 rounded-lg transition-colors flex items-center ${settingsTab === 'appearance'
-                        ? 'bg-blue-100 text-blue-700 border border-blue-200'
-                        : 'text-gray-600 hover:bg-gray-100'
+                      ? 'bg-blue-100 text-blue-700 border border-blue-200'
+                      : 'text-gray-600 hover:bg-gray-100'
                       }`}
                   >
                     <Palette className="h-4 w-4 mr-3" />
@@ -5044,8 +5078,8 @@ export default function CoachPage() {
                         key={tab.id}
                         onClick={() => setActiveTab(tab.id)}
                         className={`flex-1 px-2 py-3 text-xs font-medium border-b-2 transition-colors ${activeTab === tab.id
-                            ? 'border-blue-500 text-blue-600 bg-blue-50'
-                            : 'border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+                          ? 'border-blue-500 text-blue-600 bg-blue-50'
+                          : 'border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50'
                           }`}
                       >
                         <tab.icon className="h-3 w-3 mx-auto mb-1" />
@@ -5067,8 +5101,8 @@ export default function CoachPage() {
                           <button
                             onClick={() => setShowMonthlyStats(false)}
                             className={`px-3 py-1 text-sm font-medium rounded-md transition-colors ${!showMonthlyStats
-                                ? 'bg-white text-blue-600 shadow-sm'
-                                : 'text-gray-600 hover:text-gray-800'
+                              ? 'bg-white text-blue-600 shadow-sm'
+                              : 'text-gray-600 hover:text-gray-800'
                               }`}
                           >
                             Haftalık
@@ -5076,8 +5110,8 @@ export default function CoachPage() {
                           <button
                             onClick={() => setShowMonthlyStats(true)}
                             className={`px-3 py-1 text-sm font-medium rounded-md transition-colors ${showMonthlyStats
-                                ? 'bg-white text-blue-600 shadow-sm'
-                                : 'text-gray-600 hover:text-gray-800'
+                              ? 'bg-white text-blue-600 shadow-sm'
+                              : 'text-gray-600 hover:text-gray-800'
                               }`}
                           >
                             Aylık
@@ -5750,16 +5784,16 @@ export default function CoachPage() {
                                           {goal.title}
                                         </span>
                                         <span className={`px-2 py-1 text-xs rounded-full ${goal.priority === 'high' ? 'bg-red-100 text-red-800' :
-                                            goal.priority === 'medium' ? 'bg-yellow-100 text-yellow-800' :
-                                              'bg-green-100 text-green-800'
+                                          goal.priority === 'medium' ? 'bg-yellow-100 text-yellow-800' :
+                                            'bg-green-100 text-green-800'
                                           }`}>
                                           {goal.priority === 'high' ? 'Yüksek' :
                                             goal.priority === 'medium' ? 'Orta' : 'Düşük'}
                                         </span>
                                         <span className={`px-2 py-1 text-xs rounded-full ${goal.status === 'completed' ? 'bg-green-100 text-green-800' :
-                                            goal.status === 'active' ? 'bg-blue-100 text-blue-800' :
-                                              goal.status === 'paused' ? 'bg-gray-100 text-gray-800' :
-                                                'bg-red-100 text-red-800'
+                                          goal.status === 'active' ? 'bg-blue-100 text-blue-800' :
+                                            goal.status === 'paused' ? 'bg-gray-100 text-gray-800' :
+                                              'bg-red-100 text-red-800'
                                           }`}>
                                           {goal.status === 'completed' ? 'Tamamlandı' :
                                             goal.status === 'active' ? 'Aktif' :
@@ -5878,10 +5912,10 @@ export default function CoachPage() {
                                       <div className="flex-1">
                                         <div className="flex items-center space-x-2 mb-1">
                                           <span className={`px-2 py-1 text-xs rounded-full font-medium ${result.exam_type === 'TYT'
-                                              ? 'bg-blue-100 text-blue-800'
-                                              : result.exam_type === 'AYT'
-                                                ? 'bg-purple-100 text-purple-800'
-                                                : 'bg-green-100 text-green-800'
+                                            ? 'bg-blue-100 text-blue-800'
+                                            : result.exam_type === 'AYT'
+                                              ? 'bg-purple-100 text-purple-800'
+                                              : 'bg-green-100 text-green-800'
                                             }`}>
                                             {result.exam_type}
                                           </span>
@@ -6200,22 +6234,22 @@ export default function CoachPage() {
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     className={`w-full p-3 text-left border rounded-lg transition-colors flex items-center justify-between group hover:shadow-md ${link.icon_color === 'blue' ? 'hover:bg-blue-50 hover:border-blue-200' :
-                                        link.icon_color === 'green' ? 'hover:bg-green-50 hover:border-green-200' :
-                                          link.icon_color === 'red' ? 'hover:bg-red-50 hover:border-red-200' :
-                                            link.icon_color === 'purple' ? 'hover:bg-purple-50 hover:border-purple-200' :
-                                              link.icon_color === 'orange' ? 'hover:bg-orange-50 hover:border-orange-200' :
-                                                link.icon_color === 'indigo' ? 'hover:bg-indigo-50 hover:border-indigo-200' :
-                                                  'hover:bg-gray-50 hover:border-gray-200'
+                                      link.icon_color === 'green' ? 'hover:bg-green-50 hover:border-green-200' :
+                                        link.icon_color === 'red' ? 'hover:bg-red-50 hover:border-red-200' :
+                                          link.icon_color === 'purple' ? 'hover:bg-purple-50 hover:border-purple-200' :
+                                            link.icon_color === 'orange' ? 'hover:bg-orange-50 hover:border-orange-200' :
+                                              link.icon_color === 'indigo' ? 'hover:bg-indigo-50 hover:border-indigo-200' :
+                                                'hover:bg-gray-50 hover:border-gray-200'
                                       }`}
                                   >
                                     <div className="flex items-center">
                                       <div className={`w-8 h-8 rounded-lg flex items-center justify-center mr-3 ${link.icon_color === 'blue' ? 'bg-blue-100 text-blue-600' :
-                                          link.icon_color === 'green' ? 'bg-green-100 text-green-600' :
-                                            link.icon_color === 'red' ? 'bg-red-100 text-red-600' :
-                                              link.icon_color === 'purple' ? 'bg-purple-100 text-purple-600' :
-                                                link.icon_color === 'orange' ? 'bg-orange-100 text-orange-600' :
-                                                  link.icon_color === 'indigo' ? 'bg-indigo-100 text-indigo-600' :
-                                                    'bg-gray-100 text-gray-600'
+                                        link.icon_color === 'green' ? 'bg-green-100 text-green-600' :
+                                          link.icon_color === 'red' ? 'bg-red-100 text-red-600' :
+                                            link.icon_color === 'purple' ? 'bg-purple-100 text-purple-600' :
+                                              link.icon_color === 'orange' ? 'bg-orange-100 text-orange-600' :
+                                                link.icon_color === 'indigo' ? 'bg-indigo-100 text-indigo-600' :
+                                                  'bg-gray-100 text-gray-600'
                                         }`}>
                                         <span className="text-sm font-bold">
                                           {link.icon_letter || link.title.charAt(0).toUpperCase()}
@@ -6229,12 +6263,12 @@ export default function CoachPage() {
                                       </div>
                                     </div>
                                     <ExternalLink className={`h-4 w-4 text-gray-400 transition-colors ${link.icon_color === 'blue' ? 'group-hover:text-blue-600' :
-                                        link.icon_color === 'green' ? 'group-hover:text-green-600' :
-                                          link.icon_color === 'red' ? 'group-hover:text-red-600' :
-                                            link.icon_color === 'purple' ? 'group-hover:text-purple-600' :
-                                              link.icon_color === 'orange' ? 'group-hover:text-orange-600' :
-                                                link.icon_color === 'indigo' ? 'group-hover:text-indigo-600' :
-                                                  'group-hover:text-gray-600'
+                                      link.icon_color === 'green' ? 'group-hover:text-green-600' :
+                                        link.icon_color === 'red' ? 'group-hover:text-red-600' :
+                                          link.icon_color === 'purple' ? 'group-hover:text-purple-600' :
+                                            link.icon_color === 'orange' ? 'group-hover:text-orange-600' :
+                                              link.icon_color === 'indigo' ? 'group-hover:text-indigo-600' :
+                                                'group-hover:text-gray-600'
                                       }`} />
                                   </a>
                                 ))}
