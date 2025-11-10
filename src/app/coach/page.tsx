@@ -1512,13 +1512,6 @@ export default function CoachPage() {
     const d = new Date(date)
     const day = d.getDay()
     
-    // Debug: Log the calculation
-    console.log('🗓️ [DEBUG] Hafta başlangıcı hesaplama:', {
-      inputDate: date.toLocaleDateString('tr-TR'),
-      inputDay: date.toLocaleDateString('tr-TR', { weekday: 'long' }),
-      dayNumber: day
-    })
-    
     // Correct approach: Sunday should be the LAST day of the week
     // Week structure: Monday(1) -> Sunday(0) of SAME week
     let daysToSubtract;
@@ -1531,12 +1524,6 @@ export default function CoachPage() {
     const result = new Date(d)
     result.setDate(d.getDate() - daysToSubtract)
     result.setHours(0, 0, 0, 0) // Ensure consistent time for date comparisons
-    
-    console.log('🗓️ [DEBUG] Hesaplanan hafta başlangıcı:', {
-      weekStart: result.toLocaleDateString('tr-TR'),
-      weekStartDay: result.toLocaleDateString('tr-TR', { weekday: 'long' }),
-      daysToSubtract: daysToSubtract
-    })
     
     return result
   }
@@ -2692,16 +2679,7 @@ export default function CoachPage() {
     const subjectStats = subjects.map(subject => {
       const subjectTasks = monthlyTasks.filter(task => task.subject_id === subject.id && task.status === 'completed')
       
-      // Debug: Log review tasks for this subject
-      const reviewTasks = subjectTasks.filter(task => task.task_type === 'review')
-      if (reviewTasks.length > 0) {
-        console.log(`📊 [DEBUG] ${subject.name} - Tekrar görevleri:`, reviewTasks.map(t => ({
-          title: t.title,
-          task_type: t.task_type,
-          problem_count: t.problem_count,
-          status: t.status
-        })))
-      }
+
       
       const totalProblems = subjectTasks.reduce((sum, task) => sum + (task.problem_count || 0), 0)
       return {
@@ -2721,13 +2699,7 @@ export default function CoachPage() {
     const weekEnd = new Date(weekStart)
     weekEnd.setDate(weekStart.getDate() + 6)
 
-    console.log('📅 [DEBUG] Haftalık istatistik aralığı:', {
-      currentWeek: currentWeek.toLocaleDateString('tr-TR'),
-      weekStart: weekStart.toLocaleDateString('tr-TR'),
-      weekEnd: weekEnd.toLocaleDateString('tr-TR'),
-      weekStartDay: weekStart.toLocaleDateString('tr-TR', { weekday: 'long' }),
-      weekEndDay: weekEnd.toLocaleDateString('tr-TR', { weekday: 'long' })
-    })
+
 
     // Filter tasks for the current week
     const weekTasks = weeklyTasks.filter(task => {
@@ -2738,25 +2710,7 @@ export default function CoachPage() {
       const isInWeek = taskDate >= weekStart && taskDate <= weekEnd
       const isCompleted = task.status === 'completed'
       
-      // Debug: Log each task's date comparison with more detail
-      if (task.scheduled_date) {
-        console.log('📋 [DEBUG] Görev kontrolü:', {
-          title: task.title,
-          task_type: task.task_type,
-          scheduled_date: task.scheduled_date,
-          taskDate: taskDate.toLocaleDateString('tr-TR'),
-          taskDay: taskDate.toLocaleDateString('tr-TR', { weekday: 'long' }),
-          weekStart: weekStart.toLocaleDateString('tr-TR'),
-          weekEnd: weekEnd.toLocaleDateString('tr-TR'),
-          taskTime: taskDate.getTime(),
-          weekStartTime: weekStart.getTime(),
-          weekEndTime: weekEnd.getTime(),
-          isInWeek,
-          isCompleted,
-          problem_count: task.problem_count,
-          willBeIncluded: isInWeek && isCompleted
-        })
-      }
+
       
       return isInWeek && isCompleted
     })
@@ -2765,16 +2719,7 @@ export default function CoachPage() {
     const subjectStats = subjects.map(subject => {
       const subjectTasks = weekTasks.filter(task => task.subject_id === subject.id)
       
-      // Debug: Log review tasks for this subject
-      const reviewTasks = subjectTasks.filter(task => task.task_type === 'review')
-      if (reviewTasks.length > 0) {
-        console.log(`📊 [DEBUG] ${subject.name} - Haftalık Tekrar görevleri:`, reviewTasks.map(t => ({
-          title: t.title,
-          task_type: t.task_type,
-          problem_count: t.problem_count,
-          status: t.status
-        })))
-      }
+
       
       const totalProblems = subjectTasks.reduce((sum, task) => sum + (task.problem_count || 0), 0)
       return {
