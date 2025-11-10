@@ -1511,12 +1511,33 @@ export default function CoachPage() {
   const getWeekStart = (date: Date) => {
     const d = new Date(date)
     const day = d.getDay()
-    // For Monday-based week: Sunday should be part of current week (as last day)
-    // So we need to go back to Monday of the same week
-    const diff = day === 0 ? d.getDate() - 6 : d.getDate() - day + 1
-    d.setDate(diff)
-    d.setHours(0, 0, 0, 0) // Ensure consistent time for date comparisons
-    return d
+    
+    // Debug: Log the calculation
+    console.log('🗓️ [DEBUG] Hafta başlangıcı hesaplama:', {
+      inputDate: date.toLocaleDateString('tr-TR'),
+      inputDay: date.toLocaleDateString('tr-TR', { weekday: 'long' }),
+      dayNumber: day
+    })
+    
+    // Alternative approach: Use a more explicit calculation
+    let daysToSubtract;
+    if (day === 0) { // Sunday
+      daysToSubtract = 6; // Go back 6 days to Monday
+    } else { // Monday = 1, Tuesday = 2, etc.
+      daysToSubtract = day - 1; // Go back to Monday
+    }
+    
+    const result = new Date(d)
+    result.setDate(d.getDate() - daysToSubtract)
+    result.setHours(0, 0, 0, 0) // Ensure consistent time for date comparisons
+    
+    console.log('🗓️ [DEBUG] Hesaplanan hafta başlangıcı:', {
+      weekStart: result.toLocaleDateString('tr-TR'),
+      weekStartDay: result.toLocaleDateString('tr-TR', { weekday: 'long' }),
+      daysToSubtract: daysToSubtract
+    })
+    
+    return result
   }
 
   const formatDateForDB = (date: Date) => {
@@ -2710,7 +2731,25 @@ export default function CoachPage() {
     // Filter tasks for the current week
     const weekTasks = weeklyTasks.filter(task => {
       const taskDate = new Date(task.scheduled_date)
-      return taskDate >= weekStart && taskDate <= weekEnd && task.status === 'completed'
+      const isInWeek = taskDate >= weekStart && taskDate <= weekEnd
+      const isCompleted = task.status === 'completed'
+      
+      // Debug: Log each task's date comparison
+      if (task.scheduled_date) {
+        console.log('📋 [DEBUG] Görev kontrolü:', {
+          title: task.title,
+          task_type: task.task_type,
+          scheduled_date: task.scheduled_date,
+          taskDate: taskDate.toLocaleDateString('tr-TR'),
+          taskDay: taskDate.toLocaleDateString('tr-TR', { weekday: 'long' }),
+          isInWeek,
+          isCompleted,
+          problem_count: task.problem_count,
+          willBeIncluded: isInWeek && isCompleted
+        })
+      }
+      
+      return isInWeek && isCompleted
     })
 
     // Group by subject and calculate total problems
