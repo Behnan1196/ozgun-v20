@@ -124,6 +124,22 @@ export const SimpleNotificationManager: React.FC = () => {
     }
   }
 
+  const testBroadcast = async () => {
+    try {
+      const response = await fetch('/api/notifications/test-broadcast')
+      if (response.ok) {
+        const result = await response.json()
+        console.log('🧪 Broadcast test:', result)
+        alert(`Test sonucu: ${result.channels_found} kanal bulundu. ${result.channel_info ? `Üye sayısı: ${result.channel_info.member_count}` : 'Kanal yok'}`)
+      } else {
+        alert('Test başarısız')
+      }
+    } catch (error) {
+      console.error('Error testing broadcast:', error)
+      alert('Test hatası')
+    }
+  }
+
   return (
     <div className="relative" ref={dropdownRef}>
       {/* Notification Bell Button */}
@@ -165,14 +181,23 @@ export const SimpleNotificationManager: React.FC = () => {
               <div>
                 <div className="flex justify-between items-center mb-4">
                   <h3 className="text-sm font-semibold">Anlık Bildirim Gönder</h3>
-                  <button
-                    onClick={debugUsers}
-                    className="bg-gray-600 text-white px-2 py-1 rounded text-xs hover:bg-gray-700 flex items-center space-x-1"
-                    title="Kullanıcıları kontrol et"
-                  >
-                    <Eye className="h-3 w-3" />
-                    <span>Debug</span>
-                  </button>
+                  <div className="flex space-x-1">
+                    <button
+                      onClick={debugUsers}
+                      className="bg-gray-600 text-white px-2 py-1 rounded text-xs hover:bg-gray-700 flex items-center space-x-1"
+                      title="Kullanıcıları kontrol et"
+                    >
+                      <Eye className="h-3 w-3" />
+                      <span>Debug</span>
+                    </button>
+                    <button
+                      onClick={testBroadcast}
+                      className="bg-purple-600 text-white px-2 py-1 rounded text-xs hover:bg-purple-700"
+                      title="Broadcast test"
+                    >
+                      Test
+                    </button>
+                  </div>
                 </div>
 
                 <div className="space-y-3">
