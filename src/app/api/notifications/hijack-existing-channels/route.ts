@@ -42,10 +42,10 @@ export async function POST(request: NextRequest) {
     let targetAssignments = assignments || []
     if (target_audience === 'student') {
       // Send to students via their coach channels
-      targetAssignments = assignments?.filter(a => a.student.role === 'student') || []
+      targetAssignments = assignments?.filter((a: any) => a.student?.role === 'student') || []
     } else if (target_audience === 'coach') {
       // Send to coaches via their student channels  
-      targetAssignments = assignments?.filter(a => a.coach.role === 'coach') || []
+      targetAssignments = assignments?.filter((a: any) => a.coach?.role === 'coach') || []
     }
 
     if (targetAssignments.length === 0) {
@@ -80,13 +80,13 @@ export async function POST(request: NextRequest) {
         })
 
         if (channels.length === 0) {
-          console.log(`❌ No channel found between ${assignment.coach.full_name} and ${assignment.student.full_name}`)
+          console.log(`❌ No channel found between ${(assignment as any).coach?.full_name} and ${(assignment as any).student?.full_name}`)
           failureCount++
           continue
         }
 
         const channel = channels[0]
-        console.log(`📨 Sending to channel: ${assignment.coach.full_name} ↔ ${assignment.student.full_name}`)
+        console.log(`📨 Sending to channel: ${(assignment as any).coach?.full_name} ↔ ${(assignment as any).student?.full_name}`)
 
         // Send coordinator message to the existing channel
         const messageResult = await channel.sendMessage({
@@ -105,11 +105,11 @@ export async function POST(request: NextRequest) {
           }
         })
 
-        console.log(`✅ Message sent to ${assignment.coach.full_name} ↔ ${assignment.student.full_name}`)
+        console.log(`✅ Message sent to ${(assignment as any).coach?.full_name} ↔ ${(assignment as any).student?.full_name}`)
         successCount++
 
       } catch (error) {
-        console.error(`❌ Failed to send to ${assignment.coach.full_name} ↔ ${assignment.student.full_name}:`, error)
+        console.error(`❌ Failed to send to ${(assignment as any).coach?.full_name} ↔ ${(assignment as any).student?.full_name}:`, error)
         failureCount++
       }
     }
