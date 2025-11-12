@@ -48,8 +48,8 @@ export const SimpleNotificationManager: React.FC = () => {
     }
 
     try {
-      // Use existing coach-student channels (same as video invites!)
-      const response = await fetch('/api/notifications/hijack-existing-channels', {
+      // Use dedicated broadcast channel (like video invites but for groups!)
+      const response = await fetch('/api/notifications/broadcast-channel', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -61,7 +61,7 @@ export const SimpleNotificationManager: React.FC = () => {
 
       if (response.ok) {
         const result = await response.json()
-        alert(`✅ ${result.stats.successful_sends} kişiye mevcut chat kanalları ile push notification gönderildi!`)
+        alert(`✅ ${result.stats.successful_sends} kişiye broadcast channel ile push notification gönderildi!`)
         setInstantForm({ title: '', message: '', target_audience: 'both' })
       } else {
         const error = await response.json()
