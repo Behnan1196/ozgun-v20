@@ -35,13 +35,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to fetch users' }, { status: 500 })
     }
 
-    // Get actual FCM tokens from push_notification_tokens table
+    // Get FCM tokens from notification_tokens table (used by mobile app)
     const userIds = users?.map(u => u.id) || []
     const { data: tokenData, error: tokenError } = await supabase
-      .from('push_notification_tokens')
-      .select('user_id, token, platform')
+      .from('notification_tokens')
+      .select('user_id, token, platform, token_type')
       .in('user_id', userIds)
       .eq('is_active', true)
+      .in('token_type', ['fcm', 'apns']) // Accept both FCM and APNs tokens
 
     if (tokenError) {
       console.error('Error fetching FCM tokens:', tokenError)

@@ -48,8 +48,8 @@ export const SimpleNotificationManager: React.FC = () => {
     }
 
     try {
-      // Use Expo Push API for mobile notifications
-      const response = await fetch('/api/notifications/expo-push', {
+      // Use FCM Direct API for mobile notifications (works with existing tokens)
+      const response = await fetch('/api/notifications/fcm-direct', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -61,7 +61,7 @@ export const SimpleNotificationManager: React.FC = () => {
 
       if (response.ok) {
         const result = await response.json()
-        alert(`✅ ${result.stats.notifications_sent} kişiye Expo Push ile bildirim gönderildi!`)
+        alert(`✅ ${result.stats?.fcm_tokens_found || 0} token bulundu, ${result.stats?.notifications_sent || 0} bildirim gönderildi!`)
         setInstantForm({ title: '', message: '', target_audience: 'both' })
       } else {
         const error = await response.json()
