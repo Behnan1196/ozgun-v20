@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { cookies } from 'next/headers'
 import { StreamChat } from 'stream-chat'
+import admin from 'firebase-admin'
 
 // POST /api/notifications/broadcast-channel - Use dedicated broadcast channel
 export async function POST(request: NextRequest) {
@@ -59,15 +60,14 @@ export async function POST(request: NextRequest) {
 
     console.log(`📢 Broadcasting to ${users.length} users (${target_audience})`)
 
-    // Upsert all users in Stream
+    // Upsert all users in Stream (without role field - Stream doesn't support custom roles)
     const streamUsers = users.map(u => ({
       id: u.id,
-      name: u.full_name,
-      role: u.role
+      name: u.full_name
     }))
 
     await serverClient.upsertUsers([
-      { id: user.id, name: profile.full_name || 'Koordinatör', role: 'coordinator' },
+      { id: user.id, name: profile.full_name || 'Koordinatör' },
       ...streamUsers
     ])
 
@@ -88,7 +88,7 @@ export async function POST(request: NextRequest) {
 
     await channel.create()
 
-    // Send broadcast message with push notification
+    // Send broadcast message
     const messageResult = await channel.sendMessage({
       text: `🔔 **${title}**\n\n${message}\n\n_Koordinatör: ${profile.full_name}_`,
       user_id: user.id,
@@ -97,16 +97,101 @@ export async function POST(request: NextRequest) {
         title: title,
         priority: 'high',
         is_broadcast: true
-      },
-      // Critical: This triggers Stream's push notification system
-      push_notification: {
-        title: `🔔 ${title}`,
-        body: message,
-        sound: 'default'
       }
     })
 
     console.log(`✅ Broadcast message sent: ${messageResult.message.id}`)
+
+    // Send REAL push notifications using FCM Admin SDK
+    let pushSuccessCount = 0
+    let pushFailureCount = 0
+
+    // Initialize Firebase Admin
+    let firebaseAdmin: typeof admin | null = null
+    if (admin.apps.length === 0) {
+      const serviceAccount = process.env.GOOGLE_SERVICES_JSON
+      if (serviceAccount) {
+        try {
+          const serviceAccountKey = JSON.parse(serviceAccount)
+          admin.initializeApp({
+            credential: admin.credential.cert(serviceAccountKey),
+          })
+          firebaseAdmin = admin
+        } catch (error) {
+          console.error('❌ Error initializing Firebase Admin:', error)
+        }
+      }
+    } else {
+      firebaseAdmin = admin
+    }
+
+    if (firebaseAdmin) {
+      for (const targetUser of users) {
+        try {
+          // Get user's FCM tokens
+          const { data: tokens } = await supabase
+            .from('notification_tokens')
+            .select('*')
+            .eq('user_id', targetUser.id)
+            .eq('is_active', true)
+            .in('platform', ['ios', 'android'])
+
+          if (!tokens || tokens.length === 0) {
+            console.log(`⚠️ No tokens for user ${targetUser.id}`)
+            pushFailureCount++
+            continue
+          }
+
+          // Send to each token
+          for (const tokenRecord of tokens) {
+            try {
+              const fcmMessage = {
+                token: tokenRecord.token,
+                notification: {
+                  title: `🔔 ${title}`,
+                  body: message,
+                },
+                data: {
+                  notification_type: 'coordinator_announcement',
+                  title: title,
+                  message: message,
+                  sender_id: user.id,
+                  channel_id: channelId,
+                  type: 'coordinator_announcement'
+                },
+                android: {
+                  priority: 'high' as const,
+                },
+                apns: {
+                  payload: {
+                    aps: {
+                      alert: { title: `🔔 ${title}`, body: message },
+                      sound: 'default',
+                      badge: 1,
+                    },
+                  },
+                },
+              }
+
+              await firebaseAdmin.messaging().send(fcmMessage)
+              pushSuccessCount++
+              console.log(`✅ Push sent to ${targetUser.full_name}`)
+            } catch (tokenError) {
+              console.error(`❌ Token error for ${targetUser.id}:`, tokenError)
+              pushFailureCount++
+            }
+          }
+        } catch (error) {
+          console.error(`❌ Push notification failed for user ${targetUser.id}:`, error)
+          pushFailureCount++
+        }
+      }
+    } else {
+      console.error('❌ Firebase Admin not initialized')
+      pushFailureCount = users.length
+    }
+
+    console.log(`📱 Push notifications: ${pushSuccessCount} success, ${pushFailureCount} failures`)
 
     // Hide channel from coordinator's view (optional)
     await channel.hide(user.id)
@@ -134,10 +219,14 @@ export async function POST(request: NextRequest) {
       campaign,
       stats: {
         total_recipients: users.length,
-        successful_sends: users.length,
-        failed_sends: 0,
+        successful_sends: pushSuccessCount,
+        failed_sends: pushFailureCount,
         channel_id: channelId,
-        message_id: messageResult.message.id
+        message_id: messageResult.message.id,
+        push_notifications: {
+          success: pushSuccessCount,
+          failures: pushFailureCount
+        }
       }
     })
 
