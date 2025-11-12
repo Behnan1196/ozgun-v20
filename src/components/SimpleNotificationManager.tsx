@@ -48,8 +48,8 @@ export const SimpleNotificationManager: React.FC = () => {
     }
 
     try {
-      // Use Stream Chat webhook system for push notifications
-      const response = await fetch('/api/notifications/stream-webhook-trigger', {
+      // Use Expo Push API for mobile notifications
+      const response = await fetch('/api/notifications/expo-push', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -61,7 +61,7 @@ export const SimpleNotificationManager: React.FC = () => {
 
       if (response.ok) {
         const result = await response.json()
-        alert(`✅ ${result.stats.successful_sends} kişiye Stream webhook ile push notification gönderildi!`)
+        alert(`✅ ${result.stats.notifications_sent} kişiye Expo Push ile bildirim gönderildi!`)
         setInstantForm({ title: '', message: '', target_audience: 'both' })
       } else {
         const error = await response.json()
@@ -122,6 +122,32 @@ export const SimpleNotificationManager: React.FC = () => {
     } catch (error) {
       console.error('Error debugging users:', error)
       alert('Debug hatası')
+    }
+  }
+
+  const testExpo = async () => {
+    try {
+      const response = await fetch('/api/notifications/expo-push', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: 'Expo Push Test',
+          message: 'Bu bir Expo Push test mesajıdır 📱',
+          target_audience: 'both'
+        })
+      })
+      
+      if (response.ok) {
+        const result = await response.json()
+        console.log('📱 Expo Push test:', result)
+        alert(`✅ Expo Push Test: ${result.stats.expo_tokens_found} token bulundu, ${result.stats.notifications_sent} bildirim gönderildi!`)
+      } else {
+        const error = await response.json()
+        alert('Expo Push Test hatası: ' + error.error)
+      }
+    } catch (error) {
+      console.error('Error testing Expo Push:', error)
+      alert('Expo Push Test hatası')
     }
   }
 
@@ -200,6 +226,13 @@ export const SimpleNotificationManager: React.FC = () => {
                     >
                       <Eye className="h-3 w-3" />
                       <span>Debug</span>
+                    </button>
+                    <button
+                      onClick={testExpo}
+                      className="bg-green-600 text-white px-2 py-1 rounded text-xs hover:bg-green-700"
+                      title="Expo Push test"
+                    >
+                      Expo
                     </button>
                     <button
                       onClick={testFCM}
