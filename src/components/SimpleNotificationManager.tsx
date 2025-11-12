@@ -48,8 +48,8 @@ export const SimpleNotificationManager: React.FC = () => {
     }
 
     try {
-      // Use FCM Direct API for mobile notifications (works with existing tokens)
-      const response = await fetch('/api/notifications/fcm-direct', {
+      // Use Stream webhook system (same as video invites - this works!)
+      const response = await fetch('/api/notifications/stream-webhook-trigger', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -61,7 +61,7 @@ export const SimpleNotificationManager: React.FC = () => {
 
       if (response.ok) {
         const result = await response.json()
-        alert(`✅ ${result.stats?.fcm_tokens_found || 0} token bulundu, ${result.stats?.notifications_sent || 0} bildirim gönderildi!`)
+        alert(`✅ ${result.stats.successful_sends} kişiye Stream webhook ile push notification gönderildi!`)
         setInstantForm({ title: '', message: '', target_audience: 'both' })
       } else {
         const error = await response.json()
