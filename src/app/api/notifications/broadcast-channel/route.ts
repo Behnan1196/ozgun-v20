@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/server'
 import { cookies } from 'next/headers'
 import { StreamChat } from 'stream-chat'
 import admin from 'firebase-admin'
@@ -126,12 +127,15 @@ export async function POST(request: NextRequest) {
     }
 
     if (firebaseAdmin) {
+      // Use admin client to bypass RLS for reading tokens
+      const adminSupabase = createAdminClient()
+      
       for (const targetUser of users) {
         try {
           console.log(`🔍 Looking for tokens for user: ${targetUser.full_name} (${targetUser.id})`)
           
-          // Get user's FCM tokens
-          const { data: tokens, error: tokenError } = await supabase
+          // Get user's FCM tokens using admin client (bypasses RLS)
+          const { data: tokens, error: tokenError } = await adminSupabase
             .from('notification_tokens')
             .select('*')
             .eq('user_id', targetUser.id)
