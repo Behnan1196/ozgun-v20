@@ -56,35 +56,13 @@ export async function POST(request: NextRequest) {
     // Get Expo push tokens for these users
     const userIds = users.map(u => u.id)
     
-    // Try both table names for compatibility
-    let tokens: any[] = []
-    let tokensError: any = null
-
-    // First try push_notification_tokens table
-    const { data: tokens1, error: error1 } = await supabase
-      .from('push_notification_tokens')
+    // Get Expo push tokens from notification_tokens table (used by mobile app)
+    const { data: tokens, error: tokensError } = await supabase
+      .from('notification_tokens')
       .select('user_id, token, platform, token_type')
       .in('user_id', userIds)
       .eq('is_active', true)
       .eq('token_type', 'expo') // Only get Expo tokens
-
-    if (!error1 && tokens1) {
-      tokens = tokens1
-    } else {
-      // Try notification_tokens table as fallback
-      const { data: tokens2, error: error2 } = await supabase
-        .from('notification_tokens')
-        .select('user_id, token, platform, type')
-        .in('user_id', userIds)
-        .eq('is_active', true)
-        .eq('type', 'expo') // Only get Expo tokens
-
-      if (!error2 && tokens2) {
-        tokens = tokens2.map(t => ({ ...t, token_type: t.type }))
-      } else {
-        tokensError = error2 || error1
-      }
-    }
 
     if (tokensError) {
       console.log('⚠️ Push tokens table not found:', tokensError)
