@@ -56,13 +56,23 @@ export async function POST(request: NextRequest) {
     // Get Expo push tokens for these users
     const userIds = users.map(u => u.id)
     
-    // Get Expo push tokens from notification_tokens table (used by mobile app)
-    const { data: tokens, error: tokensError } = await supabase
+    // Get all push tokens from notification_tokens table (used by mobile app)
+    const { data: allTokens, error: tokensError } = await supabase
       .from('notification_tokens')
       .select('user_id, token, platform, token_type')
       .in('user_id', userIds)
       .eq('is_active', true)
-      .eq('token_type', 'expo') // Only get Expo tokens
+
+    console.log(`🔍 Found ${allTokens?.length || 0} total tokens:`, allTokens?.map(t => ({ type: t.token_type, platform: t.platform })))
+
+    // Filter for Expo tokens (try both 'expo' and other possible values)
+    const tokens = allTokens?.filter(t => 
+      t.token_type === 'expo' || 
+      t.token?.startsWith('ExponentPushToken[') || 
+      t.token?.startsWith('ExpoPushToken[')
+    ) || []
+
+    console.log(`📱 Filtered to ${tokens.length} Expo-compatible tokens`)
 
     if (tokensError) {
       console.log('⚠️ Push tokens table not found:', tokensError)

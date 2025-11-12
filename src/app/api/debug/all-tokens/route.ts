@@ -27,11 +27,28 @@ export async function GET(request: NextRequest) {
         .limit(10)
 
       if (!error1) {
+        const tokenTypes = tokens1?.reduce((acc: any, token: any) => {
+          acc[token.token_type] = (acc[token.token_type] || 0) + 1
+          return acc
+        }, {}) || {}
+
+        const expoLikeTokens = tokens1?.filter(t => 
+          t.token_type === 'expo' || 
+          t.token?.startsWith('ExponentPushToken[') || 
+          t.token?.startsWith('ExpoPushToken[')
+        ).length || 0
+
         results.notification_tokens = {
           exists: true,
           count: tokens1?.length || 0,
-          sample: tokens1?.slice(0, 3) || [],
-          expo_tokens: tokens1?.filter(t => t.token_type === 'expo').length || 0
+          sample: tokens1?.slice(0, 3).map(t => ({
+            token_type: t.token_type,
+            platform: t.platform,
+            token_preview: t.token?.substring(0, 30) + '...'
+          })) || [],
+          token_types: tokenTypes,
+          expo_tokens: tokens1?.filter(t => t.token_type === 'expo').length || 0,
+          expo_like_tokens: expoLikeTokens
         }
       } else {
         results.notification_tokens = {

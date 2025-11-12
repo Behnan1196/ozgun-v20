@@ -135,7 +135,10 @@ export const SimpleNotificationManager: React.FC = () => {
         let message = 'Token Tabloları:\n\n'
         
         if (result.debug_info.notification_tokens.exists) {
-          message += `✅ notification_tokens: ${result.debug_info.notification_tokens.count} token (${result.debug_info.notification_tokens.expo_tokens} Expo)\n`
+          const nt = result.debug_info.notification_tokens
+          message += `✅ notification_tokens: ${nt.count} token\n`
+          message += `   Types: ${JSON.stringify(nt.token_types)}\n`
+          message += `   Expo: ${nt.expo_tokens} | Expo-like: ${nt.expo_like_tokens}\n`
         } else {
           message += `❌ notification_tokens: Yok\n`
         }
