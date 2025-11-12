@@ -166,15 +166,12 @@ export async function POST(request: NextRequest) {
             notification_type: 'system_announcement',
             title: title,
             priority: 'normal'
-          }
-        }, {
+          },
           push_notification: {
             title: title,
             body: message,
-            sound: 'default',
-            badge: 1
-          },
-          skip_push: false
+            sound: 'default'
+          }
         })
 
         console.log(`✅ Message sent successfully to user ${userId}:`, messageResult)

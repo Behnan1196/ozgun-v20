@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { cookies } from 'next/headers'
 
 // POST /api/notifications/announcements/[id]/view - Mark announcement as viewed
 export async function POST(
@@ -7,7 +8,8 @@ export async function POST(
   { params }: { params: { id: string } }
 ) {
   try {
-    const supabase = createClient()
+    const cookieStore = cookies()
+    const supabase = createClient(cookieStore)
     
     // Check authentication
     const { data: { user }, error: authError } = await supabase.auth.getUser()
