@@ -21,6 +21,12 @@ export async function GET(request: NextRequest) {
 
     // Check notification_tokens table
     try {
+      // Get ALL tokens (active and inactive)
+      const { data: allTokens, error: allError } = await supabase
+        .from('notification_tokens')
+        .select('token, token_type, platform, user_id, is_active, created_at')
+
+      // Get only active tokens
       const { data: tokens1, error: error1 } = await supabase
         .from('notification_tokens')
         .select('token, token_type, platform, user_id, is_active, created_at')
@@ -49,8 +55,9 @@ export async function GET(request: NextRequest) {
 
         results.notification_tokens = {
           exists: true,
-          count: tokens1?.length || 0,
+          count: allTokens?.length || 0,
           active_tokens: tokens1?.length || 0,
+          inactive_tokens: (allTokens?.length || 0) - (tokens1?.length || 0),
           sample: tokens1?.slice(0, 10).map(t => ({
             token_type: t.token_type,
             platform: t.platform,
