@@ -60,6 +60,7 @@ import { CommunicationTab } from '@/components/CommunicationTab'
 import { StableStreamProvider } from '@/components/StableStreamProvider'
 import { MockExam } from '@/types/database'
 import { NotificationBell } from '@/components/NotificationBell'
+import { NotificationManager } from '@/components/NotificationManager'
 
 import { VideoCallInvite } from '@/components/VideoCallInvite'
 
@@ -2822,8 +2823,10 @@ export default function CoachPage() {
                 </div>
               )}
 
-              {/* Notification Bell - Disabled for mobile-only notifications */}
-              {/* <NotificationBell className="text-gray-300 hover:text-white" size={20} /> */}
+              {/* Notification Manager */}
+              {userRole === 'coordinator' && (
+                <NotificationManager />
+              )}
 
               {/* User Avatar with Dropdown */}
               <div className="relative" ref={dropdownRef}>
