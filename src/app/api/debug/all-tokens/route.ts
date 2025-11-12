@@ -23,8 +23,8 @@ export async function GET(request: NextRequest) {
     try {
       const { data: tokens1, error: error1 } = await supabase
         .from('notification_tokens')
-        .select('*')
-        .limit(10)
+        .select('token, token_type, platform, user_id, is_active, created_at')
+        .eq('is_active', true)
 
       if (!error1) {
         const tokenTypes = tokens1?.reduce((acc: any, token: any) => {
@@ -38,17 +38,39 @@ export async function GET(request: NextRequest) {
           t.token?.startsWith('ExpoPushToken[')
         ).length || 0
 
+        // Get user info for tokens
+        const userIds = Array.from(new Set(tokens1?.map(t => t.user_id) || []))
+        const { data: tokenUsers } = await supabase
+          .from('user_profiles')
+          .select('id, full_name, email, role')
+          .in('id', userIds)
+
+        const userMap = new Map(tokenUsers?.map(u => [u.id, u]) || [])
+
         results.notification_tokens = {
           exists: true,
           count: tokens1?.length || 0,
-          sample: tokens1?.slice(0, 3).map(t => ({
+          active_tokens: tokens1?.length || 0,
+          sample: tokens1?.slice(0, 10).map(t => ({
             token_type: t.token_type,
             platform: t.platform,
-            token_preview: t.token?.substring(0, 30) + '...'
+            token_preview: t.token?.substring(0, 30) + '...',
+            user: userMap.get(t.user_id) ? {
+              name: userMap.get(t.user_id)?.full_name,
+              email: userMap.get(t.user_id)?.email,
+              role: userMap.get(t.user_id)?.role
+            } : 'Unknown',
+            created_at: t.created_at
           })) || [],
           token_types: tokenTypes,
           expo_tokens: tokens1?.filter(t => t.token_type === 'expo').length || 0,
-          expo_like_tokens: expoLikeTokens
+          expo_like_tokens: expoLikeTokens,
+          users_with_tokens: userIds.length,
+          tokens_by_role: {
+            student: tokens1?.filter(t => userMap.get(t.user_id)?.role === 'student').length || 0,
+            coach: tokens1?.filter(t => userMap.get(t.user_id)?.role === 'coach').length || 0,
+            coordinator: tokens1?.filter(t => userMap.get(t.user_id)?.role === 'coordinator').length || 0
+          }
         }
       } else {
         results.notification_tokens = {
