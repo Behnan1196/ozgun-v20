@@ -146,12 +146,14 @@ export async function POST(request: NextRequest) {
       try {
         console.log(`📨 Sending notification to user: ${userId}`)
         
-        // Create a notification channel for the user
-        const channel = serverClient.channel('messaging', `notification_${userId}_${Date.now()}`, {
-          name: 'System Notification',
+        // Create a system notification channel for the user
+        const channelId = `system_notifications_${userId}`
+        const channel = serverClient.channel('messaging', channelId, {
+          name: 'Sistem Bildirimleri',
           members: [userId, user.id],
           created_by_id: user.id,
-          is_notification: true
+          is_notification: true,
+          system_channel: true
         })
 
         console.log(`🔗 Creating channel for user ${userId}`)

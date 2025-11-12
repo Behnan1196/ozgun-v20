@@ -229,7 +229,8 @@ export const NotificationManager: React.FC = () => {
     }
 
     try {
-      const response = await fetch('/api/notifications/send-via-stream', {
+      // Use broadcast API for better delivery
+      const response = await fetch('/api/notifications/broadcast-via-stream', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -241,15 +242,15 @@ export const NotificationManager: React.FC = () => {
 
       if (response.ok) {
         const result = await response.json()
-        alert(`✅ Stream Chat ile ${result.stats.successful_sends} bildirim gönderildi!`)
+        alert(`✅ Broadcast ile ${result.stats.total_recipients} kişiye bildirim gönderildi!`)
         loadCampaigns()
       } else {
         const error = await response.json()
         alert('Hata: ' + error.error)
       }
     } catch (error) {
-      console.error('Error sending via Stream:', error)
-      alert('Stream Chat ile gönderim hatası')
+      console.error('Error sending broadcast:', error)
+      alert('Broadcast gönderim hatası')
     }
   }
 
@@ -420,10 +421,10 @@ export const NotificationManager: React.FC = () => {
                 <button
                   onClick={sendViaStream}
                   className="bg-blue-600 text-white px-2 py-1 rounded text-xs hover:bg-blue-700 flex items-center space-x-1"
-                  title="Stream Chat ile hızlı bildirim gönder"
+                  title="Broadcast kanalı ile tüm kullanıcılara bildirim gönder"
                 >
                   <Send className="h-3 w-3" />
-                  <span>Hızlı</span>
+                  <span>Broadcast</span>
                 </button>
                 <button
                   onClick={processPushNotifications}
