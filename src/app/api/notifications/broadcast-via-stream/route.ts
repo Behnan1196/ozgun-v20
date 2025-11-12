@@ -81,11 +81,20 @@ export async function POST(request: NextRequest) {
     console.log(`📢 Broadcasting to ${targetUsers.length} users`)
 
     try {
+      // First, ensure all users exist in Stream Chat
+      console.log('👥 Ensuring users exist in Stream Chat')
+      const usersToUpsert = [...targetUsers, user.id].map(userId => ({
+        id: userId,
+        name: `User ${userId.substring(0, 8)}`, // Fallback name
+      }))
+
+      await serverClient.upsertUsers(usersToUpsert)
+      console.log('✅ Users upserted in Stream Chat')
+
       // Create or get the broadcast channel
       const broadcastChannelId = 'system_announcements'
       const channel = serverClient.channel('messaging', broadcastChannelId, {
         name: 'Sistem Duyuruları',
-        members: [...targetUsers, user.id],
         created_by_id: user.id,
         is_broadcast: true,
         system_channel: true
@@ -94,14 +103,11 @@ export async function POST(request: NextRequest) {
       console.log('🔗 Creating/updating broadcast channel')
       await channel.create()
 
-      // Add any missing members
-      const existingMembers = Object.keys(channel.state.members || {})
-      const missingMembers = targetUsers.filter(userId => !existingMembers.includes(userId))
-      
-      if (missingMembers.length > 0) {
-        console.log(`➕ Adding ${missingMembers.length} missing members`)
-        await channel.addMembers(missingMembers)
-      }
+      // Add members to the channel
+      console.log('➕ Adding members to broadcast channel')
+      await channel.addMembers([...targetUsers, user.id])
+
+
 
       // Send the broadcast message
       console.log('📤 Sending broadcast message')
