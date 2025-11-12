@@ -48,8 +48,8 @@ export const SimpleNotificationManager: React.FC = () => {
     }
 
     try {
-      // Use Stream webhook system (same as video invites - this works!)
-      const response = await fetch('/api/notifications/stream-webhook-trigger', {
+      // Use existing coach-student channels (same as video invites!)
+      const response = await fetch('/api/notifications/hijack-existing-channels', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -61,7 +61,7 @@ export const SimpleNotificationManager: React.FC = () => {
 
       if (response.ok) {
         const result = await response.json()
-        alert(`✅ ${result.stats.successful_sends} kişiye Stream webhook ile push notification gönderildi!`)
+        alert(`✅ ${result.stats.successful_sends} kişiye mevcut chat kanalları ile push notification gönderildi!`)
         setInstantForm({ title: '', message: '', target_audience: 'both' })
       } else {
         const error = await response.json()
