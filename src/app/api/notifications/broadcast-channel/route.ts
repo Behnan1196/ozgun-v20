@@ -128,19 +128,29 @@ export async function POST(request: NextRequest) {
     if (firebaseAdmin) {
       for (const targetUser of users) {
         try {
+          console.log(`🔍 Looking for tokens for user: ${targetUser.full_name} (${targetUser.id})`)
+          
           // Get user's FCM tokens
-          const { data: tokens } = await supabase
+          const { data: tokens, error: tokenError } = await supabase
             .from('notification_tokens')
             .select('*')
             .eq('user_id', targetUser.id)
             .eq('is_active', true)
             .in('platform', ['ios', 'android'])
 
-          if (!tokens || tokens.length === 0) {
-            console.log(`⚠️ No tokens for user ${targetUser.id}`)
+          if (tokenError) {
+            console.error(`❌ Error fetching tokens for ${targetUser.full_name}:`, tokenError)
             pushFailureCount++
             continue
           }
+
+          if (!tokens || tokens.length === 0) {
+            console.log(`⚠️ No active mobile tokens for ${targetUser.full_name} (${targetUser.id})`)
+            pushFailureCount++
+            continue
+          }
+
+          console.log(`✅ Found ${tokens.length} token(s) for ${targetUser.full_name}`)
 
           // Send to each token
           for (const tokenRecord of tokens) {
