@@ -125,6 +125,39 @@ export const SimpleNotificationManager: React.FC = () => {
     }
   }
 
+  const debugTokens = async () => {
+    try {
+      const response = await fetch('/api/debug/all-tokens')
+      if (response.ok) {
+        const result = await response.json()
+        console.log('🔑 Token tables analysis:', result)
+        
+        let message = 'Token Tabloları:\n\n'
+        
+        if (result.debug_info.notification_tokens.exists) {
+          message += `✅ notification_tokens: ${result.debug_info.notification_tokens.count} token (${result.debug_info.notification_tokens.expo_tokens} Expo)\n`
+        } else {
+          message += `❌ notification_tokens: Yok\n`
+        }
+        
+        if (result.debug_info.push_notification_tokens.exists) {
+          message += `✅ push_notification_tokens: ${result.debug_info.push_notification_tokens.count} token\n`
+        } else {
+          message += `❌ push_notification_tokens: Yok\n`
+        }
+        
+        message += `\n👥 Mobil kullanıcılar: ${result.debug_info.users.total_mobile_users}`
+        
+        alert(message)
+      } else {
+        alert('Token debug bilgisi alınamadı')
+      }
+    } catch (error) {
+      console.error('Error debugging tokens:', error)
+      alert('Token debug hatası')
+    }
+  }
+
   const testExpo = async () => {
     try {
       const response = await fetch('/api/notifications/expo-push', {
@@ -225,7 +258,14 @@ export const SimpleNotificationManager: React.FC = () => {
                       title="Kullanıcıları kontrol et"
                     >
                       <Eye className="h-3 w-3" />
-                      <span>Debug</span>
+                      <span>Users</span>
+                    </button>
+                    <button
+                      onClick={debugTokens}
+                      className="bg-purple-600 text-white px-2 py-1 rounded text-xs hover:bg-purple-700"
+                      title="Token tablolarını kontrol et"
+                    >
+                      Tokens
                     </button>
                     <button
                       onClick={testExpo}
