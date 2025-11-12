@@ -48,7 +48,8 @@ export const SimpleNotificationManager: React.FC = () => {
     }
 
     try {
-      const response = await fetch('/api/notifications/broadcast-via-stream', {
+      // Use Stream Chat webhook system for push notifications
+      const response = await fetch('/api/notifications/stream-webhook-trigger', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -60,7 +61,7 @@ export const SimpleNotificationManager: React.FC = () => {
 
       if (response.ok) {
         const result = await response.json()
-        alert(`✅ ${result.stats.total_recipients} kişiye anlık bildirim gönderildi!`)
+        alert(`✅ ${result.stats.successful_sends} kişiye Stream webhook ile push notification gönderildi!`)
         setInstantForm({ title: '', message: '', target_audience: 'both' })
       } else {
         const error = await response.json()
@@ -124,19 +125,29 @@ export const SimpleNotificationManager: React.FC = () => {
     }
   }
 
-  const testBroadcast = async () => {
+  const testFCM = async () => {
     try {
-      const response = await fetch('/api/notifications/test-broadcast')
+      const response = await fetch('/api/notifications/fcm-direct', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: 'FCM Test',
+          message: 'Bu bir FCM test mesajıdır',
+          target_audience: 'both'
+        })
+      })
+      
       if (response.ok) {
         const result = await response.json()
-        console.log('🧪 Broadcast test:', result)
-        alert(`Test sonucu: ${result.channels_found} kanal bulundu. ${result.channel_info ? `Üye sayısı: ${result.channel_info.member_count}` : 'Kanal yok'}`)
+        console.log('📱 FCM test:', result)
+        alert(`FCM Test: ${result.stats.fcm_tokens_found} token bulundu. ${result.message}`)
       } else {
-        alert('Test başarısız')
+        const error = await response.json()
+        alert('FCM Test hatası: ' + error.error)
       }
     } catch (error) {
-      console.error('Error testing broadcast:', error)
-      alert('Test hatası')
+      console.error('Error testing FCM:', error)
+      alert('FCM Test hatası')
     }
   }
 
@@ -191,11 +202,11 @@ export const SimpleNotificationManager: React.FC = () => {
                       <span>Debug</span>
                     </button>
                     <button
-                      onClick={testBroadcast}
-                      className="bg-purple-600 text-white px-2 py-1 rounded text-xs hover:bg-purple-700"
-                      title="Broadcast test"
+                      onClick={testFCM}
+                      className="bg-orange-600 text-white px-2 py-1 rounded text-xs hover:bg-orange-700"
+                      title="FCM test"
                     >
-                      Test
+                      FCM
                     </button>
                   </div>
                 </div>
