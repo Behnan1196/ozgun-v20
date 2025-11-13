@@ -160,6 +160,13 @@ export async function POST(request: NextRequest) {
           // Send to each token
           for (const tokenRecord of tokens) {
             try {
+              // Skip APNs tokens for now - FCM Admin SDK doesn't support them
+              if (tokenRecord.token_type === 'apns') {
+                console.log(`⚠️ Skipping APNs token for ${targetUser.full_name} - iOS support coming soon`)
+                pushFailureCount++
+                continue
+              }
+
               // Use data-only approach like video invite (app handles notification display)
               const fcmMessage = {
                 token: tokenRecord.token,
