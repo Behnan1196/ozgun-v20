@@ -161,22 +161,28 @@ export async function POST(request: NextRequest) {
           // Send to each token
           for (const tokenRecord of tokens) {
             try {
+              // Use data-only approach like video invite (app handles notification display)
               const fcmMessage = {
                 token: tokenRecord.token,
-                notification: {
+                data: {
+                  type: 'coordinator_announcement',
+                  notification_type: 'coordinator_announcement',
                   title: `🔔 ${title}`,
                   body: message,
-                },
-                data: {
-                  notification_type: 'coordinator_announcement',
-                  title: title,
-                  message: message,
+                  // Critical: These fields must be used by the app to create proper notifications
+                  notificationTitle: `🔔 ${title}`,
+                  notificationBody: message,
+                  showNotification: 'true',
+                  sound: 'default',
+                  vibrate: 'true',
+                  priority: 'high',
                   sender_id: user.id,
                   channel_id: channelId,
-                  type: 'coordinator_announcement'
+                  channelId: 'chat', // Use existing chat channel
                 },
                 android: {
                   priority: 'high' as const,
+                  ttl: 3600,
                 },
                 apns: {
                   payload: {
