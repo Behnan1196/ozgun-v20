@@ -36,18 +36,26 @@ export async function POST(request: NextRequest) {
       }, { status: 400 })
     }
 
+    // Map frontend values to database values
+    const audienceMap: Record<string, string> = {
+      'all': 'both',
+      'students': 'student',
+      'coaches': 'coach'
+    }
+    const dbTargetAudience = audienceMap[target_audience] || target_audience
+
     // Initialize Stream Chat
     const serverClient = StreamChat.getInstance(
       process.env.NEXT_PUBLIC_STREAM_API_KEY!,
       process.env.STREAM_API_SECRET!
     )
 
-    // Get target users
+    // Get target users (use mapped value for database query)
     let query = supabase.from('user_profiles').select('id, full_name, email, role')
     
-    if (target_audience === 'student') {
+    if (dbTargetAudience === 'student') {
       query = query.eq('role', 'student')
-    } else if (target_audience === 'coach') {
+    } else if (dbTargetAudience === 'coach') {
       query = query.eq('role', 'coach')
     } else {
       query = query.in('role', ['student', 'coach'])

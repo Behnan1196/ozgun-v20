@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { cookies } from 'next/headers'
 
 // POST /api/notifications/schedule-broadcast - Schedule a broadcast notification
@@ -43,8 +43,9 @@ export async function POST(request: NextRequest) {
       }, { status: 400 })
     }
 
-    // Save to notification_campaigns table with scheduled status
-    const { data: campaign, error: campaignError } = await supabase
+    // Save to notification_campaigns table with scheduled status (use admin client to bypass RLS)
+    const adminSupabase = createAdminClient()
+    const { data: campaign, error: campaignError } = await adminSupabase
       .from('notification_campaigns')
       .insert({
         name: `Scheduled - ${title}`,

@@ -13,7 +13,7 @@ export const NotificationManagerV2: React.FC = () => {
   const [generalForm, setGeneralForm] = useState({
     title: '',
     message: '',
-    target_audience: 'both',
+    target_audience: 'all', // Changed from 'both' to match database constraint
     scheduled_date: '', // Optional - if empty, send instantly
     scheduled_time: ''  // Optional
   })
@@ -206,9 +206,9 @@ export const NotificationManagerV2: React.FC = () => {
                     onChange={(e) => setGeneralForm({ ...generalForm, target_audience: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   >
-                    <option value="both">Herkes</option>
-                    <option value="student">Sadece Öğrenciler</option>
-                    <option value="coach">Sadece Koçlar</option>
+                    <option value="all">Herkes</option>
+                    <option value="students">Sadece Öğrenciler</option>
+                    <option value="coaches">Sadece Koçlar</option>
                   </select>
                 </div>
 
