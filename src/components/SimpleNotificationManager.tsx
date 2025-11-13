@@ -80,13 +80,15 @@ export const SimpleNotificationManager: React.FC = () => {
     }
 
     try {
-      // Parse as local time and convert to UTC
-      const localDateTime = new Date(`${scheduledForm.scheduled_date}T${scheduledForm.scheduled_time}`)
+      // Parse as Turkey time (UTC+3) and convert to UTC
+      // Create date string in ISO format for Turkey timezone
+      const turkeyDateTimeStr = `${scheduledForm.scheduled_date}T${scheduledForm.scheduled_time}:00+03:00`
+      const localDateTime = new Date(turkeyDateTimeStr)
       
-      // Show confirmation with both local and UTC time
-      const localTimeStr = localDateTime.toLocaleString('tr-TR')
+      // Show confirmation with both Turkey and UTC time
+      const turkeyTimeStr = localDateTime.toLocaleString('tr-TR', { timeZone: 'Europe/Istanbul' })
       const utcTimeStr = localDateTime.toISOString()
-      console.log(`📅 Scheduling: Local=${localTimeStr}, UTC=${utcTimeStr}`)
+      console.log(`📅 Scheduling: Turkey=${turkeyTimeStr}, UTC=${utcTimeStr}`)
       
       const scheduledFor = utcTimeStr
       
