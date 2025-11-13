@@ -64,7 +64,11 @@ export async function POST(request: NextRequest) {
 
     if (campaignError) {
       console.error('Error creating scheduled campaign:', campaignError)
-      return NextResponse.json({ error: 'Failed to schedule notification' }, { status: 500 })
+      return NextResponse.json({ 
+        error: 'Failed to schedule notification',
+        details: campaignError.message,
+        code: campaignError.code
+      }, { status: 500 })
     }
 
     console.log(`📅 Notification scheduled for ${scheduledDateTime.toISOString()}`)
