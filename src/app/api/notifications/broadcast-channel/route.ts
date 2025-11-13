@@ -8,23 +8,34 @@ import admin from 'firebase-admin'
 // POST /api/notifications/broadcast-channel - Use dedicated broadcast channel
 export async function POST(request: NextRequest) {
   try {
-    const cookieStore = cookies()
-    const supabase = createClient(cookieStore)
+    // Check for cron secret (bypass auth for scheduled notifications)
+    const cronSecret = request.headers.get('x-cron-secret')
+    const isCronJob = cronSecret === process.env.CRON_SECRET
+
+    let profile = null
     
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    if (!isCronJob) {
+      // Normal user authentication
+      const cookieStore = cookies()
+      const supabase = createClient(cookieStore)
+      
+      const { data: { user }, error: authError } = await supabase.auth.getUser()
+      if (authError || !user) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      }
 
-    // Check if user is coordinator/admin
-    const { data: profile, error: profileError } = await supabase
-      .from('user_profiles')
-      .select('role, full_name')
-      .eq('id', user.id)
-      .single()
+      // Check if user is coordinator/admin
+      const { data: userProfile, error: profileError } = await supabase
+        .from('user_profiles')
+        .select('role, full_name')
+        .eq('id', user.id)
+        .single()
 
-    if (profileError || !profile || !['coordinator', 'admin'].includes(profile.role)) {
-      return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 })
+      if (profileError || !userProfile || !['coordinator', 'admin'].includes(userProfile.role)) {
+        return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 })
+      }
+      
+      profile = userProfile
     }
 
     const body = await request.json()
