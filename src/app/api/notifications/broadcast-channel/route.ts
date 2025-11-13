@@ -4,6 +4,8 @@ import { createAdminClient } from '@/lib/supabase/server'
 import { cookies } from 'next/headers'
 import { StreamChat } from 'stream-chat'
 import admin from 'firebase-admin'
+import { profile } from 'console'
+import { profile } from 'console'
 
 // POST /api/notifications/broadcast-channel - Use dedicated broadcast channel
 export async function POST(request: NextRequest) {
@@ -15,15 +17,20 @@ export async function POST(request: NextRequest) {
     // Use admin client for database operations (works for both cron and user requests)
     const supabase = createAdminClient()
     
+    let user: any = null
+    let profile: any = null
+    
     if (!isCronJob) {
       // Normal user authentication
       const cookieStore = cookies()
       const userSupabase = createClient(cookieStore)
       
-      const { data: { user }, error: authError } = await userSupabase.auth.getUser()
-      if (authError || !user) {
+      const { data: { user: authUser }, error: authError } = await userSupabase.auth.getUser()
+      if (authError || !authUser) {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
       }
+      
+      user = authUser
 
       // Check if user is coordinator/admin
       const { data: userProfile, error: profileError } = await supabase
@@ -35,6 +42,8 @@ export async function POST(request: NextRequest) {
       if (profileError || !userProfile || !['coordinator', 'admin'].includes(userProfile.role)) {
         return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 })
       }
+      
+      profile = userProfile
     }
 
     const body = await request.json()
@@ -102,14 +111,18 @@ export async function POST(request: NextRequest) {
       name: u.full_name
     }))
 
-    await serverClient.upsertUsers([
-      { id: user.id, name: profile.full_name || 'Koordinatör' },
-      ...streamUsers
-    ])
+    // Add sender to Stream users if not cron job
+    const allStreamUsers = isCronJob 
+      ? streamUsers 
+      : [{ id: user.id, name: profile?.full_name || 'Koordinatör' }, ...streamUsers]
+    
+    await serverClient.upsertUsers(allStreamUsers)
 
     // Create or get broadcast channel for this audience
     const channelId = `broadcast_${target_audience}_${Date.now()}`
-    const memberIds = [user.id, ...filteredUsers.map(u => u.id)]
+    const memberIds = isCronJob 
+      ? filteredUsers.map(u => u.id)
+      : [user.id, ...filteredUsers.map(u => u.id)]
 
     const channel = serverClient.channel('messaging', channelId, {
       name: `📢 Koordinatör Bildirimi - ${target_audience === 'student' ? 'Öğrenciler' : target_audience === 'coach' ? 'Koçlar' : 'Herkes'}`,
