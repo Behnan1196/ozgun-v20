@@ -40,8 +40,13 @@ export async function GET(request: NextRequest) {
       try {
         console.log(`📤 Sending campaign: ${campaign.name} (${campaign.id})`)
 
+        // Get base URL dynamically
+        const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || process.env.VERCEL_URL 
+          ? `https://${process.env.VERCEL_URL}` 
+          : 'http://localhost:3000'
+
         // Call broadcast-channel API to send the notification
-        const response = await fetch(`${process.env.NEXT_PUBLIC_SITE_URL}/api/notifications/broadcast-channel`, {
+        const response = await fetch(`${baseUrl}/api/notifications/broadcast-channel`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
