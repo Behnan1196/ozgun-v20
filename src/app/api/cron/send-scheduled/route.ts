@@ -13,6 +13,15 @@ export async function GET(request: NextRequest) {
 
     const supabase = createAdminClient()
     const now = new Date().toISOString()
+    console.log(`🕐 Current time (UTC): ${now}`)
+
+    // First, check all scheduled campaigns (for debugging)
+    const { data: allScheduled } = await supabase
+      .from('notification_campaigns')
+      .select('id, name, status, scheduled_for')
+      .eq('status', 'scheduled')
+    
+    console.log(`📋 All scheduled campaigns:`, allScheduled)
 
     // Get all scheduled campaigns that should be sent now
     const { data: campaigns, error: fetchError } = await supabase
