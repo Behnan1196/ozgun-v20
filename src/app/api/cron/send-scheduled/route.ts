@@ -44,8 +44,11 @@ export async function GET(request: NextRequest) {
         const baseUrl = process.env.NEXT_PUBLIC_SITE_URL 
           || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000')
 
+        const apiUrl = `${baseUrl}/api/notifications/broadcast-channel`
+        console.log(`🔗 Calling API: ${apiUrl}`)
+
         // Call broadcast-channel API to send the notification
-        const response = await fetch(`${baseUrl}/api/notifications/broadcast-channel`, {
+        const response = await fetch(apiUrl, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -59,6 +62,8 @@ export async function GET(request: NextRequest) {
           })
         })
 
+        console.log(`📊 Response status: ${response.status}`)
+        
         if (response.ok) {
           const result = await response.json()
           
@@ -76,8 +81,12 @@ export async function GET(request: NextRequest) {
           console.log(`✅ Campaign sent: ${campaign.name}`)
           results.push({ id: campaign.id, success: true })
         } else {
-          const error = await response.json()
-          console.error(`❌ Failed to send campaign ${campaign.name}:`, error)
+          const responseText = await response.text()
+          console.error(`❌ Failed to send campaign ${campaign.name}:`, {
+            status: response.status,
+            statusText: response.statusText,
+            body: responseText.substring(0, 200)
+          })
           
           // Update campaign status to 'failed'
           await supabase
@@ -88,7 +97,7 @@ export async function GET(request: NextRequest) {
             })
             .eq('id', campaign.id)
 
-          results.push({ id: campaign.id, success: false, error: error.error })
+          results.push({ id: campaign.id, success: false, error: responseText.substring(0, 100) })
         }
       } catch (error) {
         console.error(`❌ Error processing campaign ${campaign.id}:`, error)
