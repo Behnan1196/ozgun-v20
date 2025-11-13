@@ -68,6 +68,10 @@ export const NotificationManagerV2: React.FC = () => {
           const result = await response.json()
           alert(`✅ Anlık bildirim gönderildi! ${result.stats.successful_sends} başarılı, ${result.stats.failed_sends} başarısız`)
           setGeneralForm({ title: '', message: '', target_audience: 'both', scheduled_date: '', scheduled_time: '' })
+          // Refresh history if on history tab
+          if (activeTab === 'history') {
+            loadHistory()
+          }
         } else {
           const error = await response.json()
           alert('Hata: ' + error.error)
@@ -90,6 +94,10 @@ export const NotificationManagerV2: React.FC = () => {
           const result = await response.json()
           alert(`✅ ${result.message}`)
           setGeneralForm({ title: '', message: '', target_audience: 'both', scheduled_date: '', scheduled_time: '' })
+          // Refresh history if on history tab
+          if (activeTab === 'history') {
+            loadHistory()
+          }
         } else {
           const errorText = await response.text()
           console.error('Schedule error:', errorText)
