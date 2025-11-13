@@ -7,6 +7,8 @@ export const NotificationManagerV2: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false)
   const [activeTab, setActiveTab] = useState<'general' | 'special' | 'history'>('general')
   const [specialTab, setSpecialTab] = useState<'task-check' | 'birthday' | 'periodic'>('task-check')
+  const [history, setHistory] = useState<any[]>([])
+  const [loadingHistory, setLoadingHistory] = useState(false)
   const dropdownRef = React.useRef<HTMLDivElement>(null)
 
   // General notification form (instant + scheduled combined)
@@ -108,6 +110,28 @@ export const NotificationManagerV2: React.FC = () => {
       alert('Ayarlar kaydedilemedi')
     }
   }
+
+  const loadHistory = async () => {
+    setLoadingHistory(true)
+    try {
+      const response = await fetch('/api/notifications/campaigns')
+      if (response.ok) {
+        const data = await response.json()
+        setHistory(data.campaigns || [])
+      }
+    } catch (error) {
+      console.error('Error loading history:', error)
+    } finally {
+      setLoadingHistory(false)
+    }
+  }
+
+  // Load history when history tab is opened
+  React.useEffect(() => {
+    if (activeTab === 'history' && history.length === 0) {
+      loadHistory()
+    }
+  }, [activeTab])
 
   return (
     <div className="relative" ref={dropdownRef}>
@@ -380,9 +404,86 @@ export const NotificationManagerV2: React.FC = () => {
 
             {/* HISTORY TAB */}
             {activeTab === 'history' && (
-              <div className="text-center py-8 text-gray-500">
-                <Clock className="w-12 h-12 mx-auto mb-3 text-gray-400" />
-                <p>Bildirim geçmişi yakında eklenecek</p>
+              <div className="space-y-3">
+                <div className="flex justify-between items-center mb-3">
+                  <h4 className="font-medium text-gray-700">Bildirim Geçmişi</h4>
+                  <button
+                    onClick={loadHistory}
+                    disabled={loadingHistory}
+                    className="text-sm text-blue-600 hover:text-blue-700 disabled:text-gray-400"
+                  >
+                    {loadingHistory ? '⏳ Yükleniyor...' : '🔄 Yenile'}
+                  </button>
+                </div>
+
+                {loadingHistory ? (
+                  <div className="text-center py-8 text-gray-500">
+                    <Clock className="w-8 h-8 mx-auto mb-2 animate-spin text-gray-400" />
+                    <p className="text-sm">Yükleniyor...</p>
+                  </div>
+                ) : history.length === 0 ? (
+                  <div className="text-center py-8 text-gray-500">
+                    <Clock className="w-12 h-12 mx-auto mb-3 text-gray-400" />
+                    <p>Henüz bildirim gönderilmemiş</p>
+                  </div>
+                ) : (
+                  <div className="space-y-2 max-h-[400px] overflow-y-auto">
+                    {history.map((campaign) => (
+                      <div
+                        key={campaign.id}
+                        className="p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                      >
+                        <div className="flex justify-between items-start mb-2">
+                          <div className="flex-1">
+                            <h5 className="font-medium text-gray-800 text-sm">{campaign.title}</h5>
+                            <p className="text-xs text-gray-600 mt-1 line-clamp-2">{campaign.body}</p>
+                          </div>
+                          <span className={`text-xs px-2 py-1 rounded-full ml-2 ${
+                            campaign.status === 'sent' 
+                              ? 'bg-green-100 text-green-700'
+                              : campaign.status === 'scheduled'
+                              ? 'bg-blue-100 text-blue-700'
+                              : campaign.status === 'failed'
+                              ? 'bg-red-100 text-red-700'
+                              : 'bg-gray-100 text-gray-700'
+                          }`}>
+                            {campaign.status === 'sent' ? '✅ Gönderildi' 
+                              : campaign.status === 'scheduled' ? '📅 Programlı'
+                              : campaign.status === 'failed' ? '❌ Başarısız'
+                              : campaign.status}
+                          </span>
+                        </div>
+                        
+                        <div className="flex items-center gap-4 text-xs text-gray-500 mt-2">
+                          <span>
+                            👥 {campaign.target_audience === 'all' ? 'Herkes' 
+                              : campaign.target_audience === 'students' ? 'Öğrenciler'
+                              : campaign.target_audience === 'coaches' ? 'Koçlar'
+                              : campaign.target_audience}
+                          </span>
+                          {campaign.total_recipients && (
+                            <span>📊 {campaign.total_recipients} kişi</span>
+                          )}
+                          {campaign.successful_sends !== undefined && (
+                            <span className="text-green-600">✓ {campaign.successful_sends}</span>
+                          )}
+                          {campaign.failed_sends !== undefined && campaign.failed_sends > 0 && (
+                            <span className="text-red-600">✗ {campaign.failed_sends}</span>
+                          )}
+                        </div>
+
+                        <div className="text-xs text-gray-400 mt-2">
+                          {campaign.sent_at 
+                            ? `Gönderildi: ${new Date(campaign.sent_at).toLocaleString('tr-TR')}`
+                            : campaign.scheduled_for
+                            ? `Programlı: ${new Date(campaign.scheduled_for).toLocaleString('tr-TR')}`
+                            : `Oluşturuldu: ${new Date(campaign.created_at).toLocaleString('tr-TR')}`
+                          }
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
           </div>
