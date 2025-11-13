@@ -72,7 +72,26 @@ export const NotificationManagerV2: React.FC = () => {
         }
       } else {
         // Schedule for later
-        alert('Programlı bildirim özelliği yakında eklenecek!')
+        const response = await fetch('/api/notifications/schedule-broadcast', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            title: generalForm.title,
+            message: generalForm.message,
+            target_audience: generalForm.target_audience,
+            scheduled_date: generalForm.scheduled_date,
+            scheduled_time: generalForm.scheduled_time
+          })
+        })
+
+        if (response.ok) {
+          const result = await response.json()
+          alert(`✅ ${result.message}`)
+          setGeneralForm({ title: '', message: '', target_audience: 'both', scheduled_date: '', scheduled_time: '' })
+        } else {
+          const error = await response.json()
+          alert('Hata: ' + error.error)
+        }
       }
     } catch (error) {
       console.error('Error sending notification:', error)
@@ -95,10 +114,10 @@ export const NotificationManagerV2: React.FC = () => {
       {/* Bell Button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="p-2 rounded-full hover:bg-gray-100 transition-colors relative"
+        className="p-2 rounded-full hover:bg-gray-700 transition-colors relative"
         title="Bildirim Yönetimi"
       >
-        <Bell className="w-6 h-6 text-gray-700" />
+        <Bell className="w-6 h-6 text-white" />
       </button>
 
       {/* Dropdown Panel */}
