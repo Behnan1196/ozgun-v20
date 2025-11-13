@@ -15,7 +15,7 @@ export const NotificationManagerV2: React.FC = () => {
   const [generalForm, setGeneralForm] = useState({
     title: '',
     message: '',
-    target_audience: 'all', // Changed from 'both' to match database constraint
+    target_audience: 'both', // Will be mapped to 'all' in API
     scheduled_date: '', // Optional - if empty, send instantly
     scheduled_time: ''  // Optional
   })

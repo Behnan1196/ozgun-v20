@@ -33,6 +33,17 @@ export async function POST(request: NextRequest) {
       }, { status: 400 })
     }
 
+    // Map frontend values to database values
+    const audienceMap: Record<string, string> = {
+      'both': 'all',
+      'all': 'all',
+      'students': 'student',
+      'student': 'student',
+      'coaches': 'coach',
+      'coach': 'coach'
+    }
+    const dbTargetAudience = audienceMap[target_audience] || target_audience
+
     // Parse as Turkey time (UTC+3) and convert to UTC
     const turkeyDateTimeStr = `${scheduled_date}T${scheduled_time}:00+03:00`
     const scheduledDateTime = new Date(turkeyDateTimeStr)
@@ -54,7 +65,7 @@ export async function POST(request: NextRequest) {
         name: `Scheduled - ${title}`,
         title,
         body: message,
-        target_audience,
+        target_audience: dbTargetAudience,
         status: 'scheduled',
         scheduled_for: scheduledDateTime.toISOString(),
         created_by: user.id
