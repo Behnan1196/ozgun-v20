@@ -49,9 +49,9 @@ export async function GET(request: NextRequest) {
       try {
         console.log(`📤 Sending campaign: ${campaign.name} (${campaign.id})`)
 
-        // Get base URL dynamically
+        // Get base URL dynamically - prefer production URL
         const baseUrl = process.env.NEXT_PUBLIC_SITE_URL 
-          || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000')
+          || (process.env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` : 'http://localhost:3000')
 
         const apiUrl = `${baseUrl}/api/notifications/broadcast-channel`
         console.log(`🔗 Calling API: ${apiUrl}`)
