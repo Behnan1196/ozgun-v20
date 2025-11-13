@@ -122,10 +122,13 @@ export async function POST(request: NextRequest) {
       ? filteredUsers.map(u => u.id)
       : [user?.id || 'system', ...filteredUsers.map(u => u.id)]
 
+    const senderId = user?.id || 'system'
+    const senderName = profile?.full_name || 'Sistem'
+    
     const channel = serverClient.channel('messaging', channelId, {
       name: `📢 Koordinatör Bildirimi - ${target_audience === 'student' ? 'Öğrenciler' : target_audience === 'coach' ? 'Koçlar' : 'Herkes'}`,
       members: memberIds,
-      created_by_id: user.id,
+      created_by_id: senderId,
       // Disable replies to keep it announcement-only
       disabled: false,
       // Custom data
@@ -137,8 +140,8 @@ export async function POST(request: NextRequest) {
 
     // Send broadcast message
     const messageResult = await channel.sendMessage({
-      text: `🔔 **${title}**\n\n${message}\n\n_Koordinatör: ${profile.full_name}_`,
-      user_id: user.id,
+      text: `🔔 **${title}**\n\n${message}\n\n_${senderName}_`,
+      user_id: senderId,
       custom: {
         notification_type: 'coordinator_announcement',
         title: title,
@@ -221,7 +224,7 @@ export async function POST(request: NextRequest) {
                     notification_type: 'coordinator_announcement',
                     title: title,
                     message: message,
-                    sender_id: user.id,
+                    sender_id: senderId,
                     channel_id: channelId,
                   }
                 )
@@ -251,7 +254,7 @@ export async function POST(request: NextRequest) {
                   sound: 'default',
                   vibrate: 'true',
                   priority: 'high',
-                  sender_id: user.id,
+                  sender_id: senderId,
                   channel_id: channelId,
                   channelId: 'chat', // Use existing chat channel
                 },
@@ -291,7 +294,9 @@ export async function POST(request: NextRequest) {
     console.log(`📱 Push notifications: ${pushSuccessCount} success, ${pushFailureCount} failures`)
 
     // Hide channel from coordinator's view (optional)
-    await channel.hide(user.id)
+    if (!isCronJob && user?.id) {
+      await channel.hide(user.id)
+    }
 
     // Log the campaign
     const { data: campaign } = await supabase
@@ -306,7 +311,7 @@ export async function POST(request: NextRequest) {
         successful_sends: pushSuccessCount,
         failed_sends: pushFailureCount,
         sent_at: new Date().toISOString(),
-        created_by: user.id
+        created_by: senderId
       })
       .select()
       .single()
