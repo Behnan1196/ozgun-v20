@@ -33,10 +33,13 @@ export async function POST(request: NextRequest) {
       }, { status: 400 })
     }
 
-    // Combine date and time
-    const scheduledDateTime = new Date(`${scheduled_date}T${scheduled_time}:00`)
+    // Parse as Turkey time (UTC+3) and convert to UTC
+    const turkeyDateTimeStr = `${scheduled_date}T${scheduled_time}:00+03:00`
+    const scheduledDateTime = new Date(turkeyDateTimeStr)
     
-    // Check if date is in the future
+    console.log(`📅 Scheduling: Turkey input=${scheduled_date} ${scheduled_time}, UTC=${scheduledDateTime.toISOString()}`)
+    
+    // Check if date is in the future (compare in UTC)
     if (scheduledDateTime <= new Date()) {
       return NextResponse.json({ 
         error: 'Scheduled time must be in the future' 
