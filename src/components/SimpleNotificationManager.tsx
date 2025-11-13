@@ -80,9 +80,15 @@ export const SimpleNotificationManager: React.FC = () => {
     }
 
     try {
-      // Convert local time to UTC (Turkey is UTC+3)
+      // Parse as local time and convert to UTC
       const localDateTime = new Date(`${scheduledForm.scheduled_date}T${scheduledForm.scheduled_time}`)
-      const scheduledFor = localDateTime.toISOString()
+      
+      // Show confirmation with both local and UTC time
+      const localTimeStr = localDateTime.toLocaleString('tr-TR')
+      const utcTimeStr = localDateTime.toISOString()
+      console.log(`📅 Scheduling: Local=${localTimeStr}, UTC=${utcTimeStr}`)
+      
+      const scheduledFor = utcTimeStr
       
       const response = await fetch('/api/notifications/campaigns', {
         method: 'POST',
