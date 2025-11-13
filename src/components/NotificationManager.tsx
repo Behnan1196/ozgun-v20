@@ -462,7 +462,14 @@ export const NotificationManager: React.FC = () => {
                           <span>Hedef: {campaign.target_audience}</span>
                           <span>Durum: {campaign.status}</span>
                           <span>{campaign.successful_sends}/{campaign.total_recipients} başarılı</span>
-                          <span>{new Date(campaign.scheduled_for).toLocaleDateString('tr-TR')}</span>
+                          <span>{new Date(campaign.scheduled_for).toLocaleString('tr-TR', { 
+                            timeZone: 'Europe/Istanbul',
+                            year: 'numeric',
+                            month: '2-digit',
+                            day: '2-digit',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          })}</span>
                         </div>
                       </div>
                     </div>
