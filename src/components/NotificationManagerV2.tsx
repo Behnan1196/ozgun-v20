@@ -91,8 +91,14 @@ export const NotificationManagerV2: React.FC = () => {
           alert(`✅ ${result.message}`)
           setGeneralForm({ title: '', message: '', target_audience: 'both', scheduled_date: '', scheduled_time: '' })
         } else {
-          const error = await response.json()
-          alert('Hata: ' + error.error)
+          const errorText = await response.text()
+          console.error('Schedule error:', errorText)
+          try {
+            const error = JSON.parse(errorText)
+            alert('Hata: ' + error.error)
+          } catch {
+            alert('Hata: ' + errorText.substring(0, 200))
+          }
         }
       }
     } catch (error) {
