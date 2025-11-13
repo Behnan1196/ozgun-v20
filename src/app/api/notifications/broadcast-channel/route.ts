@@ -4,8 +4,6 @@ import { createAdminClient } from '@/lib/supabase/server'
 import { cookies } from 'next/headers'
 import { StreamChat } from 'stream-chat'
 import admin from 'firebase-admin'
-import { profile } from 'console'
-import { profile } from 'console'
 
 // POST /api/notifications/broadcast-channel - Use dedicated broadcast channel
 export async function POST(request: NextRequest) {
