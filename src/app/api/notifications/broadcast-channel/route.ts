@@ -43,7 +43,7 @@ export async function POST(request: NextRequest) {
     )
 
     // Get target users
-    let query = supabase.from('user_profiles').select('id, full_name, role')
+    let query = supabase.from('user_profiles').select('id, full_name, email, role')
     
     if (target_audience === 'student') {
       query = query.eq('role', 'student')
@@ -59,10 +59,27 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'No target users found' }, { status: 400 })
     }
 
-    console.log(`📢 Broadcasting to ${users.length} users (${target_audience})`)
+    // 🧪 TEST MODE: Only send to Ozan and Ensar during development
+    const TEST_MODE = true
+    const TEST_EMAILS = ['ozan@yasam.com', 'ensar@yasam.com']
+    
+    let filteredUsers = users
+    if (TEST_MODE) {
+      filteredUsers = users.filter(u => TEST_EMAILS.includes(u.email || ''))
+      console.log(`🧪 TEST MODE: Filtered ${users.length} users to ${filteredUsers.length} test users`)
+    }
+
+    if (filteredUsers.length === 0) {
+      return NextResponse.json({ 
+        error: 'No test users found',
+        message: 'Test mode is enabled. Only Ozan and Ensar will receive notifications.'
+      }, { status: 400 })
+    }
+
+    console.log(`📢 Broadcasting to ${filteredUsers.length} users (${target_audience})${TEST_MODE ? ' [TEST MODE]' : ''}`)
 
     // Upsert all users in Stream (without role field - Stream doesn't support custom roles)
-    const streamUsers = users.map(u => ({
+    const streamUsers = filteredUsers.map(u => ({
       id: u.id,
       name: u.full_name
     }))
@@ -74,7 +91,7 @@ export async function POST(request: NextRequest) {
 
     // Create or get broadcast channel for this audience
     const channelId = `broadcast_${target_audience}_${Date.now()}`
-    const memberIds = [user.id, ...users.map(u => u.id)]
+    const memberIds = [user.id, ...filteredUsers.map(u => u.id)]
 
     const channel = serverClient.channel('messaging', channelId, {
       name: `📢 Koordinatör Bildirimi - ${target_audience === 'student' ? 'Öğrenciler' : target_audience === 'coach' ? 'Koçlar' : 'Herkes'}`,
@@ -130,7 +147,7 @@ export async function POST(request: NextRequest) {
       // Use admin client to bypass RLS for reading tokens
       const adminSupabase = createAdminClient()
       
-      for (const targetUser of users) {
+      for (const targetUser of filteredUsers) {
         try {
           console.log(`🔍 Looking for tokens for user: ${targetUser.full_name} (${targetUser.id})`)
           
@@ -239,7 +256,7 @@ export async function POST(request: NextRequest) {
       }
     } else {
       console.error('❌ Firebase Admin not initialized')
-      pushFailureCount = users.length
+      pushFailureCount = filteredUsers.length
     }
 
     console.log(`📱 Push notifications: ${pushSuccessCount} success, ${pushFailureCount} failures`)
@@ -251,14 +268,14 @@ export async function POST(request: NextRequest) {
     const { data: campaign } = await supabase
       .from('notification_campaigns')
       .insert({
-        name: `Broadcast - ${title}`,
+        name: `Broadcast - ${title}${TEST_MODE ? ' [TEST]' : ''}`,
         title,
         body: message,
         target_audience,
         status: 'sent',
-        total_recipients: users.length,
-        successful_sends: users.length,
-        failed_sends: 0,
+        total_recipients: filteredUsers.length,
+        successful_sends: pushSuccessCount,
+        failed_sends: pushFailureCount,
         sent_at: new Date().toISOString(),
         created_by: user.id
       })
@@ -268,8 +285,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       campaign,
+      testMode: TEST_MODE,
       stats: {
-        total_recipients: users.length,
+        total_recipients: filteredUsers.length,
         successful_sends: pushSuccessCount,
         failed_sends: pushFailureCount,
         channel_id: channelId,
