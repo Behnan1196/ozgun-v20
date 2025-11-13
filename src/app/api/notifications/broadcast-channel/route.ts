@@ -112,7 +112,7 @@ export async function POST(request: NextRequest) {
     // Add sender to Stream users if not cron job
     const allStreamUsers = isCronJob 
       ? streamUsers 
-      : [{ id: user.id, name: profile?.full_name || 'Koordinatör' }, ...streamUsers]
+      : [{ id: user?.id || 'system', name: profile?.full_name || 'Koordinatör' }, ...streamUsers]
     
     await serverClient.upsertUsers(allStreamUsers)
 
@@ -120,7 +120,7 @@ export async function POST(request: NextRequest) {
     const channelId = `broadcast_${target_audience}_${Date.now()}`
     const memberIds = isCronJob 
       ? filteredUsers.map(u => u.id)
-      : [user.id, ...filteredUsers.map(u => u.id)]
+      : [user?.id || 'system', ...filteredUsers.map(u => u.id)]
 
     const channel = serverClient.channel('messaging', channelId, {
       name: `📢 Koordinatör Bildirimi - ${target_audience === 'student' ? 'Öğrenciler' : target_audience === 'coach' ? 'Koçlar' : 'Herkes'}`,
