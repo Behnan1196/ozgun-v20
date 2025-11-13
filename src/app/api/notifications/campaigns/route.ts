@@ -192,3 +192,54 @@ async function queueNotificationsForCampaign(supabase: any, campaign: any) {
     console.error('Error in queueNotificationsForCampaign:', error)
   }
 }
+
+
+// DELETE /api/notifications/campaigns?id=xxx - Delete a campaign
+export async function DELETE(request: NextRequest) {
+  try {
+    const cookieStore = cookies()
+    const supabase = createClient(cookieStore)
+    
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    if (authError || !user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    // Check if user is coordinator/admin
+    const { data: profile } = await supabase
+      .from('user_profiles')
+      .select('role')
+      .eq('id', user.id)
+      .single()
+
+    if (!profile || !['coordinator', 'admin'].includes(profile.role)) {
+      return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 })
+    }
+
+    const { searchParams } = new URL(request.url)
+    const campaignId = searchParams.get('id')
+
+    if (!campaignId) {
+      return NextResponse.json({ error: 'Campaign ID required' }, { status: 400 })
+    }
+
+    // Delete campaign
+    const { error: deleteError } = await supabase
+      .from('notification_campaigns')
+      .delete()
+      .eq('id', campaignId)
+
+    if (deleteError) {
+      console.error('Error deleting campaign:', deleteError)
+      return NextResponse.json({ error: 'Failed to delete campaign' }, { status: 500 })
+    }
+
+    return NextResponse.json({ success: true, message: 'Campaign deleted' })
+
+  } catch (error) {
+    console.error('Error in DELETE /api/notifications/campaigns:', error)
+    return NextResponse.json({ 
+      error: 'Internal server error: ' + (error as Error).message 
+    }, { status: 500 })
+  }
+}

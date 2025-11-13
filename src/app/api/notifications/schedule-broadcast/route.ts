@@ -48,8 +48,6 @@ export async function POST(request: NextRequest) {
     const turkeyDateTimeStr = `${scheduled_date}T${scheduled_time}:00+03:00`
     const scheduledDateTime = new Date(turkeyDateTimeStr)
     
-    console.log(`📅 Scheduling: Turkey input=${scheduled_date} ${scheduled_time}, UTC=${scheduledDateTime.toISOString()}`)
-    
     // Check if date is in the future (compare in UTC)
     if (scheduledDateTime <= new Date()) {
       return NextResponse.json({ 
@@ -81,8 +79,6 @@ export async function POST(request: NextRequest) {
         code: campaignError.code
       }, { status: 500 })
     }
-
-    console.log(`📅 Notification scheduled for ${scheduledDateTime.toISOString()}`)
 
     return NextResponse.json({
       success: true,

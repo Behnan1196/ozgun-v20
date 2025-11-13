@@ -125,6 +125,28 @@ export const NotificationManagerV2: React.FC = () => {
     }
   }
 
+  const deleteCampaign = async (campaignId: string) => {
+    if (!confirm('Bu kampanyayı silmek istediğinizden emin misiniz?')) {
+      return
+    }
+
+    try {
+      const response = await fetch(`/api/notifications/campaigns?id=${campaignId}`, {
+        method: 'DELETE'
+      })
+
+      if (response.ok) {
+        alert('✅ Kampanya silindi')
+        loadHistory()
+      } else {
+        alert('❌ Kampanya silinemedi')
+      }
+    } catch (error) {
+      console.error('Error deleting campaign:', error)
+      alert('Silme hatası')
+    }
+  }
+
   const loadHistory = async () => {
     setLoadingHistory(true)
     try {
@@ -452,7 +474,8 @@ export const NotificationManagerV2: React.FC = () => {
                             <h5 className="font-medium text-gray-800 text-sm">{campaign.title}</h5>
                             <p className="text-xs text-gray-600 mt-1 line-clamp-2">{campaign.body}</p>
                           </div>
-                          <span className={`text-xs px-2 py-1 rounded-full ml-2 ${
+                          <div className="flex items-center space-x-2">
+                            <span className={`text-xs px-2 py-1 rounded-full ${
                             campaign.status === 'sent' 
                               ? 'bg-green-100 text-green-700'
                               : campaign.status === 'scheduled'
@@ -465,7 +488,15 @@ export const NotificationManagerV2: React.FC = () => {
                               : campaign.status === 'scheduled' ? '📅 Programlı'
                               : campaign.status === 'failed' ? '❌ Başarısız'
                               : campaign.status}
-                          </span>
+                            </span>
+                            <button
+                              onClick={() => deleteCampaign(campaign.id)}
+                              className="text-red-600 hover:text-red-700 p-1"
+                              title="Sil"
+                            >
+                              🗑️
+                            </button>
+                          </div>
                         </div>
                         
                         <div className="flex items-center gap-4 text-xs text-gray-500 mt-2">

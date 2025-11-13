@@ -13,15 +13,6 @@ export async function GET(request: NextRequest) {
 
     const supabase = createAdminClient()
     const now = new Date().toISOString()
-    console.log(`🕐 Current time (UTC): ${now}`)
-
-    // First, check all scheduled campaigns (for debugging)
-    const { data: allScheduled } = await supabase
-      .from('notification_campaigns')
-      .select('id, name, status, scheduled_for')
-      .eq('status', 'scheduled')
-    
-    console.log(`📋 All scheduled campaigns:`, allScheduled)
 
     // Get all scheduled campaigns that should be sent now
     const { data: campaigns, error: fetchError } = await supabase
@@ -47,17 +38,12 @@ export async function GET(request: NextRequest) {
 
     for (const campaign of campaigns) {
       try {
-        console.log(`📤 Sending campaign: ${campaign.name} (${campaign.id})`)
-
         // Get base URL dynamically - prefer production URL
         const baseUrl = process.env.NEXT_PUBLIC_SITE_URL 
           || (process.env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` : 'http://localhost:3000')
 
-        const apiUrl = `${baseUrl}/api/notifications/broadcast-channel`
-        console.log(`🔗 Calling API: ${apiUrl}`)
-
         // Call broadcast-channel API to send the notification
-        const response = await fetch(apiUrl, {
+        const response = await fetch(`${baseUrl}/api/notifications/broadcast-channel`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -71,8 +57,6 @@ export async function GET(request: NextRequest) {
           })
         })
 
-        console.log(`📊 Response status: ${response.status}`)
-        
         if (response.ok) {
           const result = await response.json()
           
@@ -87,15 +71,10 @@ export async function GET(request: NextRequest) {
             })
             .eq('id', campaign.id)
 
-          console.log(`✅ Campaign sent: ${campaign.name}`)
           results.push({ id: campaign.id, success: true })
         } else {
           const responseText = await response.text()
-          console.error(`❌ Failed to send campaign ${campaign.name}:`, {
-            status: response.status,
-            statusText: response.statusText,
-            body: responseText.substring(0, 200)
-          })
+          console.error(`Failed to send campaign ${campaign.id}:`, response.status)
           
           // Update campaign status to 'failed'
           await supabase
