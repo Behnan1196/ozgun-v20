@@ -134,15 +134,14 @@ export async function POST(request: NextRequest) {
         try {
           console.log(`🔍 Looking for tokens for user: ${targetUser.full_name} (${targetUser.id})`)
           
-          // Get user's FCM tokens using admin client (bypasses RLS)
-          // Only get FCM tokens (Android) for now - APNs requires different handling
+          // Get user's tokens using admin client (bypasses RLS)
+          // Support both Android (FCM) and iOS (APNs)
           const { data: tokens, error: tokenError } = await adminSupabase
             .from('notification_tokens')
             .select('*')
             .eq('user_id', targetUser.id)
             .eq('is_active', true)
-            .eq('platform', 'android')
-            .eq('token_type', 'fcm')
+            .in('platform', ['android', 'ios'])
 
           if (tokenError) {
             console.error(`❌ Error fetching tokens for ${targetUser.full_name}:`, tokenError)
