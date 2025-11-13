@@ -160,10 +160,33 @@ export async function POST(request: NextRequest) {
           // Send to each token
           for (const tokenRecord of tokens) {
             try {
-              // Skip APNs tokens for now - FCM Admin SDK doesn't support them
+              // Handle APNs tokens (iOS) separately
               if (tokenRecord.token_type === 'apns') {
-                console.log(`⚠️ Skipping APNs token for ${targetUser.full_name} - iOS support coming soon`)
-                pushFailureCount++
+                console.log(`📱 Sending APNs notification to ${targetUser.full_name}`)
+                
+                // Import APNs function from video invite service
+                const { sendAPNSNotification } = await import('@/lib/notifications/video-invite-service')
+                
+                const apnsResult = await sendAPNSNotification(
+                  tokenRecord.token,
+                  `🔔 ${title}`,
+                  message,
+                  {
+                    notification_type: 'coordinator_announcement',
+                    title: title,
+                    message: message,
+                    sender_id: user.id,
+                    channel_id: channelId,
+                  }
+                )
+                
+                if (apnsResult.success) {
+                  pushSuccessCount++
+                  console.log(`✅ APNs push sent to ${targetUser.full_name}`)
+                } else {
+                  pushFailureCount++
+                  console.error(`❌ APNs push failed for ${targetUser.full_name}:`, apnsResult.error)
+                }
                 continue
               }
 

@@ -95,7 +95,7 @@ function initializeAPNProvider() {
 }
 
 // Send APNs notification
-async function sendAPNSNotification(
+export async function sendAPNSNotification(
   deviceToken: string, 
   title: string, 
   body: string, 
