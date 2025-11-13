@@ -12,14 +12,15 @@ export async function POST(request: NextRequest) {
     const cronSecret = request.headers.get('x-cron-secret')
     const isCronJob = cronSecret === process.env.CRON_SECRET
 
-    let profile = null
+    // Use admin client for database operations (works for both cron and user requests)
+    const supabase = createAdminClient()
     
     if (!isCronJob) {
       // Normal user authentication
       const cookieStore = cookies()
-      const supabase = createClient(cookieStore)
+      const userSupabase = createClient(cookieStore)
       
-      const { data: { user }, error: authError } = await supabase.auth.getUser()
+      const { data: { user }, error: authError } = await userSupabase.auth.getUser()
       if (authError || !user) {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
       }
@@ -34,8 +35,6 @@ export async function POST(request: NextRequest) {
       if (profileError || !userProfile || !['coordinator', 'admin'].includes(userProfile.role)) {
         return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 })
       }
-      
-      profile = userProfile
     }
 
     const body = await request.json()
