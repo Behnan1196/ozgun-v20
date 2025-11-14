@@ -44,40 +44,73 @@ export async function GET(request: NextRequest) {
       })
     }
 
-    // Call process-automated API with task check rule
-    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL 
-      || (process.env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` : 'http://localhost:3000')
+    // Get today's date in Turkey timezone
+    const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Europe/Istanbul' }) // YYYY-MM-DD
 
-    const response = await fetch(`${baseUrl}/api/notifications/process-automated`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-cron-secret': process.env.CRON_SECRET || ''
-      },
-      body: JSON.stringify({
-        rule_type: 'daily_task_reminder',
-        force: true,
-        custom_messages: {
-          thank_you: settings.thank_you_message,
-          reminder: settings.reminder_message
-        }
-      })
-    })
+    // Get all students
+    const { data: students, error: studentsError } = await supabase
+      .from('user_profiles')
+      .select('id, full_name')
+      .eq('role', 'student')
 
-    if (response.ok) {
-      const result = await response.json()
-      return NextResponse.json({
-        success: true,
-        message: 'Daily task check completed',
-        result
-      })
-    } else {
-      const error = await response.text()
-      return NextResponse.json({ 
-        error: 'Failed to process daily tasks',
-        details: error
-      }, { status: 500 })
+    if (studentsError || !students) {
+      return NextResponse.json({ error: 'Failed to fetch students' }, { status: 500 })
     }
+
+    const results = []
+
+    for (const student of students) {
+      // Get student's tasks for today
+      const { data: tasks } = await supabase
+        .from('daily_tasks')
+        .select('id, is_completed')
+        .eq('student_id', student.id)
+        .eq('date', today)
+
+      if (!tasks || tasks.length === 0) {
+        continue // No tasks for today
+      }
+
+      const totalTasks = tasks.length
+      const completedTasks = tasks.filter(t => t.is_completed).length
+      const allCompleted = completedTasks === totalTasks
+
+      // Determine message
+      const message = allCompleted ? settings.thank_you_message : settings.reminder_message
+      const title = allCompleted ? '🎉 Tebrikler!' : '⏰ Görev Hatırlatması'
+
+      // Send notification via broadcast-channel
+      const baseUrl = process.env.NEXT_PUBLIC_SITE_URL 
+        || (process.env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` : 'http://localhost:3000')
+
+      const response = await fetch(`${baseUrl}/api/notifications/broadcast-channel`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-cron-secret': process.env.CRON_SECRET || ''
+        },
+        body: JSON.stringify({
+          title,
+          message: `${message}\n\n📊 Bugün: ${completedTasks}/${totalTasks} görev tamamlandı`,
+          target_audience: 'student',
+          target_user_ids: [student.id]
+        })
+      })
+
+      results.push({
+        student: student.full_name,
+        tasks: `${completedTasks}/${totalTasks}`,
+        all_completed: allCompleted,
+        notification_sent: response.ok
+      })
+    }
+
+    return NextResponse.json({
+      success: true,
+      message: 'Daily task check completed',
+      checked_students: students.length,
+      results
+    })
 
   } catch (error) {
     console.error('Error in daily-tasks cron:', error)
