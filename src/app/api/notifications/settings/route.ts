@@ -69,16 +69,46 @@ export async function POST(request: NextRequest) {
 
     // Use admin client to bypass RLS
     const adminSupabase = createAdminClient()
-    const { data, error } = await adminSupabase
+    
+    // First, try to get existing setting
+    const { data: existing } = await adminSupabase
       .from('notification_settings')
-      .upsert({
-        setting_key,
-        setting_value,
-        updated_by: user.id,
-        updated_at: new Date().toISOString()
-      })
-      .select()
+      .select('id')
+      .eq('setting_key', setting_key)
       .single()
+
+    let data, error
+
+    if (existing) {
+      // Update existing
+      const result = await adminSupabase
+        .from('notification_settings')
+        .update({
+          setting_value,
+          updated_by: user.id,
+          updated_at: new Date().toISOString()
+        })
+        .eq('setting_key', setting_key)
+        .select()
+        .single()
+      
+      data = result.data
+      error = result.error
+    } else {
+      // Insert new
+      const result = await adminSupabase
+        .from('notification_settings')
+        .insert({
+          setting_key,
+          setting_value,
+          updated_by: user.id
+        })
+        .select()
+        .single()
+      
+      data = result.data
+      error = result.error
+    }
 
     if (error) {
       console.error('Error updating settings:', error)
