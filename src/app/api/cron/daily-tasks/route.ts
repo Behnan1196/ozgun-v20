@@ -35,11 +35,16 @@ export async function GET(request: NextRequest) {
     const [checkHour, checkMinute] = settings.check_time.split(':').map(Number)
     
     // Check if we're in the right hour (allow ±5 minutes for cron timing variations)
-    if (currentHour !== checkHour || Math.abs(currentMinute - checkMinute) > 5) {
+    const timeMatch = currentHour === checkHour && Math.abs(currentMinute - checkMinute) <= 5
+    
+    console.log(`⏰ Time check: ${currentHour}:${String(currentMinute).padStart(2, '0')} vs ${settings.check_time} - Match: ${timeMatch}`)
+    
+    if (!timeMatch) {
       return NextResponse.json({ 
         message: 'Not the right time yet',
         current_time: `${currentHour}:${String(currentMinute).padStart(2, '0')}`,
-        check_time: settings.check_time
+        check_time: settings.check_time,
+        time_match: timeMatch
       })
     }
 
