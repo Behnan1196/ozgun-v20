@@ -72,7 +72,7 @@ export async function GET(request: NextRequest) {
     for (const student of students) {
       // Get student's tasks for today
       const { data: tasks } = await supabase
-        .from('daily_tasks')
+        .from('tasks')
         .select('id, is_completed, date')
         .eq('student_id', student.id)
         .eq('date', today)
