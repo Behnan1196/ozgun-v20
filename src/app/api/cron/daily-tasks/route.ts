@@ -53,12 +53,13 @@ export async function GET(request: NextRequest) {
     // Get today's date in Turkey timezone
     const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Europe/Istanbul' }) // YYYY-MM-DD
 
-    // Get all students (TEST: only Ozan for now)
+    // Get all students
     const { data: students, error: studentsError } = await supabase
       .from('user_profiles')
       .select('id, full_name, email')
       .eq('role', 'student')
-      .eq('email', 'ozanozturkmen@gmail.com') // TEST: Remove this line for production
+    
+    console.log(`👥 Found ${students?.length || 0} students:`, students?.map(s => s.email))
 
     if (studentsError || !students) {
       return NextResponse.json({ error: 'Failed to fetch students' }, { status: 500 })
