@@ -77,7 +77,7 @@ export async function GET(request: NextRequest) {
 
       // Determine message
       const message = allCompleted ? settings.thank_you_message : settings.reminder_message
-      const title = allCompleted ? '🎉 Tebrikler!' : '⏰ Görev Hatırlatması'
+      const title = allCompleted ? '🎉 Tebrikler!' : 'Görev Hatırlatması'
 
       // Send notification via broadcast-channel
       const baseUrl = process.env.NEXT_PUBLIC_SITE_URL 
