@@ -25,6 +25,25 @@ export async function GET(request: NextRequest) {
 
     const settings = settingsData.setting_value
 
+    // Check if current time matches check_time (Turkey timezone)
+    const now = new Date()
+    const turkeyTime = new Date(now.toLocaleString('en-US', { timeZone: 'Europe/Istanbul' }))
+    const currentHour = turkeyTime.getHours()
+    const currentMinute = turkeyTime.getMinutes()
+    
+    // Parse check_time (format: "HH:MM")
+    const [checkHour, checkMinute] = settings.check_time.split(':').map(Number)
+    
+    // Check if we're in the right hour and within 5 minutes of the target time
+    // This allows for cron job timing variations
+    if (currentHour !== checkHour || Math.abs(currentMinute - checkMinute) > 5) {
+      return NextResponse.json({ 
+        message: 'Not the right time yet',
+        current_time: `${currentHour}:${currentMinute}`,
+        check_time: settings.check_time
+      })
+    }
+
     // Call process-automated API with task check rule
     const baseUrl = process.env.NEXT_PUBLIC_SITE_URL 
       || (process.env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` : 'http://localhost:3000')
