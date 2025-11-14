@@ -52,6 +52,7 @@ export async function GET(request: NextRequest) {
 
     // Get today's date in Turkey timezone
     const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Europe/Istanbul' }) // YYYY-MM-DD
+    console.log(`📅 Checking tasks for date: ${today}`)
 
     // Get all students (TEST: only Ozan for now)
     const { data: students, error: studentsError } = await supabase
@@ -72,9 +73,11 @@ export async function GET(request: NextRequest) {
       // Get student's tasks for today
       const { data: tasks } = await supabase
         .from('daily_tasks')
-        .select('id, is_completed')
+        .select('id, is_completed, date')
         .eq('student_id', student.id)
         .eq('date', today)
+
+      console.log(`📝 ${student.full_name}: Found ${tasks?.length || 0} tasks for ${today}`)
 
       if (!tasks || tasks.length === 0) {
         continue // No tasks for today
