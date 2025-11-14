@@ -73,9 +73,9 @@ export async function GET(request: NextRequest) {
       // Get student's tasks for today
       const { data: tasks } = await supabase
         .from('tasks')
-        .select('id, is_completed, date')
-        .eq('student_id', student.id)
-        .eq('date', today)
+        .select('id, status, scheduled_date')
+        .eq('assigned_to', student.id)
+        .eq('scheduled_date', today)
 
       console.log(`📝 ${student.full_name}: Found ${tasks?.length || 0} tasks for ${today}`)
 
@@ -84,7 +84,7 @@ export async function GET(request: NextRequest) {
       }
 
       const totalTasks = tasks.length
-      const completedTasks = tasks.filter(t => t.is_completed).length
+      const completedTasks = tasks.filter(t => t.status === 'completed').length
       const allCompleted = completedTasks === totalTasks
 
       // Determine message
