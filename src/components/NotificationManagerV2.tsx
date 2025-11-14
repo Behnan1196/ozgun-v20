@@ -115,10 +115,34 @@ export const NotificationManagerV2: React.FC = () => {
     }
   }
 
+  const loadTaskCheckSettings = async () => {
+    try {
+      const response = await fetch('/api/notifications/settings?key=task_check')
+      if (response.ok) {
+        const data = await response.json()
+        setTaskCheckSettings(data.settings)
+      }
+    } catch (error) {
+      console.error('Error loading task check settings:', error)
+    }
+  }
+
   const saveTaskCheckSettings = async () => {
     try {
-      // TODO: Save to database
-      alert('Görev kontrol ayarları kaydedildi!')
+      const response = await fetch('/api/notifications/settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          setting_key: 'task_check',
+          setting_value: taskCheckSettings
+        })
+      })
+
+      if (response.ok) {
+        alert('✅ Görev kontrol ayarları kaydedildi!')
+      } else {
+        alert('❌ Ayarlar kaydedilemedi')
+      }
     } catch (error) {
       console.error('Error saving task check settings:', error)
       alert('Ayarlar kaydedilemedi')
@@ -168,6 +192,13 @@ export const NotificationManagerV2: React.FC = () => {
       loadHistory()
     }
   }, [activeTab])
+
+  // Load task check settings when special tab is opened
+  React.useEffect(() => {
+    if (activeTab === 'special' && specialTab === 'task-check') {
+      loadTaskCheckSettings()
+    }
+  }, [activeTab, specialTab])
 
   return (
     <div className="relative" ref={dropdownRef}>
