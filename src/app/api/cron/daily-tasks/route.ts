@@ -34,25 +34,17 @@ export async function GET(request: NextRequest) {
     // Parse check_time (format: "HH:MM")
     const [checkHour, checkMinute] = settings.check_time.split(':').map(Number)
     
-    // TEST: Skip time check for now
-    console.log(`⏰ Time check: Current=${currentHour}:${currentMinute}, Target=${checkHour}:${checkMinute}`)
-    
-    // Check if we're in the right hour and within 5 minutes of the target time
-    // This allows for cron job timing variations
-    // TEMPORARILY DISABLED FOR TESTING
-    /*
+    // Check if we're in the right hour (allow ±5 minutes for cron timing variations)
     if (currentHour !== checkHour || Math.abs(currentMinute - checkMinute) > 5) {
       return NextResponse.json({ 
         message: 'Not the right time yet',
-        current_time: `${currentHour}:${currentMinute}`,
+        current_time: `${currentHour}:${String(currentMinute).padStart(2, '0')}`,
         check_time: settings.check_time
       })
     }
-    */
 
     // Get today's date in Turkey timezone
     const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Europe/Istanbul' }) // YYYY-MM-DD
-    console.log(`📅 Checking tasks for date: ${today}`)
 
     // Get all students (TEST: only Ozan for now)
     const { data: students, error: studentsError } = await supabase
@@ -60,8 +52,6 @@ export async function GET(request: NextRequest) {
       .select('id, full_name, email')
       .eq('role', 'student')
       .eq('email', 'ozan@yasam.com') // TEST: Remove this line for production
-    
-    console.log(`👥 Found ${students?.length || 0} students for task check`)
 
     if (studentsError || !students) {
       return NextResponse.json({ error: 'Failed to fetch students' }, { status: 500 })
@@ -76,8 +66,6 @@ export async function GET(request: NextRequest) {
         .select('id, status, scheduled_date')
         .eq('assigned_to', student.id)
         .eq('scheduled_date', today)
-
-      console.log(`📝 ${student.full_name}: Found ${tasks?.length || 0} tasks for ${today}`)
 
       if (!tasks || tasks.length === 0) {
         continue // No tasks for today
