@@ -34,8 +34,13 @@ export async function GET(request: NextRequest) {
     // Parse check_time (format: "HH:MM")
     const [checkHour, checkMinute] = settings.check_time.split(':').map(Number)
     
+    // TEST: Skip time check for now
+    console.log(`⏰ Time check: Current=${currentHour}:${currentMinute}, Target=${checkHour}:${checkMinute}`)
+    
     // Check if we're in the right hour and within 5 minutes of the target time
     // This allows for cron job timing variations
+    // TEMPORARILY DISABLED FOR TESTING
+    /*
     if (currentHour !== checkHour || Math.abs(currentMinute - checkMinute) > 5) {
       return NextResponse.json({ 
         message: 'Not the right time yet',
@@ -43,6 +48,7 @@ export async function GET(request: NextRequest) {
         check_time: settings.check_time
       })
     }
+    */
 
     // Get today's date in Turkey timezone
     const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Europe/Istanbul' }) // YYYY-MM-DD
