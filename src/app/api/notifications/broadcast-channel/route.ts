@@ -266,8 +266,17 @@ export async function POST(request: NextRequest) {
               await firebaseAdmin.messaging().send(fcmMessage)
               pushSuccessCount++
               console.log(`✅ Push sent to ${targetUser.full_name}`)
-            } catch (tokenError) {
+            } catch (tokenError: any) {
               console.error(`❌ Token error for ${targetUser.id}:`, tokenError)
+              
+              // If token is invalid, mark it as inactive
+              if (tokenError?.errorInfo?.code === 'messaging/registration-token-not-registered') {
+                await adminSupabase
+                  .from('notification_tokens')
+                  .update({ is_active: false })
+                  .eq('id', token.id)
+              }
+              
               pushFailureCount++
             }
           }
