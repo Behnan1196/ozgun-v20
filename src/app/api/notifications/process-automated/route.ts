@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { cookies } from 'next/headers'
 
+// TEST MODE: Only send to this user ID
+const TEST_USER_ID = '5e0e1e8e-e5e5-4e5e-8e5e-5e5e5e5e5e5e' // Senin user ID'n
+
 // POST /api/notifications/process-automated - Process automated notification rules
 export async function POST(request: NextRequest) {
   try {
@@ -12,9 +15,9 @@ export async function POST(request: NextRequest) {
     // For security, you might want to add API key authentication here
     
     const body = await request.json()
-    const { rule_type, force = false } = body
+    const { rule_type, force = false, test_mode = true } = body
 
-    console.log('🤖 Processing automated notifications:', { rule_type, force })
+    console.log('🤖 Processing automated notifications:', { rule_type, force, test_mode })
 
     // Get active automated rules
     let query = supabase
@@ -37,7 +40,7 @@ export async function POST(request: NextRequest) {
 
     for (const rule of rules || []) {
       try {
-        const result = await processAutomatedRule(supabase, rule, force)
+        const result = await processAutomatedRule(supabase, rule, force, test_mode)
         results.push(result)
       } catch (error) {
         console.error(`Error processing rule ${rule.id}:`, error)
@@ -60,11 +63,11 @@ export async function POST(request: NextRequest) {
   }
 }
 
-async function processAutomatedRule(supabase: any, rule: any, force: boolean = false) {
+async function processAutomatedRule(supabase: any, rule: any, force: boolean = false, test_mode: boolean = true) {
   const now = new Date()
   const conditions = rule.trigger_conditions
 
-  console.log(`📋 Processing rule: ${rule.name} (${rule.rule_type})`)
+  console.log(`📋 Processing rule: ${rule.name} (${rule.rule_type})`, test_mode ? '🧪 TEST MODE' : '')
 
   // Check if rule should run based on conditions and last execution
   if (!force && !shouldRuleRun(rule, conditions, now)) {
@@ -110,7 +113,7 @@ async function processAutomatedRule(supabase: any, rule: any, force: boolean = f
 
   // Create notifications for target users
   if (targetUsers.length > 0) {
-    const notifications = targetUsers.map(user => ({
+    let notifications = targetUsers.map(user => ({
       user_id: user.id,
       title: interpolateTemplate(rule.title_template, user),
       body: interpolateTemplate(rule.body_template, user),
@@ -122,16 +125,39 @@ async function processAutomatedRule(supabase: any, rule: any, force: boolean = f
       custom_data: { rule_name: rule.name }
     }))
 
-    const { error: insertError } = await supabase
-      .from('notification_queue')
-      .insert(notifications)
-
-    if (insertError) {
-      console.error('Error inserting notifications:', insertError)
-      throw new Error('Failed to create notifications')
+    // TEST MODE: Only send to test user
+    if (test_mode) {
+      console.log(`🧪 TEST MODE: Filtering ${notifications.length} notifications to only test user`)
+      notifications = notifications.filter(n => n.user_id === TEST_USER_ID)
+      
+      // If test user not in target list, create a test notification anyway
+      if (notifications.length === 0) {
+        notifications = [{
+          user_id: TEST_USER_ID,
+          title: `[TEST] ${rule.title_template}`,
+          body: `[TEST] ${rule.body_template} (${targetUsers.length} hedef kullanıcı bulundu)`,
+          notification_type: rule.rule_type,
+          source_type: 'automated_rule',
+          source_id: rule.id,
+          priority: rule.rule_type === 'exam_reminder' ? 2 : 5,
+          include_sound: true,
+          custom_data: { rule_name: rule.name, test_mode: true, original_target_count: targetUsers.length }
+        }]
+      }
     }
 
-    notificationsCreated = notifications.length
+    if (notifications.length > 0) {
+      const { error: insertError } = await supabase
+        .from('notification_queue')
+        .insert(notifications)
+
+      if (insertError) {
+        console.error('Error inserting notifications:', insertError)
+        throw new Error('Failed to create notifications')
+      }
+
+      notificationsCreated = notifications.length
+    }
   }
 
   // Update rule's last execution time
@@ -155,8 +181,12 @@ function shouldRuleRun(rule: any, conditions: any, now: Date): boolean {
     const lastExecution = new Date(rule.last_executed_at)
     const hoursSinceLastExecution = (now.getTime() - lastExecution.getTime()) / (1000 * 60 * 60)
     
-    // Don't run the same rule more than once per hour
-    if (hoursSinceLastExecution < 1) {
+    // For daily rules, don't run more than once per 23 hours
+    // For weekly rules, don't run more than once per 7 days
+    const minHoursBetweenRuns = rule.rule_type === 'weekly_summary' ? 168 : 23
+    
+    if (hoursSinceLastExecution < minHoursBetweenRuns) {
+      console.log(`⏳ Rule ${rule.name} last ran ${hoursSinceLastExecution.toFixed(1)}h ago, needs ${minHoursBetweenRuns}h`)
       return false
     }
   }
@@ -167,11 +197,11 @@ function shouldRuleRun(rule: any, conditions: any, now: Date): boolean {
     const currentHour = now.getHours()
     const currentMinute = now.getMinutes()
     
-    // Allow 30-minute window around scheduled time
+    // Only run if we're within 5 minutes of scheduled time
     const scheduledTime = hours * 60 + minutes
     const currentTime = currentHour * 60 + currentMinute
     
-    if (Math.abs(currentTime - scheduledTime) > 30) {
+    if (Math.abs(currentTime - scheduledTime) > 5) {
       return false
     }
   }
@@ -182,6 +212,7 @@ function shouldRuleRun(rule: any, conditions: any, now: Date): boolean {
     const currentDay = dayNames[now.getDay()]
     
     if (!conditions.days.includes(currentDay)) {
+      console.log(`📅 Rule ${rule.name} not scheduled for ${currentDay}`)
       return false
     }
   }

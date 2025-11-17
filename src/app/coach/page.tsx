@@ -500,6 +500,14 @@ export default function CoachPage() {
   const [showSettingsModal, setShowSettingsModal] = useState(false)
   const [settingsTab, setSettingsTab] = useState('profile')
   const [showCurrentPassword, setShowCurrentPassword] = useState(false)
+  
+  // Password Reset Modal State
+  const [showPasswordResetModal, setShowPasswordResetModal] = useState(false)
+  const [resetPasswordForm, setResetPasswordForm] = useState({
+    user_id: '',
+    user_name: '',
+    new_password: ''
+  })
   const [showNewPassword, setShowNewPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null)
@@ -702,6 +710,57 @@ export default function CoachPage() {
       console.error('Error updating password:', error)
       alert('Şifre güncellenirken hata oluştu.')
     }
+  }
+
+  // Reset student password (admin function)
+  const resetStudentPassword = async () => {
+    if (!resetPasswordForm.new_password) {
+      alert('Lütfen yeni şifre giriniz!')
+      return
+    }
+
+    if (resetPasswordForm.new_password.length < 6) {
+      alert('Şifre en az 6 karakter olmalıdır!')
+      return
+    }
+
+    if (!confirm(`${resetPasswordForm.user_name} için şifreyi sıfırlamak istediğinize emin misiniz?`)) {
+      return
+    }
+
+    try {
+      const response = await fetch('/api/admin/reset-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          user_id: resetPasswordForm.user_id,
+          new_password: resetPasswordForm.new_password
+        })
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        alert('Hata: ' + (data.error || 'Şifre sıfırlanamadı'))
+        return
+      }
+
+      alert(data.message || 'Şifre başarıyla sıfırlandı!')
+      setShowPasswordResetModal(false)
+      setResetPasswordForm({ user_id: '', user_name: '', new_password: '' })
+    } catch (error) {
+      console.error('Error resetting password:', error)
+      alert('Şifre sıfırlanırken hata oluştu.')
+    }
+  }
+
+  const openPasswordResetModal = (student: Student) => {
+    setResetPasswordForm({
+      user_id: student.id,
+      user_name: student.full_name,
+      new_password: ''
+    })
+    setShowPasswordResetModal(true)
   }
 
 
@@ -2790,9 +2849,20 @@ export default function CoachPage() {
                       </select>
                       {/* Student Online Status */}
                       {selectedStudent && (
-                        <div className="flex items-center space-x-1" title={partnerOnline ? 'Çevrimiçi' : 'Çevrimdışı'}>
-                          <div className={`w-2 h-2 rounded-full ${partnerOnline ? 'bg-green-400' : 'bg-gray-400'}`}></div>
-                        </div>
+                        <>
+                          <div className="flex items-center space-x-1" title={partnerOnline ? 'Çevrimiçi' : 'Çevrimdışı'}>
+                            <div className={`w-2 h-2 rounded-full ${partnerOnline ? 'bg-green-400' : 'bg-gray-400'}`}></div>
+                          </div>
+                          {/* Password Reset Button */}
+                          <button
+                            onClick={() => openPasswordResetModal(selectedStudent)}
+                            className="px-3 py-2 bg-yellow-600 hover:bg-yellow-700 text-white text-sm rounded-md flex items-center space-x-1"
+                            title="Şifre Sıfırla"
+                          >
+                            <Shield className="h-4 w-4" />
+                            <span>Şifre Sıfırla</span>
+                          </button>
+                        </>
                       )}
                     </div>
                   ) : (
@@ -6300,6 +6370,70 @@ export default function CoachPage() {
         </StableStreamProvider>
       </div>
 
+      {/* Password Reset Modal */}
+      {showPasswordResetModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg w-full max-w-md mx-4 p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-semibold text-gray-800 flex items-center">
+                <Shield className="h-5 w-5 mr-2 text-yellow-600" />
+                Şifre Sıfırla
+              </h2>
+              <button
+                onClick={() => setShowPasswordResetModal(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Kullanıcı
+                </label>
+                <input
+                  type="text"
+                  value={resetPasswordForm.user_name}
+                  disabled
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-600"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Yeni Şifre
+                </label>
+                <input
+                  type="text"
+                  value={resetPasswordForm.new_password}
+                  onChange={(e) => setResetPasswordForm(prev => ({ ...prev, new_password: e.target.value }))}
+                  placeholder="En az 6 karakter"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-yellow-500 focus:border-transparent"
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Öğrenciye bu şifreyi iletmeyi unutmayın!
+                </p>
+              </div>
+
+              <div className="flex space-x-3 pt-4">
+                <button
+                  onClick={() => setShowPasswordResetModal(false)}
+                  className="flex-1 px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
+                >
+                  İptal
+                </button>
+                <button
+                  onClick={resetStudentPassword}
+                  className="flex-1 px-4 py-2 bg-yellow-600 text-white rounded-md hover:bg-yellow-700"
+                >
+                  Şifreyi Sıfırla
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   )
