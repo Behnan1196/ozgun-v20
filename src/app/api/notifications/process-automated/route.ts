@@ -251,19 +251,27 @@ async function getDailyTaskReminderTargets(supabase: any) {
   // Get students with incomplete tasks for today
   const today = new Date().toISOString().split('T')[0]
   
-  const { data: students } = await supabase
+  console.log(`📅 Checking tasks for date: ${today}`)
+  
+  const { data: students, error } = await supabase
     .from('user_profiles')
     .select(`
       id, full_name,
-      tasks:tasks!tasks_assigned_to_fkey(id, status)
+      tasks:tasks!tasks_assigned_to_fkey(id, status, scheduled_date)
     `)
     .eq('role', 'student')
     .eq('is_active', true)
     .eq('tasks.scheduled_date', today)
 
+  console.log(`👥 Found ${students?.length || 0} students with tasks today`)
+  if (error) {
+    console.error('❌ Error fetching students:', error)
+  }
+
   return (students || [])
     .map((student: any) => {
       const incompleteTasks = student.tasks?.filter((task: any) => task.status !== 'completed') || []
+      console.log(`   ${student.full_name}: ${incompleteTasks.length} incomplete tasks`)
       return {
         ...student,
         incomplete_task_count: incompleteTasks.length
