@@ -13,6 +13,7 @@ export async function GET(request: NextRequest) {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'x-cron-secret': process.env.CRON_SECRET || ''
       },
       body: JSON.stringify({
         title: 'Test Bildirim - Otomatik Hatırlatıcı',
