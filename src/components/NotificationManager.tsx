@@ -290,13 +290,25 @@ export const NotificationManager: React.FC = () => {
       const response = await fetch('/api/notifications/process-automated', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ rule_type: ruleType, force: true })
+        body: JSON.stringify({ 
+          rule_type: ruleType, 
+          force: true,
+          test_mode: true // Always use test mode for manual triggers
+        })
       })
 
       const data = await response.json()
 
       if (response.ok) {
-        alert(`${data.processed_rules} kural işlendi!`)
+        const result = data.results?.[0]
+        if (result) {
+          alert(`✅ ${result.rule_name}\n\n` +
+                `Hedef: ${result.target_users} kullanıcı\n` +
+                `Gönderilen: ${result.notifications_created} bildirim\n\n` +
+                `Test modu: Sadece Ozan'a gönderildi`)
+        } else {
+          alert(`${data.processed_rules} kural işlendi!`)
+        }
       } else {
         alert('Otomatik kurallar işlenirken hata: ' + data.error)
       }
