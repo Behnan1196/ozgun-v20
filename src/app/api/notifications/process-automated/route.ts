@@ -122,7 +122,7 @@ async function processAutomatedRule(supabase: any, rule: any, force: boolean = f
       source_id: rule.id,
       priority: rule.rule_type === 'exam_reminder' ? 2 : 5,
       include_sound: true,
-      custom_data: { rule_name: rule.name }
+      custom_data: { rule_name: rule.name } as any
     }))
 
     // TEST MODE: Only send to test user
@@ -141,7 +141,7 @@ async function processAutomatedRule(supabase: any, rule: any, force: boolean = f
           source_id: rule.id,
           priority: rule.rule_type === 'exam_reminder' ? 2 : 5,
           include_sound: true,
-          custom_data: { rule_name: rule.name, test_mode: true, original_target_count: targetUsers.length }
+          custom_data: { rule_name: rule.name, test_mode: true, original_target_count: targetUsers.length } as any
         }]
       }
     }
