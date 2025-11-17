@@ -111,6 +111,7 @@ async function processAutomatedRule(supabase: any, rule: any, force: boolean = f
   }
 
   let targetUsers: any[] = []
+  let usersToNotify: any[] = []
   let notificationsCreated = 0
 
   // Process different rule types
@@ -145,7 +146,7 @@ async function processAutomatedRule(supabase: any, rule: any, force: boolean = f
 
   // Send notifications directly via broadcast-channel
   if (targetUsers.length > 0) {
-    let usersToNotify = targetUsers
+    usersToNotify = targetUsers
     
     debugInfo.beforeFilter = targetUsers.length
     debugInfo.testModeActive = test_mode
@@ -218,7 +219,7 @@ async function processAutomatedRule(supabase: any, rule: any, force: boolean = f
     rule_name: rule.name,
     success: true,
     notifications_created: notificationsCreated,
-    target_users: targetUsers.length,
+    target_users: usersToNotify.length, // Use filtered count
     debug: debugInfo
   }
 }
