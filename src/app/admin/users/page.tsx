@@ -20,7 +20,7 @@ import {
   CircularProgress,
 } from '@mui/material'
 import { DataGrid, GridColDef, GridActionsCellItem } from '@mui/x-data-grid'
-import { Add, Edit, Delete } from '@mui/icons-material'
+import { Add, Edit, Delete, LockReset } from '@mui/icons-material'
 import AdminLayout from '@/components/admin/AdminLayout'
 import { createClient } from '@/lib/supabase/client'
 import { UserProfile, UserRole } from '@/types/database'
@@ -51,6 +51,10 @@ export default function UserManagement() {
   })
   const [formError, setFormError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
+  const [resetPasswordDialogOpen, setResetPasswordDialogOpen] = useState(false)
+  const [resetPasswordUser, setResetPasswordUser] = useState<UserProfile | null>(null)
+  const [newPassword, setNewPassword] = useState('')
+  const [resettingPassword, setResettingPassword] = useState(false)
 
   useEffect(() => {
     checkAuthAndLoadUsers()
@@ -193,6 +197,51 @@ export default function UserManagement() {
     }
   }
 
+  const handleResetPassword = (user: UserProfile) => {
+    setResetPasswordUser(user)
+    setNewPassword('')
+    setResetPasswordDialogOpen(true)
+  }
+
+  const handleResetPasswordSubmit = async () => {
+    if (!resetPasswordUser || !newPassword) {
+      alert('Lütfen yeni şifre giriniz!')
+      return
+    }
+
+    if (newPassword.length < 6) {
+      alert('Şifre en az 6 karakter olmalıdır!')
+      return
+    }
+
+    setResettingPassword(true)
+    try {
+      const response = await fetch('/api/admin/reset-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          user_id: resetPasswordUser.id,
+          new_password: newPassword
+        })
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Şifre sıfırlanamadı')
+      }
+
+      alert(`✅ ${data.message}`)
+      setResetPasswordDialogOpen(false)
+      setResetPasswordUser(null)
+      setNewPassword('')
+    } catch (error: any) {
+      alert('❌ Hata: ' + error.message)
+    } finally {
+      setResettingPassword(false)
+    }
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setSubmitting(true)
@@ -309,7 +358,7 @@ export default function UserManagement() {
       field: 'actions',
       type: 'actions',
       headerName: 'İşlemler',
-      width: 100,
+      width: 150,
       getActions: (params) => [
         <GridActionsCellItem
           key="edit"
@@ -318,10 +367,18 @@ export default function UserManagement() {
           onClick={() => handleEditUser(params.row)}
         />,
         <GridActionsCellItem
+          key="reset-password"
+          icon={<LockReset />}
+          label="Şifre Sıfırla"
+          onClick={() => handleResetPassword(params.row)}
+          showInMenu
+        />,
+        <GridActionsCellItem
           key="delete"
           icon={<Delete />}
           label="Sil"
           onClick={() => handleDeleteUser(params.row.id)}
+          showInMenu
         />,
       ],
     },
@@ -453,6 +510,60 @@ export default function UserManagement() {
               </Button>
             </DialogActions>
           </form>
+        </Dialog>
+
+        {/* Reset Password Dialog */}
+        <Dialog 
+          open={resetPasswordDialogOpen} 
+          onClose={() => setResetPasswordDialogOpen(false)} 
+          maxWidth="sm" 
+          fullWidth
+        >
+          <DialogTitle>
+            Şifre Sıfırla
+          </DialogTitle>
+          <DialogContent>
+            {resetPasswordUser && (
+              <>
+                <Alert severity="info" sx={{ mb: 2 }}>
+                  <strong>{resetPasswordUser.full_name}</strong> için yeni şifre belirleyin
+                </Alert>
+                
+                <TextField
+                  fullWidth
+                  label="Kullanıcı"
+                  value={resetPasswordUser.full_name}
+                  disabled
+                  margin="normal"
+                />
+                
+                <TextField
+                  fullWidth
+                  label="Yeni Şifre"
+                  type="text"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  margin="normal"
+                  placeholder="En az 6 karakter"
+                  helperText="Kullanıcıya bu şifreyi iletmeyi unutmayın!"
+                  autoFocus
+                />
+              </>
+            )}
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setResetPasswordDialogOpen(false)}>
+              İptal
+            </Button>
+            <Button 
+              onClick={handleResetPasswordSubmit} 
+              variant="contained" 
+              color="warning"
+              disabled={resettingPassword}
+            >
+              {resettingPassword ? 'Sıfırlanıyor...' : 'Şifreyi Sıfırla'}
+            </Button>
+          </DialogActions>
         </Dialog>
       </Box>
     </AdminLayout>
