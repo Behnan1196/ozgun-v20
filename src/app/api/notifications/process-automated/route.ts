@@ -280,8 +280,6 @@ async function getDailyTaskReminderTargets(supabase: any) {
   }).filter((student: any) => student.incomplete_task_count > 0)
 
   return studentsWithTasks
-    })
-    .filter((student: any) => student.incomplete_task_count > 0)
 }
 
 async function getTaskCompletionTargets(supabase: any) {
