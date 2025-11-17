@@ -256,21 +256,33 @@ async function getDailyTaskReminderTargets(supabase: any) {
   // Get students with incomplete tasks for today
   const today = new Date().toISOString().split('T')[0]
   
+  console.log(`📅 Checking tasks for date: ${today}`)
+  
   // Try direct query first
-  const { data: allStudents } = await supabase
+  const { data: allStudents, error: studentsError } = await supabase
     .from('user_profiles')
-    .select('id, full_name, role, is_active')
+    .select('id, full_name, role')
     .eq('role', 'student')
   
-  const { data: todayTasks } = await supabase
+  console.log(`👥 Found ${allStudents?.length || 0} students total`)
+  if (studentsError) console.error('Students error:', studentsError)
+  
+  const { data: todayTasks, error: tasksError } = await supabase
     .from('tasks')
-    .select('id, assigned_to, status, scheduled_date')
+    .select('id, assigned_to, status, scheduled_date, title')
     .eq('scheduled_date', today)
+  
+  console.log(`📋 Found ${todayTasks?.length || 0} tasks for today`)
+  if (tasksError) console.error('Tasks error:', tasksError)
   
   // Manual join
   const studentsWithTasks = (allStudents || []).map((student: any) => {
     const studentTasks = (todayTasks || []).filter((task: any) => task.assigned_to === student.id)
     const incompleteTasks = studentTasks.filter((task: any) => task.status !== 'completed')
+    
+    if (incompleteTasks.length > 0) {
+      console.log(`   ✅ ${student.full_name}: ${incompleteTasks.length} incomplete tasks`)
+    }
     
     return {
       ...student,
@@ -278,6 +290,8 @@ async function getDailyTaskReminderTargets(supabase: any) {
       incomplete_task_count: incompleteTasks.length
     }
   }).filter((student: any) => student.incomplete_task_count > 0)
+
+  console.log(`🎯 Final result: ${studentsWithTasks.length} students with incomplete tasks`)
 
   return studentsWithTasks
 }
