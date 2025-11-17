@@ -122,6 +122,14 @@ async function processAutomatedRule(supabase: any, rule: any, force: boolean = f
       debugInfo.targetUserNames = targetUsers.map((u: any) => u.full_name)
       break
     
+    case 'task_check':
+      // Get all students with tasks and categorize them
+      targetUsers = await getTaskCheckTargets(supabase)
+      debugInfo.targetUsersFound = targetUsers.length
+      debugInfo.completedAll = targetUsers.filter((u: any) => u.all_completed).length
+      debugInfo.hasIncomplete = targetUsers.filter((u: any) => u.has_incomplete).length
+      break
+    
     case 'task_completion_thanks':
       targetUsers = await getTaskCompletionTargets(supabase)
       break
@@ -169,8 +177,35 @@ async function processAutomatedRule(supabase: any, rule: any, force: boolean = f
     // Add notifications to queue for each user
     for (const user of usersToNotify) {
       try {
-        const title = interpolateTemplate(rule.title_template, user)
-        const body = interpolateTemplate(rule.body_template, user)
+        let title = ''
+        let body = ''
+
+        // Special handling for task_check - use different messages based on completion status
+        if (rule.rule_type === 'task_check') {
+          // Get task check settings from notification_settings
+          const { data: settings } = await supabase
+            .from('notification_settings')
+            .select('setting_value')
+            .eq('setting_key', 'task_check')
+            .single()
+
+          const taskCheckSettings = settings?.setting_value || {
+            thank_you_message: '🎉 Harika! Bugünkü tüm görevlerini tamamladın. Tebrikler!',
+            reminder_message: '⏰ Henüz tamamlanmamış görevlerin var. Lütfen kontrol et!'
+          }
+
+          if (user.all_completed) {
+            title = '✅ Görevler Tamamlandı!'
+            body = taskCheckSettings.thank_you_message
+          } else {
+            title = '⏰ Görev Hatırlatması'
+            body = taskCheckSettings.reminder_message
+          }
+        } else {
+          // Use template for other rule types
+          title = interpolateTemplate(rule.title_template, user)
+          body = interpolateTemplate(rule.body_template, user)
+        }
 
         // Insert into notification_queue
         const { error: queueError } = await supabase
@@ -186,7 +221,8 @@ async function processAutomatedRule(supabase: any, rule: any, force: boolean = f
             metadata: {
               rule_id: rule.id,
               rule_name: rule.name,
-              automated: true
+              automated: true,
+              task_status: rule.rule_type === 'task_check' ? (user.all_completed ? 'completed' : 'incomplete') : undefined
             }
           })
 
@@ -336,6 +372,55 @@ async function getDailyTaskReminderTargets(supabase: any) {
   console.log(`🎯 Final result: ${studentsWithTasks.length} students with incomplete tasks`)
 
   return studentsWithTasks
+}
+
+async function getTaskCheckTargets(supabase: any) {
+  // Get ALL students with tasks for today (both completed and incomplete)
+  const today = new Date().toISOString().split('T')[0]
+  
+  console.log(`📅 Task Check: Checking tasks for date: ${today}`)
+  
+  const { data: allStudents, error: studentsError } = await supabase
+    .from('user_profiles')
+    .select('id, full_name, role')
+    .eq('role', 'student')
+  
+  console.log(`👥 Found ${allStudents?.length || 0} students total`)
+  if (studentsError) console.error('Students error:', studentsError)
+  
+  const { data: todayTasks, error: tasksError } = await supabase
+    .from('tasks')
+    .select('id, assigned_to, status, scheduled_date, title')
+    .eq('scheduled_date', today)
+  
+  console.log(`📋 Found ${todayTasks?.length || 0} tasks for today`)
+  if (tasksError) console.error('Tasks error:', tasksError)
+  
+  // Categorize students
+  const studentsWithTaskStatus = (allStudents || []).map((student: any) => {
+    const studentTasks = (todayTasks || []).filter((task: any) => task.assigned_to === student.id)
+    const incompleteTasks = studentTasks.filter((task: any) => task.status !== 'completed')
+    const completedTasks = studentTasks.filter((task: any) => task.status === 'completed')
+    
+    const hasAllCompleted = studentTasks.length > 0 && incompleteTasks.length === 0
+    const hasIncomplete = incompleteTasks.length > 0
+    
+    return {
+      ...student,
+      tasks: studentTasks,
+      incomplete_task_count: incompleteTasks.length,
+      completed_task_count: completedTasks.length,
+      total_task_count: studentTasks.length,
+      all_completed: hasAllCompleted,
+      has_incomplete: hasIncomplete
+    }
+  }).filter((student: any) => student.total_task_count > 0) // Only students with tasks
+
+  console.log(`🎯 Task Check: ${studentsWithTaskStatus.length} students with tasks today`)
+  console.log(`   ✅ Completed all: ${studentsWithTaskStatus.filter(s => s.all_completed).length}`)
+  console.log(`   ⚠️ Has incomplete: ${studentsWithTaskStatus.filter(s => s.has_incomplete).length}`)
+
+  return studentsWithTaskStatus
 }
 
 async function getTaskCompletionTargets(supabase: any) {

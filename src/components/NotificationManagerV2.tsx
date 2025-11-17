@@ -513,12 +513,60 @@ export const NotificationManagerV2: React.FC = () => {
                 </div>
 
                 <div className="grid grid-cols-1 gap-3">
+                  <div className="border border-orange-300 bg-orange-50 rounded-lg p-4 hover:bg-orange-100 transition-colors">
+                    <div className="flex justify-between items-start mb-2">
+                      <div>
+                        <h5 className="font-medium text-orange-900">✅ Görev Kontrol Sistemi</h5>
+                        <p className="text-sm text-orange-700 mt-1">
+                          Belirlenen saatte görevleri kontrol eder. Tamamlanmışsa teşekkür, tamamlanmamışsa hatırlatma gönderir.
+                        </p>
+                        <p className="text-xs text-orange-600 mt-2">
+                          💡 Mesajları "Özel Bildirimler > Görev Kontrol" sekmesinden düzenleyebilirsiniz
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={async () => {
+                        try {
+                          const response = await fetch('/api/notifications/process-automated', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ 
+                              rule_type: 'task_check', 
+                              force: true,
+                              test_mode: true
+                            })
+                          })
+                          const data = await response.json()
+                          if (response.ok) {
+                            const result = data.results?.[0]
+                            if (result) {
+                              alert(`✅ ${result.rule_name}\n\n` +
+                                    `Toplam: ${result.debug?.targetUsersFound || 0} öğrenci\n` +
+                                    `✅ Tamamladı: ${result.debug?.completedAll || 0}\n` +
+                                    `⚠️ Tamamlamadı: ${result.debug?.hasIncomplete || 0}\n` +
+                                    `Gönderilen: ${result.notifications_created} bildirim\n\n` +
+                                    `Test modu: Sadece Ozan'a gönderildi`)
+                            }
+                          } else {
+                            alert('Hata: ' + data.error)
+                          }
+                        } catch (error) {
+                          alert('Bildirim gönderme hatası')
+                        }
+                      }}
+                      className="mt-3 w-full bg-orange-600 text-white py-2 rounded-lg hover:bg-orange-700 transition-colors text-sm font-medium"
+                    >
+                      🚀 Şimdi Çalıştır (Test)
+                    </button>
+                  </div>
+
                   <div className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors">
                     <div className="flex justify-between items-start mb-2">
                       <div>
                         <h5 className="font-medium text-gray-800">📋 Günlük Görev Hatırlatması</h5>
                         <p className="text-sm text-gray-600 mt-1">
-                          Her gün saat 18:00'da tamamlanmamış görevler için hatırlatma gönderir
+                          Sadece tamamlanmamış görevler için hatırlatma gönderir (eski sistem)
                         </p>
                       </div>
                     </div>
