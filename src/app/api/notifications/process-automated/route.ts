@@ -3,7 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { cookies } from 'next/headers'
 
 // TEST MODE: Only send to this user ID
-const TEST_USER_ID = '5e0e1e8e-e5e5-4e5e-8e5e-5e5e5e5e5e5e' // Senin user ID'n
+const TEST_USER_ID = '9e48fc98-3064-4eca-a99c-4696a058c357' // Senin user ID'n
 
 // POST /api/notifications/process-automated - Process automated notification rules
 export async function POST(request: NextRequest) {
