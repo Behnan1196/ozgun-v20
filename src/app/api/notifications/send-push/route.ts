@@ -5,8 +5,25 @@ import { cookies } from 'next/headers'
 // POST /api/notifications/send-push - Process notification queue and send push notifications
 export async function POST(request: NextRequest) {
   try {
-    const cookieStore = cookies()
-    const supabase = createClient(cookieStore)
+    // Check for cron secret or user auth
+    const cronSecret = request.headers.get('x-cron-secret')
+    const isCronJob = cronSecret === process.env.CRON_SECRET
+
+    let supabase
+    if (isCronJob) {
+      // Use admin client for cron jobs
+      const { createAdminClient } = await import('@/lib/supabase/server')
+      supabase = createAdminClient()
+    } else {
+      // Require user authentication
+      const cookieStore = cookies()
+      supabase = (await import('@/lib/supabase/server')).createClient(cookieStore)
+      
+      const { data: { user }, error: authError } = await supabase.auth.getUser()
+      if (authError || !user) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      }
+    }
     
     // Get pending notifications from queue
     const { data: pendingNotifications, error } = await supabase
