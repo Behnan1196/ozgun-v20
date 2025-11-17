@@ -166,41 +166,57 @@ async function processAutomatedRule(supabase: any, rule: any, force: boolean = f
     debugInfo.afterFilter = usersToNotify.length
     debugInfo.usersToNotify = usersToNotify.map((u: any) => ({ id: u.id, name: u.full_name }))
 
-    // Send notification to each user via broadcast-channel
+    // Add notifications to queue for each user
     for (const user of usersToNotify) {
+      try {
+        const title = interpolateTemplate(rule.title_template, user)
+        const body = interpolateTemplate(rule.body_template, user)
+
+        // Insert into notification_queue
+        const { error: queueError } = await supabase
+          .from('notification_queue')
+          .insert({
+            user_id: user.id,
+            title,
+            body,
+            notification_type: rule.rule_type,
+            priority: 'normal',
+            status: 'pending',
+            scheduled_for: new Date().toISOString(),
+            metadata: {
+              rule_id: rule.id,
+              rule_name: rule.name,
+              automated: true
+            }
+          })
+
+        if (!queueError) {
+          notificationsCreated++
+          console.log(`✅ Queued notification for ${user.full_name}`)
+        } else {
+          console.error(`❌ Failed to queue notification for ${user.full_name}:`, queueError)
+        }
+      } catch (error) {
+        console.error(`Error queuing notification for ${user.full_name}:`, error)
+      }
+    }
+
+    // Process the queue immediately
+    if (notificationsCreated > 0) {
       try {
         const baseUrl = process.env.NEXT_PUBLIC_SITE_URL 
           || (process.env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` : 'http://localhost:3000')
 
-        const title = interpolateTemplate(rule.title_template, user)
-        const body = interpolateTemplate(rule.body_template, user)
-
-        // Create a temporary "student" with only this user
-        const tempStudents = [user]
-        
-        // Use broadcast-channel but filter to only this user
-        const response = await fetch(`${baseUrl}/api/notifications/broadcast-channel`, {
+        await fetch(`${baseUrl}/api/notifications/send-push`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             'x-cron-secret': process.env.CRON_SECRET || ''
-          },
-          body: JSON.stringify({
-            title,
-            message: body,
-            target_audience: 'students',
-            test_mode: true, // This will filter to TEST_USER_ID
-            force_user_id: user.id // Custom parameter to force specific user
-          })
+          }
         })
-
-        if (response.ok) {
-          notificationsCreated++
-        } else {
-          console.error(`Failed to send notification to ${user.full_name}`)
-        }
+        console.log(`📤 Triggered push notification processing`)
       } catch (error) {
-        console.error(`Error sending notification to ${user.full_name}:`, error)
+        console.error(`Error triggering push notifications:`, error)
       }
     }
   }
