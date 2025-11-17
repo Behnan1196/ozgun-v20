@@ -89,6 +89,12 @@ export async function POST(request: NextRequest) {
 async function processAutomatedRule(supabase: any, rule: any, force: boolean = false, test_mode: boolean = true) {
   const now = new Date()
   const conditions = rule.trigger_conditions
+  const debugInfo: any = {
+    rule_name: rule.name,
+    rule_type: rule.rule_type,
+    test_mode,
+    force
+  }
 
   console.log(`📋 Processing rule: ${rule.name} (${rule.rule_type})`, test_mode ? '🧪 TEST MODE' : '')
 
@@ -99,7 +105,8 @@ async function processAutomatedRule(supabase: any, rule: any, force: boolean = f
       rule_name: rule.name,
       success: true,
       skipped: true,
-      reason: 'Not scheduled to run now'
+      reason: 'Not scheduled to run now',
+      debug: debugInfo
     }
   }
 
@@ -110,6 +117,8 @@ async function processAutomatedRule(supabase: any, rule: any, force: boolean = f
   switch (rule.rule_type) {
     case 'daily_task_reminder':
       targetUsers = await getDailyTaskReminderTargets(supabase)
+      debugInfo.targetUsersFound = targetUsers.length
+      debugInfo.targetUserNames = targetUsers.map((u: any) => u.full_name)
       break
     
     case 'task_completion_thanks':
@@ -189,12 +198,16 @@ async function processAutomatedRule(supabase: any, rule: any, force: boolean = f
     .update({ last_executed_at: now.toISOString() })
     .eq('id', rule.id)
 
+  debugInfo.notificationsCreated = notificationsCreated
+  debugInfo.finalTargetUsers = targetUsers.length
+
   return {
     rule_id: rule.id,
     rule_name: rule.name,
     success: true,
     notifications_created: notificationsCreated,
-    target_users: targetUsers.length
+    target_users: targetUsers.length,
+    debug: debugInfo
   }
 }
 
