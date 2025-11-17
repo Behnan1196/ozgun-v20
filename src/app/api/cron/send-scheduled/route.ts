@@ -96,40 +96,11 @@ export async function GET(request: NextRequest) {
     const successCount = results.filter(r => r.success).length
     const failureCount = results.filter(r => !r.success).length
 
-    // Also check automated notification rules
-    let automatedResults = null
-    try {
-      const baseUrl = process.env.NEXT_PUBLIC_SITE_URL 
-        || (process.env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` : 'http://localhost:3000')
-
-      const automatedResponse = await fetch(`${baseUrl}/api/notifications/process-automated`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          rule_type: 'daily_task_reminder',
-          force: false,
-          test_mode: true
-        })
-      })
-
-      if (automatedResponse.ok) {
-        automatedResults = await automatedResponse.json()
-        console.log('✅ Automated notifications processed:', automatedResults)
-      } else {
-        console.error('❌ Failed to process automated notifications')
-      }
-    } catch (error) {
-      console.error('❌ Error processing automated notifications:', error)
-    }
-
     return NextResponse.json({
       message: `Processed ${campaigns.length} campaign(s)`,
       success: successCount,
       failed: failureCount,
-      results,
-      automated: automatedResults
+      results
     })
 
   } catch (error) {

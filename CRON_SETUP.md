@@ -8,11 +8,20 @@ Bu proje için harici cron servisi kullanıyoruz çünkü Vercel Hobby planı sa
 - https://cron-job.org adresine git
 - Ücretsiz hesap oluştur
 
-### 2. Yeni Cron Job Ekle
+### 2. İki Ayrı Cron Job Ekle
 
-#### Programlı Bildirimler ve Otomatik Hatırlatıcılar
-- **Title:** Ozgun Notifications
+#### A) Programlı Bildirimler (Her Dakika)
+- **Title:** Ozgun Scheduled Notifications
 - **URL:** `https://ozgun-v20.vercel.app/api/cron/send-scheduled`
+- **Schedule:** `* * * * *` (her dakika)
+- **Request Method:** GET
+- **Authentication:**
+  - Type: Bearer Token
+  - Token: `[CRON_SECRET değerini .env.local'dan kopyala]`
+
+#### B) Otomatik Görev Hatırlatıcıları (Her Saat)
+- **Title:** Ozgun Automated Reminders
+- **URL:** `https://ozgun-v20.vercel.app/api/cron/check-automated`
 - **Schedule:** `0 * * * *` (her saat başı)
 - **Request Method:** GET
 - **Authentication:**
@@ -26,18 +35,20 @@ Bu proje için harici cron servisi kullanıyoruz çünkü Vercel Hobby planı sa
 
 ## Nasıl Çalışır?
 
-### Programlı Bildirimler
-- Kullanıcı UI'dan bildirim programlar (tarih + saat)
+### Programlı Bildirimler (Her Dakika)
+- Kullanıcı UI'dan bildirim programlar (tarih + saat + dakika)
 - `notification_campaigns` tablosuna kaydedilir
-- Cron job her saat çalışır
+- Cron job **her dakika** çalışır
 - Zamanı gelen bildirimleri gönderir
+- **Endpoint:** `/api/cron/send-scheduled`
 
-### Otomatik Görev Hatırlatıcıları
+### Otomatik Görev Hatırlatıcıları (Her Saat)
 - Kullanıcı UI'dan saat ayarlar (örn: 20:00)
 - `automated_notification_rules` tablosunda `trigger_conditions.time` güncellenir
-- Cron job her saat çalışır
+- Cron job **her saat** çalışır
 - Kod saati kontrol eder (±5 dakika pencere)
 - Eğer saat uyuşuyorsa bildirim gönderir
+- **Endpoint:** `/api/cron/check-automated`
 
 ## Güvenlik
 
