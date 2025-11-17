@@ -60,7 +60,7 @@ import { CommunicationTab } from '@/components/CommunicationTab'
 import { StableStreamProvider } from '@/components/StableStreamProvider'
 import { MockExam } from '@/types/database'
 import { NotificationBell } from '@/components/NotificationBell'
-import { NotificationManagerV2 } from '@/components/NotificationManagerV2'
+import { NotificationManager } from '@/components/NotificationManager'
 
 import { VideoCallInvite } from '@/components/VideoCallInvite'
 
@@ -2893,9 +2893,9 @@ export default function CoachPage() {
                 </div>
               )}
 
-              {/* Notification Manager V2 */}
+              {/* Notification Manager */}
               {userRole === 'coordinator' && (
-                <NotificationManagerV2 />
+                <NotificationManager />
               )}
 
               {/* User Avatar with Dropdown */}
