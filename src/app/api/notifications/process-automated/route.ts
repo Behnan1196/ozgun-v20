@@ -146,16 +146,24 @@ async function processAutomatedRule(supabase: any, rule: any, force: boolean = f
   // Send notifications directly via broadcast-channel
   if (targetUsers.length > 0) {
     let usersToNotify = targetUsers
+    
+    debugInfo.beforeFilter = targetUsers.length
+    debugInfo.testModeActive = test_mode
+    debugInfo.testUserId = TEST_USER_ID
 
     // TEST MODE: Only send to test user
     if (test_mode) {
-      console.log(`🧪 TEST MODE: Filtering ${targetUsers.length} users to only test user`)
+      console.log(`🧪 TEST MODE: Filtering ${targetUsers.length} users to only test user ${TEST_USER_ID}`)
       usersToNotify = targetUsers.filter(u => u.id === TEST_USER_ID)
+      console.log(`🧪 After filter: ${usersToNotify.length} users`)
       
       if (usersToNotify.length === 0) {
         console.log(`⚠️ Test user not in target list, skipping`)
       }
     }
+    
+    debugInfo.afterFilter = usersToNotify.length
+    debugInfo.usersToNotify = usersToNotify.map((u: any) => ({ id: u.id, name: u.full_name }))
 
     // Send notification to each user via broadcast-channel
     for (const user of usersToNotify) {
@@ -166,6 +174,10 @@ async function processAutomatedRule(supabase: any, rule: any, force: boolean = f
         const title = interpolateTemplate(rule.title_template, user)
         const body = interpolateTemplate(rule.body_template, user)
 
+        // Create a temporary "student" with only this user
+        const tempStudents = [user]
+        
+        // Use broadcast-channel but filter to only this user
         const response = await fetch(`${baseUrl}/api/notifications/broadcast-channel`, {
           method: 'POST',
           headers: {
@@ -175,9 +187,9 @@ async function processAutomatedRule(supabase: any, rule: any, force: boolean = f
           body: JSON.stringify({
             title,
             message: body,
-            target_audience: 'custom',
-            test_mode: true, // Use test mode to send only to specific user
-            target_user_id: user.id
+            target_audience: 'students',
+            test_mode: true, // This will filter to TEST_USER_ID
+            force_user_id: user.id // Custom parameter to force specific user
           })
         })
 
