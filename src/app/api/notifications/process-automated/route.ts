@@ -134,52 +134,52 @@ async function processAutomatedRule(supabase: any, rule: any, force: boolean = f
       }
   }
 
-  // Create notifications for target users
+  // Send notifications directly via broadcast-channel
   if (targetUsers.length > 0) {
-    let notifications = targetUsers.map(user => ({
-      user_id: user.id,
-      title: interpolateTemplate(rule.title_template, user),
-      body: interpolateTemplate(rule.body_template, user),
-      notification_type: rule.rule_type,
-      source_type: 'automated_rule',
-      source_id: rule.id,
-      priority: rule.rule_type === 'exam_reminder' ? 2 : 5,
-      include_sound: true,
-      custom_data: { rule_name: rule.name } as any
-    }))
+    let usersToNotify = targetUsers
 
     // TEST MODE: Only send to test user
     if (test_mode) {
-      console.log(`🧪 TEST MODE: Filtering ${notifications.length} notifications to only test user`)
-      notifications = notifications.filter(n => n.user_id === TEST_USER_ID)
+      console.log(`🧪 TEST MODE: Filtering ${targetUsers.length} users to only test user`)
+      usersToNotify = targetUsers.filter(u => u.id === TEST_USER_ID)
       
-      // If test user not in target list, create a test notification anyway
-      if (notifications.length === 0) {
-        notifications = [{
-          user_id: TEST_USER_ID,
-          title: `[TEST] ${rule.title_template}`,
-          body: `[TEST] ${rule.body_template} (${targetUsers.length} hedef kullanıcı bulundu)`,
-          notification_type: rule.rule_type,
-          source_type: 'automated_rule',
-          source_id: rule.id,
-          priority: rule.rule_type === 'exam_reminder' ? 2 : 5,
-          include_sound: true,
-          custom_data: { rule_name: rule.name, test_mode: true, original_target_count: targetUsers.length } as any
-        }]
+      if (usersToNotify.length === 0) {
+        console.log(`⚠️ Test user not in target list, skipping`)
       }
     }
 
-    if (notifications.length > 0) {
-      const { error: insertError } = await supabase
-        .from('notification_queue')
-        .insert(notifications)
+    // Send notification to each user via broadcast-channel
+    for (const user of usersToNotify) {
+      try {
+        const baseUrl = process.env.NEXT_PUBLIC_SITE_URL 
+          || (process.env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` : 'http://localhost:3000')
 
-      if (insertError) {
-        console.error('Error inserting notifications:', insertError)
-        throw new Error('Failed to create notifications')
+        const title = interpolateTemplate(rule.title_template, user)
+        const body = interpolateTemplate(rule.body_template, user)
+
+        const response = await fetch(`${baseUrl}/api/notifications/broadcast-channel`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-cron-secret': process.env.CRON_SECRET || ''
+          },
+          body: JSON.stringify({
+            title,
+            message: body,
+            target_audience: 'custom',
+            test_mode: true, // Use test mode to send only to specific user
+            target_user_id: user.id
+          })
+        })
+
+        if (response.ok) {
+          notificationsCreated++
+        } else {
+          console.error(`Failed to send notification to ${user.full_name}`)
+        }
+      } catch (error) {
+        console.error(`Error sending notification to ${user.full_name}:`, error)
       }
-
-      notificationsCreated = notifications.length
     }
   }
 
