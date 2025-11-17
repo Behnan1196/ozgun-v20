@@ -115,6 +115,27 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to update settings' }, { status: 500 })
     }
 
+    // If task_check settings, also update automated_notification_rules
+    if (setting_key === 'task_check' && setting_value.check_time) {
+      const checkTime = setting_value.check_time // e.g., "20:00"
+      
+      // Update daily_task_reminder rule
+      await adminSupabase
+        .from('automated_notification_rules')
+        .update({
+          trigger_conditions: {
+            time: checkTime,
+            days: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
+          },
+          is_active: setting_value.enabled || false,
+          body_template: setting_value.reminder_message || 'Henüz tamamlanmamış görevlerin var. Lütfen kontrol et!',
+          updated_at: new Date().toISOString()
+        })
+        .eq('rule_type', 'daily_task_reminder')
+
+      console.log(`✅ Updated automated_notification_rules with time: ${checkTime}`)
+    }
+
     return NextResponse.json({ success: true, settings: data })
 
   } catch (error) {
