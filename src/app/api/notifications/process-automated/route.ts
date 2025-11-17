@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
-import { cookies } from 'next/headers'
+import { createAdminClient } from '@/lib/supabase/server'
 
 // TEST MODE: Only send to this user ID
 const TEST_USER_ID = '9e48fc98-3064-4eca-a99c-4696a058c357' // Senin user ID'n
@@ -8,11 +7,8 @@ const TEST_USER_ID = '9e48fc98-3064-4eca-a99c-4696a058c357' // Senin user ID'n
 // POST /api/notifications/process-automated - Process automated notification rules
 export async function POST(request: NextRequest) {
   try {
-    const cookieStore = cookies()
-    const supabase = createClient(cookieStore)
-    
-    // This endpoint should be called by a cron job or background worker
-    // For security, you might want to add API key authentication here
+    // Use admin client to bypass RLS (this endpoint is called by cron jobs)
+    const supabase = createAdminClient()
     
     const body = await request.json()
     const { rule_type, force = false, test_mode = true } = body
