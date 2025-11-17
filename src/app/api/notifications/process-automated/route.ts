@@ -71,10 +71,15 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    return NextResponse.json({ 
-      processed_rules: results.length,
-      results 
-    })
+    // Add debug info
+    const debugInfo = {
+      totalRules: rules?.length || 0,
+      processedRules: results.length,
+      results,
+      timestamp: new Date().toISOString()
+    }
+
+    return NextResponse.json(debugInfo)
   } catch (error) {
     console.error('Error in process-automated POST:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
@@ -251,31 +256,30 @@ async function getDailyTaskReminderTargets(supabase: any) {
   // Get students with incomplete tasks for today
   const today = new Date().toISOString().split('T')[0]
   
-  console.log(`📅 Checking tasks for date: ${today}`)
-  
-  const { data: students, error } = await supabase
+  // Try direct query first
+  const { data: allStudents } = await supabase
     .from('user_profiles')
-    .select(`
-      id, full_name,
-      tasks:tasks!tasks_assigned_to_fkey(id, status, scheduled_date)
-    `)
+    .select('id, full_name, role, is_active')
     .eq('role', 'student')
-    .eq('is_active', true)
-    .eq('tasks.scheduled_date', today)
+  
+  const { data: todayTasks } = await supabase
+    .from('tasks')
+    .select('id, assigned_to, status, scheduled_date')
+    .eq('scheduled_date', today)
+  
+  // Manual join
+  const studentsWithTasks = (allStudents || []).map((student: any) => {
+    const studentTasks = (todayTasks || []).filter((task: any) => task.assigned_to === student.id)
+    const incompleteTasks = studentTasks.filter((task: any) => task.status !== 'completed')
+    
+    return {
+      ...student,
+      tasks: studentTasks,
+      incomplete_task_count: incompleteTasks.length
+    }
+  }).filter((student: any) => student.incomplete_task_count > 0)
 
-  console.log(`👥 Found ${students?.length || 0} students with tasks today`)
-  if (error) {
-    console.error('❌ Error fetching students:', error)
-  }
-
-  return (students || [])
-    .map((student: any) => {
-      const incompleteTasks = student.tasks?.filter((task: any) => task.status !== 'completed') || []
-      console.log(`   ${student.full_name}: ${incompleteTasks.length} incomplete tasks`)
-      return {
-        ...student,
-        incomplete_task_count: incompleteTasks.length
-      }
+  return studentsWithTasks
     })
     .filter((student: any) => student.incomplete_task_count > 0)
 }
