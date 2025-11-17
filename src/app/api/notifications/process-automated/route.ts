@@ -417,8 +417,8 @@ async function getTaskCheckTargets(supabase: any) {
   }).filter((student: any) => student.total_task_count > 0) // Only students with tasks
 
   console.log(`🎯 Task Check: ${studentsWithTaskStatus.length} students with tasks today`)
-  console.log(`   ✅ Completed all: ${studentsWithTaskStatus.filter(s => s.all_completed).length}`)
-  console.log(`   ⚠️ Has incomplete: ${studentsWithTaskStatus.filter(s => s.has_incomplete).length}`)
+  console.log(`   ✅ Completed all: ${studentsWithTaskStatus.filter((s: any) => s.all_completed).length}`)
+  console.log(`   ⚠️ Has incomplete: ${studentsWithTaskStatus.filter((s: any) => s.has_incomplete).length}`)
 
   return studentsWithTaskStatus
 }

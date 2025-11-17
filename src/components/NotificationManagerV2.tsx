@@ -521,7 +521,7 @@ export const NotificationManagerV2: React.FC = () => {
                           Belirlenen saatte görevleri kontrol eder. Tamamlanmışsa teşekkür, tamamlanmamışsa hatırlatma gönderir.
                         </p>
                         <p className="text-xs text-orange-600 mt-2">
-                          💡 Mesajları "Özel Bildirimler > Görev Kontrol" sekmesinden düzenleyebilirsiniz
+                          💡 Mesajları &quot;Özel Bildirimler &gt; Görev Kontrol&quot; sekmesinden düzenleyebilirsiniz
                         </p>
                       </div>
                     </div>
