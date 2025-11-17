@@ -4,36 +4,37 @@ import { createAdminClient } from '@/lib/supabase/server'
 // GET /api/notifications/test-force - Force send notification to Ozan
 export async function GET(request: NextRequest) {
   try {
-    const supabase = createAdminClient()
-    const TEST_USER_ID = '9e48fc98-3064-4eca-a99c-4696a058c357' // Ozan
+    // Get base URL
+    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL 
+      || (process.env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` : 'http://localhost:3000')
 
-    // Create notification directly
-    const { data: notification, error } = await supabase
-      .from('notification_queue')
-      .insert({
-        user_id: TEST_USER_ID,
-        title: 'Test Bildirim',
-        body: 'Bu bir test bildirimidir. Eğer bunu görüyorsan sistem çalışıyor! 🎉',
-        notification_type: 'task_reminder',
-        source_type: 'manual',
-        priority: 5,
-        include_sound: true,
-        custom_data: { test: true }
+    // Call broadcast-channel with test mode
+    const response = await fetch(`${baseUrl}/api/notifications/broadcast-channel`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        title: 'Test Bildirim - Otomatik Hatırlatıcı',
+        message: 'Bu bir test bildirimidir. Eğer bunu görüyorsan otomatik bildirim sistemi çalışıyor! 🎉',
+        target_audience: 'all',
+        test_mode: true // Only send to Ozan
       })
-      .select()
-      .single()
+    })
 
-    if (error) {
+    const data = await response.json()
+
+    if (!response.ok) {
       return NextResponse.json({ 
         success: false,
-        error: error.message 
+        error: data.error || 'Failed to send notification'
       }, { status: 500 })
     }
 
     return NextResponse.json({
       success: true,
-      message: 'Test notification created in queue',
-      notification
+      message: 'Test notification sent via broadcast-channel',
+      result: data
     })
 
   } catch (error) {
