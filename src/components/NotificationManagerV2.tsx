@@ -1,11 +1,11 @@
 'use client'
 
 import React, { useState } from 'react'
-import { Bell, Send, Clock, CheckSquare, Calendar, Repeat } from 'lucide-react'
+import { Bell, Send, Clock, CheckSquare, Calendar, Repeat, Settings } from 'lucide-react'
 
 export const NotificationManagerV2: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false)
-  const [activeTab, setActiveTab] = useState<'general' | 'special' | 'history'>('general')
+  const [activeTab, setActiveTab] = useState<'general' | 'special' | 'history' | 'automated'>('general')
   const [specialTab, setSpecialTab] = useState<'task-check' | 'birthday' | 'periodic'>('task-check')
   const [history, setHistory] = useState<any[]>([])
   const [loadingHistory, setLoadingHistory] = useState(false)
@@ -260,6 +260,17 @@ export const NotificationManagerV2: React.FC = () => {
               <Clock className="w-4 h-4 inline mr-2" />
               Geçmiş
             </button>
+            <button
+              onClick={() => setActiveTab('automated')}
+              className={`flex-1 px-4 py-3 text-sm font-medium transition-colors ${
+                activeTab === 'automated'
+                  ? 'text-orange-600 border-b-2 border-orange-600 bg-orange-50'
+                  : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
+              }`}
+            >
+              <Settings className="w-4 h-4 inline mr-2" />
+              Otomatik
+            </button>
           </div>
 
           {/* Content */}
@@ -488,6 +499,192 @@ export const NotificationManagerV2: React.FC = () => {
                     <p>Periyodik mesajlar özelliği yakında eklenecek</p>
                   </div>
                 )}
+              </div>
+            )}
+
+            {/* AUTOMATED TAB */}
+            {activeTab === 'automated' && (
+              <div className="space-y-4">
+                <div className="bg-orange-50 border border-orange-200 rounded-lg p-4 mb-4">
+                  <h4 className="font-medium text-orange-900 mb-2">🤖 Otomatik Bildirim Kuralları</h4>
+                  <p className="text-sm text-orange-700">
+                    Belirlenen kurallara göre otomatik olarak bildirim gönderir. Test modunda sadece Ozan'a gönderilir.
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-1 gap-3">
+                  <div className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors">
+                    <div className="flex justify-between items-start mb-2">
+                      <div>
+                        <h5 className="font-medium text-gray-800">📋 Günlük Görev Hatırlatması</h5>
+                        <p className="text-sm text-gray-600 mt-1">
+                          Her gün saat 18:00'da tamamlanmamış görevler için hatırlatma gönderir
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={async () => {
+                        try {
+                          const response = await fetch('/api/notifications/process-automated', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ 
+                              rule_type: 'daily_task_reminder', 
+                              force: true,
+                              test_mode: true
+                            })
+                          })
+                          const data = await response.json()
+                          if (response.ok) {
+                            const result = data.results?.[0]
+                            if (result) {
+                              alert(`✅ ${result.rule_name}\n\n` +
+                                    `Hedef: ${result.target_users} kullanıcı\n` +
+                                    `Gönderilen: ${result.notifications_created} bildirim\n\n` +
+                                    `Test modu: Sadece Ozan'a gönderildi`)
+                            }
+                          } else {
+                            alert('Hata: ' + data.error)
+                          }
+                        } catch (error) {
+                          alert('Bildirim gönderme hatası')
+                        }
+                      }}
+                      className="mt-3 w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
+                    >
+                      🚀 Şimdi Çalıştır (Test)
+                    </button>
+                  </div>
+
+                  <div className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors">
+                    <div className="flex justify-between items-start mb-2">
+                      <div>
+                        <h5 className="font-medium text-gray-800">🎉 Görev Tamamlama Teşekkürü</h5>
+                        <p className="text-sm text-gray-600 mt-1">
+                          Tüm günlük görevlerini tamamlayan öğrencilere teşekkür mesajı gönderir
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={async () => {
+                        try {
+                          const response = await fetch('/api/notifications/process-automated', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ 
+                              rule_type: 'task_completion_thanks', 
+                              force: true,
+                              test_mode: true
+                            })
+                          })
+                          const data = await response.json()
+                          if (response.ok) {
+                            const result = data.results?.[0]
+                            if (result) {
+                              alert(`✅ ${result.rule_name}\n\n` +
+                                    `Hedef: ${result.target_users} kullanıcı\n` +
+                                    `Gönderilen: ${result.notifications_created} bildirim\n\n` +
+                                    `Test modu: Sadece Ozan'a gönderildi`)
+                            }
+                          } else {
+                            alert('Hata: ' + data.error)
+                          }
+                        } catch (error) {
+                          alert('Bildirim gönderme hatası')
+                        }
+                      }}
+                      className="mt-3 w-full bg-green-600 text-white py-2 rounded-lg hover:bg-green-700 transition-colors text-sm font-medium"
+                    >
+                      🚀 Şimdi Çalıştır (Test)
+                    </button>
+                  </div>
+
+                  <div className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors">
+                    <div className="flex justify-between items-start mb-2">
+                      <div>
+                        <h5 className="font-medium text-gray-800">📊 Haftalık Özet</h5>
+                        <p className="text-sm text-gray-600 mt-1">
+                          Her Pazar akşamı haftalık performans özeti gönderir
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={async () => {
+                        try {
+                          const response = await fetch('/api/notifications/process-automated', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ 
+                              rule_type: 'weekly_summary', 
+                              force: true,
+                              test_mode: true
+                            })
+                          })
+                          const data = await response.json()
+                          if (response.ok) {
+                            const result = data.results?.[0]
+                            if (result) {
+                              alert(`✅ ${result.rule_name}\n\n` +
+                                    `Hedef: ${result.target_users} kullanıcı\n` +
+                                    `Gönderilen: ${result.notifications_created} bildirim\n\n` +
+                                    `Test modu: Sadece Ozan'a gönderildi`)
+                            }
+                          } else {
+                            alert('Hata: ' + data.error)
+                          }
+                        } catch (error) {
+                          alert('Bildirim gönderme hatası')
+                        }
+                      }}
+                      className="mt-3 w-full bg-purple-600 text-white py-2 rounded-lg hover:bg-purple-700 transition-colors text-sm font-medium"
+                    >
+                      🚀 Şimdi Çalıştır (Test)
+                    </button>
+                  </div>
+
+                  <div className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors">
+                    <div className="flex justify-between items-start mb-2">
+                      <div>
+                        <h5 className="font-medium text-gray-800">📝 Sınav Hatırlatması</h5>
+                        <p className="text-sm text-gray-600 mt-1">
+                          Yaklaşan sınavlar için bir gün önceden hatırlatma gönderir
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={async () => {
+                        try {
+                          const response = await fetch('/api/notifications/process-automated', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ 
+                              rule_type: 'exam_reminder', 
+                              force: true,
+                              test_mode: true
+                            })
+                          })
+                          const data = await response.json()
+                          if (response.ok) {
+                            const result = data.results?.[0]
+                            if (result) {
+                              alert(`✅ ${result.rule_name}\n\n` +
+                                    `Hedef: ${result.target_users} kullanıcı\n` +
+                                    `Gönderilen: ${result.notifications_created} bildirim\n\n` +
+                                    `Test modu: Sadece Ozan'a gönderildi`)
+                            }
+                          } else {
+                            alert('Hata: ' + data.error)
+                          }
+                        } catch (error) {
+                          alert('Bildirim gönderme hatası')
+                        }
+                      }}
+                      className="mt-3 w-full bg-orange-600 text-white py-2 rounded-lg hover:bg-orange-700 transition-colors text-sm font-medium"
+                    >
+                      🚀 Şimdi Çalıştır (Test)
+                    </button>
+                  </div>
+                </div>
               </div>
             )}
 
