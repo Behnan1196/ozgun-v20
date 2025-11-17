@@ -275,7 +275,7 @@ export async function POST(request: NextRequest) {
                 await adminSupabase
                   .from('notification_tokens')
                   .update({ is_active: false })
-                  .eq('id', token.id)
+                  .eq('id', tokenRecord.id)
               }
               
               pushFailureCount++
