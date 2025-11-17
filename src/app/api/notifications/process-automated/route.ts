@@ -25,12 +25,34 @@ export async function POST(request: NextRequest) {
       query = query.eq('rule_type', rule_type)
     }
 
+    console.log('📋 Fetching rules with query:', { rule_type, is_active: true })
+
     const { data: rules, error: rulesError } = await query
 
+    console.log('📊 Query result:', { 
+      rulesCount: rules?.length || 0, 
+      hasError: !!rulesError,
+      error: rulesError 
+    })
+
     if (rulesError) {
-      console.error('Error fetching automated rules:', rulesError)
-      return NextResponse.json({ error: 'Failed to fetch rules' }, { status: 500 })
+      console.error('❌ Error fetching automated rules:', rulesError)
+      return NextResponse.json({ 
+        error: 'Failed to fetch rules',
+        details: rulesError 
+      }, { status: 500 })
     }
+
+    if (!rules || rules.length === 0) {
+      console.log('⚠️ No active rules found')
+      return NextResponse.json({ 
+        processed_rules: 0,
+        results: [],
+        message: 'No active rules found'
+      })
+    }
+
+    console.log(`✅ Found ${rules.length} active rule(s)`)
 
     const results = []
 
