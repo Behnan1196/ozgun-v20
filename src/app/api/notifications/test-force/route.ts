@@ -14,7 +14,7 @@ export async function GET(request: NextRequest) {
         user_id: TEST_USER_ID,
         title: 'Test Bildirim',
         body: 'Bu bir test bildirimidir. Eğer bunu görüyorsan sistem çalışıyor! 🎉',
-        notification_type: 'daily_task_reminder',
+        notification_type: 'task_reminder',
         source_type: 'manual',
         priority: 5,
         include_sound: true,
