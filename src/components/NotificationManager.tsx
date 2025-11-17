@@ -331,7 +331,7 @@ export const NotificationManager: React.FC = () => {
 
       {/* Dropdown Panel */}
       {isOpen && (
-        <div className="absolute right-0 top-10 w-96 bg-white rounded-lg shadow-lg border border-gray-200 z-50">
+        <div className="absolute right-0 top-10 w-[600px] bg-white rounded-lg shadow-lg border border-gray-200 z-50">
           <div className="border-b border-gray-200">
             <nav className="flex space-x-4 px-4">
               {[
