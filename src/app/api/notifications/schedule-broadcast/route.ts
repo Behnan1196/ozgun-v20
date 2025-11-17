@@ -25,13 +25,16 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { title, message, target_audience, scheduled_date, scheduled_time } = body
+    const { title, message, target_audience, scheduled_date, scheduled_time, test_mode = false } = body
 
     if (!title || !message || !scheduled_date || !scheduled_time) {
       return NextResponse.json({ 
         error: 'Missing required fields: title, message, scheduled_date, scheduled_time' 
       }, { status: 400 })
     }
+
+    // TEST MODE: Only send to test user
+    const TEST_USER_ID = '9e48fc98-3064-4eca-a99c-4696a058c357' // Ozan
 
     // Map frontend values to database values
     const audienceMap: Record<string, string> = {
@@ -57,17 +60,25 @@ export async function POST(request: NextRequest) {
 
     // Save to notification_campaigns table with scheduled status (use admin client to bypass RLS)
     const adminSupabase = createAdminClient()
+    
+    // If test mode, set target_user_ids to only test user
+    const campaignData: any = {
+      name: test_mode ? `[TEST] Scheduled - ${title}` : `Scheduled - ${title}`,
+      title,
+      body: message,
+      target_audience: test_mode ? 'custom' : dbTargetAudience,
+      status: 'scheduled',
+      scheduled_for: scheduledDateTime.toISOString(),
+      created_by: user.id
+    }
+    
+    if (test_mode) {
+      campaignData.target_user_ids = [TEST_USER_ID]
+    }
+    
     const { data: campaign, error: campaignError } = await adminSupabase
       .from('notification_campaigns')
-      .insert({
-        name: `Scheduled - ${title}`,
-        title,
-        body: message,
-        target_audience: dbTargetAudience,
-        status: 'scheduled',
-        scheduled_for: scheduledDateTime.toISOString(),
-        created_by: user.id
-      })
+      .insert(campaignData)
       .select()
       .single()
 

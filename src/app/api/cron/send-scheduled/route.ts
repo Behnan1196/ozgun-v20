@@ -42,6 +42,9 @@ export async function GET(request: NextRequest) {
         const baseUrl = process.env.NEXT_PUBLIC_SITE_URL 
           || (process.env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` : 'http://localhost:3000')
 
+        // Check if campaign is in test mode (target_audience = 'custom' with target_user_ids)
+        const isTestMode = campaign.target_audience === 'custom' && campaign.target_user_ids?.length > 0
+        
         // Call broadcast-channel API to send the notification
         const response = await fetch(`${baseUrl}/api/notifications/broadcast-channel`, {
           method: 'POST',
@@ -53,6 +56,7 @@ export async function GET(request: NextRequest) {
             title: campaign.title,
             message: campaign.body,
             target_audience: campaign.target_audience,
+            test_mode: isTestMode,
             campaign_id: campaign.id // Pass campaign ID to update it
           })
         })

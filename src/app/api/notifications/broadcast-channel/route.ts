@@ -46,13 +46,16 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { title, message, target_audience } = body
+    const { title, message, target_audience, test_mode = false } = body
 
     if (!title || !message) {
       return NextResponse.json({ 
         error: 'Missing required fields: title, message' 
       }, { status: 400 })
     }
+
+    // TEST MODE: Only send to test user
+    const TEST_USER_ID = '9e48fc98-3064-4eca-a99c-4696a058c357' // Ozan
 
     // Map frontend values to database values
     const audienceMap: Record<string, string> = {
@@ -71,12 +74,19 @@ export async function POST(request: NextRequest) {
     // Get target users (use mapped value for database query)
     let query = supabase.from('user_profiles').select('id, full_name, email, role')
     
-    if (dbTargetAudience === 'student') {
-      query = query.eq('role', 'student')
-    } else if (dbTargetAudience === 'coach') {
-      query = query.eq('role', 'coach')
+    if (test_mode) {
+      // TEST MODE: Only get test user
+      console.log('🧪 TEST MODE: Only sending to test user')
+      query = query.eq('id', TEST_USER_ID)
     } else {
-      query = query.in('role', ['student', 'coach'])
+      // Normal mode: filter by audience
+      if (dbTargetAudience === 'student') {
+        query = query.eq('role', 'student')
+      } else if (dbTargetAudience === 'coach') {
+        query = query.eq('role', 'coach')
+      } else {
+        query = query.in('role', ['student', 'coach'])
+      }
     }
 
     const { data: users, error: usersError } = await query

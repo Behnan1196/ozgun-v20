@@ -17,7 +17,8 @@ export const NotificationManagerV2: React.FC = () => {
     message: '',
     target_audience: 'both', // Will be mapped to 'all' in API
     scheduled_date: '', // Optional - if empty, send instantly
-    scheduled_time: ''  // Optional
+    scheduled_time: '',  // Optional
+    test_mode: true // TEST MODE: Only send to test user
   })
 
   // Task check settings
@@ -60,14 +61,16 @@ export const NotificationManagerV2: React.FC = () => {
           body: JSON.stringify({
             title: generalForm.title,
             message: generalForm.message,
-            target_audience: generalForm.target_audience
+            target_audience: generalForm.target_audience,
+            test_mode: generalForm.test_mode
           })
         })
 
         if (response.ok) {
           const result = await response.json()
-          alert(`✅ Anlık bildirim gönderildi! ${result.stats.successful_sends} başarılı, ${result.stats.failed_sends} başarısız`)
-          setGeneralForm({ title: '', message: '', target_audience: 'both', scheduled_date: '', scheduled_time: '' })
+          const testModeMsg = generalForm.test_mode ? ' (TEST MODU: Sadece Ozan)' : ''
+          alert(`✅ Anlık bildirim gönderildi!${testModeMsg} ${result.stats.successful_sends} başarılı, ${result.stats.failed_sends} başarısız`)
+          setGeneralForm({ title: '', message: '', target_audience: 'both', scheduled_date: '', scheduled_time: '', test_mode: generalForm.test_mode })
           // Refresh history if on history tab
           if (activeTab === 'history') {
             loadHistory()
@@ -86,14 +89,16 @@ export const NotificationManagerV2: React.FC = () => {
             message: generalForm.message,
             target_audience: generalForm.target_audience,
             scheduled_date: generalForm.scheduled_date,
-            scheduled_time: generalForm.scheduled_time
+            scheduled_time: generalForm.scheduled_time,
+            test_mode: generalForm.test_mode
           })
         })
 
         if (response.ok) {
           const result = await response.json()
-          alert(`✅ ${result.message}`)
-          setGeneralForm({ title: '', message: '', target_audience: 'both', scheduled_date: '', scheduled_time: '' })
+          const testModeMsg = generalForm.test_mode ? ' (TEST MODU: Sadece Ozan)' : ''
+          alert(`✅ ${result.message}${testModeMsg}`)
+          setGeneralForm({ title: '', message: '', target_audience: 'both', scheduled_date: '', scheduled_time: '', test_mode: generalForm.test_mode })
           // Refresh history if on history tab
           if (activeTab === 'history') {
             loadHistory()
@@ -301,6 +306,23 @@ export const NotificationManagerV2: React.FC = () => {
                     <option value="students">Sadece Öğrenciler</option>
                     <option value="coaches">Sadece Koçlar</option>
                   </select>
+                </div>
+
+                {/* Test Mode Toggle */}
+                <div className="flex items-center justify-between p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                  <div className="flex-1">
+                    <span className="text-sm font-medium text-yellow-900">🧪 Test Modu</span>
+                    <p className="text-xs text-yellow-700 mt-1">Aktifse sadece Ozan'a gönderilir</p>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={generalForm.test_mode}
+                      onChange={(e) => setGeneralForm({ ...generalForm, test_mode: e.target.checked })}
+                      className="sr-only peer"
+                    />
+                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-yellow-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-yellow-600"></div>
+                  </label>
                 </div>
 
                 {/* Optional Scheduling */}
