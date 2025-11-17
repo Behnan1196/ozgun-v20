@@ -200,10 +200,19 @@ function shouldRuleRun(rule: any, conditions: any, now: Date): boolean {
     // Only run if we're within 5 minutes of scheduled time
     const scheduledTime = hours * 60 + minutes
     const currentTime = currentHour * 60 + currentMinute
+    const timeDiff = Math.abs(currentTime - scheduledTime)
     
-    if (Math.abs(currentTime - scheduledTime) > 5) {
+    console.log(`⏰ Time check for ${rule.name}:`)
+    console.log(`   Scheduled: ${conditions.time} (${scheduledTime} minutes)`)
+    console.log(`   Current UTC: ${currentHour}:${currentMinute.toString().padStart(2, '0')} (${currentTime} minutes)`)
+    console.log(`   Difference: ${timeDiff} minutes (max 5)`)
+    
+    if (timeDiff > 5) {
+      console.log(`   ❌ Outside time window`)
       return false
     }
+    
+    console.log(`   ✅ Within time window`)
   }
 
   // Check day-based conditions
