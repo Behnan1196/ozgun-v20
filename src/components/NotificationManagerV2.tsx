@@ -141,7 +141,11 @@ export const NotificationManagerV2: React.FC = () => {
       if (ruleResponse.ok) {
         const ruleData = await ruleResponse.json()
         if (ruleData.rule) {
-          settings.check_time = ruleData.rule.trigger_conditions?.time || settings.check_time
+          // Convert UTC time to Turkey time (UTC+3)
+          const utcTime = ruleData.rule.trigger_conditions?.time || settings.check_time
+          const [hours, minutes] = utcTime.split(':').map(Number)
+          const turkeyHours = (hours + 3) % 24 // Add 3 hours for Turkey timezone
+          settings.check_time = `${turkeyHours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`
           settings.enabled = ruleData.rule.is_active
         }
       }
@@ -154,6 +158,11 @@ export const NotificationManagerV2: React.FC = () => {
 
   const saveTaskCheckSettings = async () => {
     try {
+      // Convert Turkey time to UTC (subtract 3 hours)
+      const [hours, minutes] = taskCheckSettings.check_time.split(':').map(Number)
+      const utcHours = (hours - 3 + 24) % 24 // Subtract 3 hours, handle negative with +24
+      const utcTime = `${utcHours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`
+
       // Save to notification_settings (for messages)
       const settingsResponse = await fetch('/api/notifications/settings', {
         method: 'POST',
@@ -164,19 +173,19 @@ export const NotificationManagerV2: React.FC = () => {
         })
       })
 
-      // Also update automated_notification_rules (for schedule)
+      // Also update automated_notification_rules (for schedule) - send UTC time
       const rulesResponse = await fetch('/api/notifications/update-rule-schedule', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           rule_type: 'task_check',
-          check_time: taskCheckSettings.check_time,
+          check_time: utcTime, // Send UTC time to backend
           enabled: taskCheckSettings.enabled
         })
       })
 
       if (settingsResponse.ok && rulesResponse.ok) {
-        alert('✅ Görev kontrol ayarları kaydedildi!')
+        alert(`✅ Görev kontrol ayarları kaydedildi!\n\nTürkiye saati: ${taskCheckSettings.check_time}\nUTC saati: ${utcTime}`)
       } else {
         alert('❌ Ayarlar kaydedilemedi')
       }
@@ -488,7 +497,7 @@ export const NotificationManagerV2: React.FC = () => {
 
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
-                        ⏰ Kontrol Saati
+                        ⏰ Kontrol Saati (Türkiye Saati)
                       </label>
                       <input
                         type="time"
@@ -497,7 +506,7 @@ export const NotificationManagerV2: React.FC = () => {
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg"
                       />
                       <p className="text-xs text-gray-500 mt-1">
-                        Her gün bu saatte görevler kontrol edilir
+                        Her gün bu saatte görevler kontrol edilir (Türkiye saati UTC+3)
                       </p>
                     </div>
 
