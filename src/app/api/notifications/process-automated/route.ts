@@ -6,14 +6,15 @@ const TEST_USER_ID = '9e48fc98-3064-4eca-a99c-4696a058c357' // Senin user ID'n
 
 // GET /api/notifications/process-automated - Process automated notification rules (for cron jobs)
 export async function GET(request: NextRequest) {
-  // Check query params for test_mode
+  // Check query params
   const { searchParams } = new URL(request.url)
   const testMode = searchParams.get('test_mode') === 'true'
+  const force = searchParams.get('force') === 'true'
   
-  // Cron jobs use GET, so we'll process with default parameters
+  // Cron jobs use GET, so we'll process with query parameters
   return processAutomatedNotifications(request, {
     rule_type: undefined,
-    force: false,
+    force: force, // Can bypass time checks
     test_mode: testMode // Can be controlled via query param
   })
 }
