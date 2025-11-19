@@ -215,7 +215,6 @@ async function processAutomatedRule(supabase: any, rule: any, force: boolean = f
             title,
             body,
             notification_type: rule.rule_type,
-            priority: 'normal',
             status: 'pending',
             scheduled_for: new Date().toISOString()
           })
