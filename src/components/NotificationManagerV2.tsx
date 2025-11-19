@@ -435,7 +435,13 @@ export const NotificationManagerV2: React.FC = () => {
                     onClick={() => {
                       const expanded = (document.getElementById('task-check-settings') as HTMLElement)
                       if (expanded) {
-                        expanded.style.display = expanded.style.display === 'none' ? 'block' : 'none'
+                        const isCurrentlyHidden = expanded.style.display === 'none'
+                        expanded.style.display = isCurrentlyHidden ? 'block' : 'none'
+                        
+                        // Load settings when opening
+                        if (isCurrentlyHidden) {
+                          loadTaskCheckSettings()
+                        }
                       }
                     }}
                     className="w-full p-4 text-left hover:bg-orange-100 transition-colors flex justify-between items-center"
