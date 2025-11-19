@@ -217,13 +217,7 @@ async function processAutomatedRule(supabase: any, rule: any, force: boolean = f
             notification_type: rule.rule_type,
             priority: 'normal',
             status: 'pending',
-            scheduled_for: new Date().toISOString(),
-            metadata: {
-              rule_id: rule.id,
-              rule_name: rule.name,
-              automated: true,
-              task_status: rule.rule_type === 'task_check' ? (user.all_completed ? 'completed' : 'incomplete') : undefined
-            }
+            scheduled_for: new Date().toISOString()
           })
 
         if (!queueError) {
