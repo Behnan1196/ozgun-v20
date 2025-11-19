@@ -418,6 +418,23 @@ export const NotificationManagerV2: React.FC = () => {
                   </button>
                   
                   <div id="task-check-settings" style={{ display: 'none' }} className="p-4 border-t border-orange-200 bg-white space-y-4">
+                    {/* Test Mode Toggle */}
+                    <div className="flex items-center justify-between p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                      <div className="flex-1">
+                        <span className="text-sm font-medium text-yellow-900">🧪 Test Modu</span>
+                        <p className="text-xs text-yellow-700 mt-1">Aktifse sadece Ozan'a gönderilir</p>
+                      </div>
+                      <label className="relative inline-flex items-center cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={generalForm.test_mode}
+                          onChange={(e) => setGeneralForm({ ...generalForm, test_mode: e.target.checked })}
+                          className="sr-only peer"
+                        />
+                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-yellow-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-yellow-600"></div>
+                      </label>
+                    </div>
+
                     <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                       <span className="text-sm font-medium text-gray-700">Görev Kontrolü Aktif</span>
                       <label className="relative inline-flex items-center cursor-pointer">
@@ -480,25 +497,27 @@ export const NotificationManagerV2: React.FC = () => {
                       <button
                         onClick={async () => {
                           try {
+                            const testMode = generalForm.test_mode
                             const response = await fetch('/api/notifications/process-automated', {
                               method: 'POST',
                               headers: { 'Content-Type': 'application/json' },
                               body: JSON.stringify({ 
                                 rule_type: 'task_check', 
                                 force: true,
-                                test_mode: true
+                                test_mode: testMode
                               })
                             })
                             const data = await response.json()
                             if (response.ok) {
                               const result = data.results?.[0]
                               if (result) {
+                                const testModeMsg = testMode ? '\n\n🧪 Test modu: Sadece Ozan\'a gönderildi' : '\n\n📢 Tüm öğrencilere gönderildi'
                                 alert(`✅ ${result.rule_name}\n\n` +
                                       `Toplam: ${result.debug?.targetUsersFound || 0} öğrenci\n` +
                                       `✅ Tamamladı: ${result.debug?.completedAll || 0}\n` +
                                       `⚠️ Tamamlamadı: ${result.debug?.hasIncomplete || 0}\n` +
-                                      `Gönderilen: ${result.notifications_created} bildirim\n\n` +
-                                      `Test modu: Sadece Ozan'a gönderildi`)
+                                      `Gönderilen: ${result.notifications_created} bildirim` +
+                                      testModeMsg)
                               }
                             } else {
                               alert('Hata: ' + data.error)
@@ -509,7 +528,7 @@ export const NotificationManagerV2: React.FC = () => {
                         }}
                         className="flex-1 bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
                       >
-                        🚀 Şimdi Test Et
+                        🚀 Şimdi Çalıştır
                       </button>
                     </div>
                   </div>
