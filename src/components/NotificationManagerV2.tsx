@@ -25,6 +25,7 @@ export const NotificationManagerV2: React.FC = () => {
   const [taskCheckSettings, setTaskCheckSettings] = useState({
     enabled: false,
     check_time: '20:00',
+    test_mode: true, // Default to test mode for safety
     thank_you_message: '🎉 Harika! Bugünkü tüm görevlerini tamamladın. Tebrikler!',
     reminder_message: '⏰ Henüz tamamlanmamış görevlerin var. Lütfen kontrol et!'
   })
@@ -127,6 +128,7 @@ export const NotificationManagerV2: React.FC = () => {
       let settings = {
         enabled: false,
         check_time: '20:00',
+        test_mode: true, // Default to test mode for safety
         thank_you_message: '🎉 Harika! Bugünkü tüm görevlerini tamamladın. Tebrikler!',
         reminder_message: '⏰ Henüz tamamlanmamış görevlerin var. Lütfen kontrol et!'
       }
@@ -474,8 +476,8 @@ export const NotificationManagerV2: React.FC = () => {
                       <label className="relative inline-flex items-center cursor-pointer">
                         <input
                           type="checkbox"
-                          checked={generalForm.test_mode}
-                          onChange={(e) => setGeneralForm({ ...generalForm, test_mode: e.target.checked })}
+                          checked={taskCheckSettings.test_mode}
+                          onChange={(e) => setTaskCheckSettings({ ...taskCheckSettings, test_mode: e.target.checked })}
                           className="sr-only peer"
                         />
                         <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-yellow-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-yellow-600"></div>
@@ -544,7 +546,7 @@ export const NotificationManagerV2: React.FC = () => {
                       <button
                         onClick={async () => {
                           try {
-                            const testMode = generalForm.test_mode
+                            const testMode = taskCheckSettings.test_mode
                             const response = await fetch('/api/notifications/process-automated', {
                               method: 'POST',
                               headers: { 'Content-Type': 'application/json' },
