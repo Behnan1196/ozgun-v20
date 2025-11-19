@@ -4,14 +4,32 @@ import { createAdminClient } from '@/lib/supabase/server'
 // TEST MODE: Only send to this user ID
 const TEST_USER_ID = '9e48fc98-3064-4eca-a99c-4696a058c357' // Senin user ID'n
 
+// GET /api/notifications/process-automated - Process automated notification rules (for cron jobs)
+export async function GET(request: NextRequest) {
+  // Cron jobs use GET, so we'll process with default parameters
+  return processAutomatedNotifications(request, {
+    rule_type: undefined,
+    force: false,
+    test_mode: false // Production mode for cron jobs
+  })
+}
+
 // POST /api/notifications/process-automated - Process automated notification rules
 export async function POST(request: NextRequest) {
+  const body = await request.json()
+  const { rule_type, force = false, test_mode = true } = body
+  return processAutomatedNotifications(request, { rule_type, force, test_mode })
+}
+
+async function processAutomatedNotifications(
+  request: NextRequest, 
+  params: { rule_type?: string; force: boolean; test_mode: boolean }
+) {
   try {
+    const { rule_type, force, test_mode } = params
+    
     // Use admin client to bypass RLS (this endpoint is called by cron jobs)
     const supabase = createAdminClient()
-    
-    const body = await request.json()
-    const { rule_type, force = false, test_mode = true } = body
 
     console.log('🤖 Processing automated notifications:', { rule_type, force, test_mode })
 
