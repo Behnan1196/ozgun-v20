@@ -230,6 +230,21 @@ async function processAutomatedRule(supabase: any, rule: any, force: boolean = f
           body = interpolateTemplate(rule.body_template, user)
         }
 
+        // Check if notification already exists in queue (prevent duplicates)
+        const today = new Date().toISOString().split('T')[0]
+        const { data: existingNotif } = await supabase
+          .from('notification_queue')
+          .select('id')
+          .eq('user_id', user.id)
+          .eq('notification_type', rule.rule_type)
+          .gte('created_at', today)
+          .single()
+
+        if (existingNotif) {
+          console.log(`⚠️ Notification already queued for ${user.full_name} today, skipping`)
+          continue
+        }
+
         // Insert into notification_queue
         const { error: queueError } = await supabase
           .from('notification_queue')
