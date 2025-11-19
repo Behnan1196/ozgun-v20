@@ -122,11 +122,31 @@ export const NotificationManagerV2: React.FC = () => {
 
   const loadTaskCheckSettings = async () => {
     try {
-      const response = await fetch('/api/notifications/settings?key=task_check')
-      if (response.ok) {
-        const data = await response.json()
-        setTaskCheckSettings(data.settings)
+      // Load settings (messages)
+      const settingsResponse = await fetch('/api/notifications/settings?key=task_check')
+      let settings = {
+        enabled: false,
+        check_time: '20:00',
+        thank_you_message: '🎉 Harika! Bugünkü tüm görevlerini tamamladın. Tebrikler!',
+        reminder_message: '⏰ Henüz tamamlanmamış görevlerin var. Lütfen kontrol et!'
       }
+      
+      if (settingsResponse.ok) {
+        const data = await settingsResponse.json()
+        settings = { ...settings, ...data.settings }
+      }
+
+      // Load rule (schedule and enabled status)
+      const ruleResponse = await fetch('/api/notifications/get-rule?rule_type=task_check')
+      if (ruleResponse.ok) {
+        const ruleData = await ruleResponse.json()
+        if (ruleData.rule) {
+          settings.check_time = ruleData.rule.trigger_conditions?.time || settings.check_time
+          settings.enabled = ruleData.rule.is_active
+        }
+      }
+
+      setTaskCheckSettings(settings)
     } catch (error) {
       console.error('Error loading task check settings:', error)
     }
@@ -134,7 +154,8 @@ export const NotificationManagerV2: React.FC = () => {
 
   const saveTaskCheckSettings = async () => {
     try {
-      const response = await fetch('/api/notifications/settings', {
+      // Save to notification_settings (for messages)
+      const settingsResponse = await fetch('/api/notifications/settings', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -143,7 +164,18 @@ export const NotificationManagerV2: React.FC = () => {
         })
       })
 
-      if (response.ok) {
+      // Also update automated_notification_rules (for schedule)
+      const rulesResponse = await fetch('/api/notifications/update-rule-schedule', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          rule_type: 'task_check',
+          check_time: taskCheckSettings.check_time,
+          enabled: taskCheckSettings.enabled
+        })
+      })
+
+      if (settingsResponse.ok && rulesResponse.ok) {
         alert('✅ Görev kontrol ayarları kaydedildi!')
       } else {
         alert('❌ Ayarlar kaydedilemedi')
