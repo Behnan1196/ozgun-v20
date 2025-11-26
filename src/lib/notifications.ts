@@ -204,3 +204,46 @@ export async function clearChromeNotificationCache(): Promise<void> {
 export async function sendTestWebNotification(): Promise<void> {
   console.log('🚫 Test web notification disabled - Mobile-only system');
 }
+
+/**
+ * Send chat message notification
+ * Sends push notification to recipient when a chat message is sent
+ */
+export async function sendChatMessageNotification(
+  recipientId: string,
+  messageText: string,
+  channelId?: string
+): Promise<{ success: boolean; error?: string; notificationsSent?: number }> {
+  try {
+    const response = await fetch('/api/notifications/chat-message', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        recipientId,
+        messageText,
+        channelId,
+      }),
+    });
+
+    const result = await response.json();
+
+    if (!response.ok) {
+      console.error('❌ Error sending chat notification:', result);
+      return { success: false, error: result.error || 'Failed to send chat notification' };
+    }
+
+    console.log('✅ Chat notification sent successfully:', result);
+    return { 
+      success: true, 
+      notificationsSent: result.notificationsSent,
+    };
+  } catch (error) {
+    console.error('❌ Error sending chat notification:', error);
+    return { 
+      success: false, 
+      error: error instanceof Error ? error.message : String(error)
+    };
+  }
+}
