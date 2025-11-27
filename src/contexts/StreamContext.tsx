@@ -611,6 +611,31 @@ export function StreamProvider({ children }: StreamProviderProps) {
       await channel.create()
       await channel.watch()
       
+      // Set up message listener for push notifications
+      console.log('🔔 [CHAT] Setting up message listener for notifications');
+      channel.on('message.new', async (event) => {
+        const message = event.message;
+        if (!message) return;
+        
+        const messageUserId = message.user?.id;
+        if (!messageUserId) return;
+        
+        // Only process our own messages to send notifications to recipient
+        if (messageUserId === user.id) {
+          // Get recipient ID (the other person in the channel)
+          const members = Object.keys(channel.state.members);
+          const recipientId = members.find(id => id !== user.id);
+          
+          if (recipientId && message.text) {
+            console.log('📤 [CHAT] Sending push notification to recipient:', recipientId);
+            
+            // Import and call the notification function
+            const { sendChatMessageNotification } = await import('@/lib/notifications');
+            await sendChatMessageNotification(recipientId, message.text, channel.id);
+          }
+        }
+      });
+      
       setChatChannel(channel)
       console.log('✅ Chat channel ready')
       
