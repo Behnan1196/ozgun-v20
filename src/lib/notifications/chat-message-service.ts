@@ -153,22 +153,34 @@ export async function sendChatMessageNotification(
     const supabase = createAdminClient();
 
     // Check if recipient is currently active in chat (last activity < 30 seconds ago)
-    const { data: activityData } = await supabase
+    const { data: activityData, error: activityError } = await supabase
       .from('user_activity')
       .select('last_activity_at, current_screen')
       .eq('user_id', recipientId)
       .single();
 
-    if (activityData) {
+    console.log('📊 Activity check:', {
+      recipientId,
+      hasData: !!activityData,
+      error: activityError?.message,
+      currentScreen: activityData?.current_screen,
+      lastActivity: activityData?.last_activity_at
+    });
+
+    if (activityData && activityData.last_activity_at) {
       const lastActivity = new Date(activityData.last_activity_at);
       const now = new Date();
       const secondsSinceActivity = (now.getTime() - lastActivity.getTime()) / 1000;
+
+      console.log(`📊 Activity details: screen=${activityData.current_screen}, seconds=${secondsSinceActivity.toFixed(0)}`);
 
       // If user is in chat screen and was active in last 30 seconds, don't send notification
       if (activityData.current_screen === 'chat' && secondsSinceActivity < 30) {
         console.log(`⏭️ Recipient is currently in chat (${secondsSinceActivity.toFixed(0)}s ago), skipping notification`);
         return { success: true, notificationsSent: 0 };
       }
+    } else {
+      console.log('⚠️ No activity data found or missing last_activity_at');
     }
 
     // Get recipient's notification tokens
