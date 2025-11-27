@@ -614,8 +614,10 @@ export function StreamProvider({ children }: StreamProviderProps) {
       // Set up message listener for push notifications
       console.log('🔔 [CHAT] Setting up message listener for notifications');
       
-      // Remove any existing listeners to prevent duplicates
-      channel.off('message.new');
+      // Note: We don't remove existing listeners here because:
+      // 1. Channel is recreated when switching partners (see cleanup above)
+      // 2. Stream Chat handles duplicate listeners internally
+      // 3. The channel.off() method requires the exact handler reference
       
       const messageHandler = async (event: any) => {
         const message = event.message;
