@@ -614,14 +614,19 @@ export function StreamProvider({ children }: StreamProviderProps) {
       // Set up message listener for push notifications
       console.log('🔔 [CHAT] Setting up message listener for notifications');
       
-      // Note: We don't remove existing listeners here because:
-      // 1. Channel is recreated when switching partners (see cleanup above)
-      // 2. Stream Chat handles duplicate listeners internally
-      // 3. The channel.off() method requires the exact handler reference
+      // Track processed messages to prevent duplicates
+      const processedMessages = new Set<string>();
       
       const messageHandler = async (event: any) => {
         const message = event.message;
-        if (!message) return;
+        if (!message || !message.id) return;
+        
+        // Prevent duplicate processing of the same message
+        if (processedMessages.has(message.id)) {
+          console.log('⏭️ [CHAT] Message already processed, skipping:', message.id);
+          return;
+        }
+        processedMessages.add(message.id);
         
         const messageUserId = message.user?.id;
         if (!messageUserId) return;
@@ -633,7 +638,7 @@ export function StreamProvider({ children }: StreamProviderProps) {
           const recipientId = members.find(id => id !== user.id);
           
           if (recipientId && message.text) {
-            console.log('📤 [CHAT] Sending push notification to recipient:', recipientId);
+            console.log('📤 [CHAT] Sending push notification to recipient:', recipientId, 'for message:', message.id);
             
             // Import and call the notification function
             const { sendChatMessageNotification } = await import('@/lib/notifications');
