@@ -20,6 +20,11 @@ export async function POST(request: NextRequest) {
     
     console.log('📨 Stream webhook event:', event.type);
 
+    // DISABLED: We now use direct push notifications via message listener in StreamContext
+    // This webhook is kept for backward compatibility but does not send notifications
+    console.log('⏭️ Webhook disabled - using direct push notification system');
+    return NextResponse.json({ success: true, message: 'Webhook disabled - using direct push notifications' });
+
     // Only handle message.new events
     if (event.type !== 'message.new') {
       console.log('⏭️ Ignoring event type:', event.type);

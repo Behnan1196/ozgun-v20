@@ -613,7 +613,11 @@ export function StreamProvider({ children }: StreamProviderProps) {
       
       // Set up message listener for push notifications
       console.log('🔔 [CHAT] Setting up message listener for notifications');
-      channel.on('message.new', async (event) => {
+      
+      // Remove any existing listeners to prevent duplicates
+      channel.off('message.new');
+      
+      const messageHandler = async (event: any) => {
         const message = event.message;
         if (!message) return;
         
@@ -634,7 +638,9 @@ export function StreamProvider({ children }: StreamProviderProps) {
             await sendChatMessageNotification(recipientId, message.text, channel.id);
           }
         }
-      });
+      };
+      
+      channel.on('message.new', messageHandler);
       
       setChatChannel(channel)
       console.log('✅ Chat channel ready')
