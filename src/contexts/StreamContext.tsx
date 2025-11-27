@@ -96,6 +96,9 @@ export function StreamProvider({ children }: StreamProviderProps) {
   const [chatLoading, setChatLoading] = useState(false)
   const [chatError, setChatError] = useState<string | null>(null)
   
+  // Track processed messages to prevent duplicate notifications
+  const processedMessagesRef = useRef<Set<string>>(new Set())
+  
   // Video state
   const [videoClient, setVideoClient] = useState<StreamVideoClient | null>(null)
   const [videoCall, setVideoCall] = useState<Call | null>(null)
@@ -614,19 +617,16 @@ export function StreamProvider({ children }: StreamProviderProps) {
       // Set up message listener for push notifications
       console.log('🔔 [CHAT] Setting up message listener for notifications');
       
-      // Track processed messages to prevent duplicates
-      const processedMessages = new Set<string>();
-      
       const messageHandler = async (event: any) => {
         const message = event.message;
         if (!message || !message.id) return;
         
-        // Prevent duplicate processing of the same message
-        if (processedMessages.has(message.id)) {
+        // Prevent duplicate processing of the same message using context-level Set
+        if (processedMessagesRef.current.has(message.id)) {
           console.log('⏭️ [CHAT] Message already processed, skipping:', message.id);
           return;
         }
-        processedMessages.add(message.id);
+        processedMessagesRef.current.add(message.id);
         
         const messageUserId = message.user?.id;
         if (!messageUserId) return;
