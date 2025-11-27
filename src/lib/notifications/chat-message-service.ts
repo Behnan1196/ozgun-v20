@@ -157,7 +157,7 @@ export async function sendChatMessageNotification(
       .from('user_activity')
       .select('last_activity_at, current_screen')
       .eq('user_id', recipientId)
-      .single();
+      .maybeSingle(); // Use maybeSingle() to handle 0 or 1 rows
 
     console.log('📊 Activity check:', {
       recipientId,
