@@ -5044,7 +5044,7 @@ export default function CoachPage() {
                                           title={userRole === 'student' && task.assigned_to === user?.id ? 'Dokunarak düzenle' : undefined}
                                         >
                                           <Calculator className="h-3 w-3" />
-                                          <span className="font-bold">{task.problem_count ? `${task.problem_count} soru` : 'Soru sayısı yok'}</span>
+                                          <span className="font-bold">{task.problem_count ? `${task.problem_count} soru` : 'Soru yok'}</span>
                                           {userRole === 'student' && task.assigned_to === user?.id && (
                                             <span className="text-gray-500 text-xs ml-1">(düzenle)</span>
                                           )}
