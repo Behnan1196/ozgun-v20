@@ -50,27 +50,23 @@ async function sendFCMChatNotification(
       return { success: false, error: 'Firebase Admin not configured' };
     }
 
-    // Truncate message if too long
-    const truncatedMessage = messageText.length > 100 
-      ? messageText.substring(0, 100) + '...' 
+    // Truncate message to prevent 16KB limit on Android
+    const truncatedMessage = messageText.length > 80 
+      ? messageText.substring(0, 80) + '...' 
       : messageText;
 
-    // Use data-only approach like video invite
+    // Use data-only approach like video invite (minimal payload for 16KB limit)
     const message = {
       token,
       data: {
-        ...Object.fromEntries(Object.entries(data).map(([k, v]) => [k, String(v)])),
         type: 'chat_message',
-        notification_type: 'chat_message',
         title: `💬 ${senderName}`,
         body: truncatedMessage,
-        notificationTitle: `💬 ${senderName}`,
-        notificationBody: truncatedMessage,
         showNotification: 'true',
         sound: 'default',
-        vibrate: 'true',
         priority: 'high',
-        channelId: 'chat_messages',
+        sender_id: data.sender_id,
+        channel_id: data.channel_id,
       },
       android: {
         priority: 'high' as const,
